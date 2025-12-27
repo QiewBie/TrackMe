@@ -1,0 +1,58 @@
+﻿
+> time-tracker@0.0.0 lint
+> eslint .
+
+
+C:\Users\danil\Downloads\time-tracker\src\components\Dashboard.jsx
+  58:8  warning  React Hook useEffect has missing dependencies: 'activeTimers', 'startTimer', and 'tasks'. Either include them or remove the dependency array  react-hooks/exhaustive-deps
+
+C:\Users\danil\Downloads\time-tracker\src\components\shared\DateTimePicker.jsx
+  23:13  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+  21 |         if (value) {
+  22 |             const date = parseISO(value);
+> 23 |             setSelectedDate(date);
+     |             ^^^^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  24 |             setViewDate(date);
+  25 |         } else {
+  26 |             setSelectedDate(null);  react-hooks/set-state-in-effect
+
+C:\Users\danil\Downloads\time-tracker\src\components\tasks\TaskInput.jsx
+  14:13  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+  12 |     useEffect(() => {
+  13 |         if (currentFilter !== 'all') {
+> 14 |             setCatId(Number(currentFilter));
+     |             ^^^^^^^^ Avoid calling setState() directly within an effect
+  15 |         } else if (categories.length > 0 && !categories.find(c => c.id === Number(catId))) {
+  16 |             setCatId(categories[0].id);
+  17 |         }  react-hooks/set-state-in-effect
+
+C:\Users\danil\Downloads\time-tracker\src\context\TimerContext.jsx
+   7:52  error  Error: Cannot call impure function during render
+
+`Date.now` is an impure function. Calling an impure function can produce unstable results that update unpredictably when the component happens to re-render. (https://react.dev/reference/rules/components-and-hooks-must-be-pure#components-and-hooks-must-be-idempotent).
+
+   5 | export const TimerProvider = ({ children }) => {
+   6 |     const [activeTimers, setActiveTimers] = useState({}); // { [taskId]: startTime }
+>  7 |     const [currentTime, setCurrentTime] = useState(Date.now());
+     |                                                    ^^^^^^^^^^ Cannot call impure function
+   8 |     const intervalRef = useRef(null);
+   9 |
+  10 |     // Update current time every second if there are active timers  react-hooks/purity
+  59:14  error  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            react-refresh/only-export-components
+
+тЬЦ 5 problems (4 errors, 1 warning)
+

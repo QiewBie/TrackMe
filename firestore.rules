@@ -1,0 +1,62 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // --- Helper Functions ---
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    // Validate Task Schema
+    function isValidTask() {
+      let task = request.resource.data;
+      // Ensure required fields exist and types are correct
+      // Note: 'description' and others are optional check
+      return task.keys().hasAll(['id', 'title', 'createdAt']) &&
+             task.id is string &&
+             task.title is string && task.title.size() < 2000 &&
+             (task.get('description', null) == null || task.get('description', '') is string) &&
+             (task.get('timeSpent', 0) is number);
+    }
+
+    // Validate Category Schema
+    function isValidCategory() {
+      let cat = request.resource.data;
+      return cat.keys().hasAll(['id', 'name', 'color']) &&
+             cat.id is string &&
+             cat.name is string &&
+             cat.color is string;
+    }
+
+    // --- Rules ---
+    match /users/{userId} {
+      // User Profile
+      allow read: if isOwner(userId);
+      allow write: if isOwner(userId); // TODO: Add specific User schema validation
+
+      // Sub-collections
+      match /tasks/{taskId} {
+        allow read: if isOwner(userId);
+        allow write: if isOwner(userId) && isValidTask();
+      }
+
+      match /categories/{catId} {
+        allow read: if isOwner(userId);
+        allow write: if isOwner(userId) && isValidCategory();
+      }
+
+      match /playlists/{playlistId} {
+        allow read, write: if isOwner(userId); // Strict schema pending
+      }
+      
+      // Allow other collections for now, but restrictive
+      match /{document=**} {
+         allow read, write: if isOwner(userId);
+      }
+    }
+  }
+}

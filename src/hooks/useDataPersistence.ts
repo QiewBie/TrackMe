@@ -1,9 +1,11 @@
 import { useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { createBackup, downloadBackup, validateBackup, restoreBackup } from '../utils/backup';
+import { useTranslation } from 'react-i18next';
 // import { toast } from 'react-hot-toast'; // Toast removed to avoid dep issues
 
 export const useDataPersistence = () => {
+    const { t } = useTranslation();
     const { user } = useAuth();
 
     const exportData = useCallback(() => {
@@ -13,9 +15,9 @@ export const useDataPersistence = () => {
             // toast.success("Backup downloaded successfully");
         } catch (error) {
             console.error("Export failed:", error);
-            alert("Failed to export data.");
+            alert(t('common.export_error'));
         }
-    }, [user]);
+    }, [user, t]);
 
     const validateImport = useCallback(async (file: File) => {
         try {

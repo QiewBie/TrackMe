@@ -57,7 +57,7 @@ const ProfileView: React.FC<ProfileViewProps> = ({ user, setUser, updateAvatar, 
                     <div className="bg-bg-surface p-8 rounded-3xl shadow-sm border border-border relative overflow-hidden group">
 
                         {/* Decorative Background */}
-                        <div className="absolute top-0 left-0 right-0 h-32 bg-gradient-to-br from-blue-500/10 to-purple-500/10 dark:from-blue-500/20 dark:to-purple-500/20 pointer-events-none"></div>
+                        <div className="absolute top-0 left-0 right-0 h-32 bg-gradient-to-br from-brand-primary/10 to-brand-secondary/10 pointer-events-none"></div>
 
                         <div className="relative relative z-10 flex flex-col items-center">
                             <label className="relative cursor-pointer group/avatar w-40 h-40 mb-6">
@@ -65,11 +65,11 @@ const ProfileView: React.FC<ProfileViewProps> = ({ user, setUser, updateAvatar, 
                                     {user.avatar ?
                                         <img src={user.avatar} alt="Avatar" className="w-full h-full object-cover" /> :
                                         <div className="w-full h-full flex items-center justify-center bg-bg-main">
-                                            <User className="w-16 h-16 text-slate-300" />
+                                            <User className="w-16 h-16 text-ui-disabled" />
                                         </div>
                                     }
                                 </div>
-                                <div className="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center opacity-0 md:group-hover/avatar:opacity-100 transition-opacity duration-300 text-white backdrop-blur-sm pointer-events-none md:pointer-events-auto">
+                                <div className="absolute inset-0 bg-black/50 rounded-full flex items-center justify-center opacity-0 md:group-hover/avatar:opacity-100 transition-opacity duration-300 text-white backdrop-blur-sm pointer-events-none md:pointer-events-auto">
                                     <Camera size={32} className="animate-bounce" />
                                 </div>
                                 <input type="file" className="hidden" accept="image/*" onChange={handleAvatarUpload} />
@@ -99,31 +99,31 @@ const ProfileView: React.FC<ProfileViewProps> = ({ user, setUser, updateAvatar, 
                         <div className="space-y-3">
                             <button
                                 onClick={() => setDarkMode(!darkMode)}
-                                className="w-full flex items-center justify-between p-3 rounded-xl bg-bg-main border border-border hover:border-blue-400 transition-all group"
+                                className="w-full flex items-center justify-between p-3 rounded-xl bg-bg-main border border-border hover:border-brand-primary transition-all group"
                             >
                                 <div className="flex items-center gap-3">
-                                    <div className={clsx("p-2 rounded-lg transition-colors", darkMode ? "bg-slate-800 text-white" : "bg-amber-100 text-amber-500")}>
+                                    <div className={clsx("p-2 rounded-lg transition-colors", darkMode ? "bg-bg-inverse text-text-inverse" : "bg-bg-subtle text-text-secondary")}>
                                         {darkMode ? <Moon size={18} /> : <Sun size={18} />}
                                     </div>
                                     <span className="font-semibold text-text-primary">{darkMode ? t('navigation.dark_theme') : t('navigation.light_theme')}</span>
                                 </div>
-                                <div className={clsx("w-10 h-6 rounded-full relative transition-colors", darkMode ? "bg-blue-600" : "bg-slate-300")}>
+                                <div className={clsx("w-10 h-6 rounded-full relative transition-colors", darkMode ? "bg-brand-primary" : "bg-ui-disabled")}>
                                     <div className={clsx("absolute top-1 w-4 h-4 rounded-full bg-white transition-transform duration-300", darkMode ? "left-5" : "left-1")} />
                                 </div>
                             </button>
 
                             <button
                                 onClick={toggleLanguage}
-                                className="w-full flex items-center justify-between p-3 rounded-xl bg-bg-main border border-border hover:border-blue-400 transition-all group"
+                                className="w-full flex items-center justify-between p-3 rounded-xl bg-bg-main border border-border hover:border-brand-primary transition-all group"
                             >
                                 <div className="flex items-center gap-3">
-                                    <div className="p-2 rounded-lg bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400">
+                                    <div className="p-2 rounded-lg bg-brand-primary/10 text-brand-primary">
                                         <Languages size={18} />
                                     </div>
                                     <span className="font-semibold text-text-primary">{t('profile.language', 'Language')}</span>
                                 </div>
                                 <span className="font-bold text-sm bg-bg-surface px-3 py-1 rounded-lg border border-border text-text-primary">
-                                    {i18n.language === 'uk' ? 'Українська' : 'English'}
+                                    {i18n.language === 'uk' ? t('profile.language_uk', 'Українська') : t('profile.language_en', 'English')}
                                 </span>
                             </button>
                         </div>
@@ -139,9 +139,9 @@ const ProfileView: React.FC<ProfileViewProps> = ({ user, setUser, updateAvatar, 
                     </div>
 
                     {/* Danger Zone - Softened */}
-                    <div className="border border-border p-8 rounded-3xl bg-rose-50/30 dark:bg-rose-900/10">
+                    <div className="border border-status-error/20 p-8 rounded-3xl bg-status-error/5">
                         <div className="flex items-center gap-3 mb-6">
-                            <div className="p-2 bg-rose-100 dark:bg-rose-900/30 text-rose-500 rounded-lg">
+                            <div className="p-2 bg-status-error/10 text-status-error rounded-lg">
                                 <Trash2 size={20} />
                             </div>
                             <div>

@@ -50,7 +50,7 @@ export const PlaylistCard: React.FC<PlaylistCardProps> = ({
                 <div className="absolute inset-0 flex items-center justify-center opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity duration-300 bg-black/10 md:bg-black/20 backdrop-blur-[0px] md:backdrop-blur-[2px]">
                     <button
                         onClick={(e) => { e.stopPropagation(); onStart(); }}
-                        className="w-14 h-14 bg-white rounded-full flex items-center justify-center shadow-lg hover:scale-110 active:scale-95 active:bg-slate-200 transition-all text-slate-900"
+                        className="w-14 h-14 bg-white rounded-full flex items-center justify-center shadow-lg hover:scale-110 active:scale-95 active:bg-bg-subtle transition-all text-slate-900"
                         aria-label={t('playlists.start_session')}
                     >
                         <Play size={24} className="ml-1" fill="currentColor" />
@@ -71,14 +71,14 @@ export const PlaylistCard: React.FC<PlaylistCardProps> = ({
                     <div className="flex gap-1">
                         <button
                             onClick={(e) => { e.stopPropagation(); onViewDetails(); }}
-                            className="text-text-secondary hover:text-blue-500 transition-colors p-2 md:p-1"
+                            className="text-text-secondary hover:text-brand-primary transition-colors p-2 md:p-1"
                             title={t('playlists.manage', 'Manage Tasks')}
                         >
                             <Edit3 size={16} />
                         </button>
                         <button
                             onClick={(e) => { e.stopPropagation(); onDelete(); }}
-                            className="text-text-secondary hover:text-red-500 transition-colors p-2 md:p-1"
+                            className="text-text-secondary hover:text-status-error transition-colors p-2 md:p-1"
                             title={t('common.delete', 'Delete')}
                         >
                             <Trash2 size={16} />
@@ -90,7 +90,7 @@ export const PlaylistCard: React.FC<PlaylistCardProps> = ({
                 <div className="space-y-2 mb-4 flex-1">
                     {playlistTasks.slice(0, 3).map(task => (
                         <div key={task.id} className="text-xs text-text-secondary flex items-center gap-2 truncate">
-                            <div className={`w-1.5 h-1.5 rounded-full shrink-0 ${task.completed ? 'bg-emerald-400' : 'bg-slate-300'}`} />
+                            <div className={`w-1.5 h-1.5 rounded-full shrink-0 ${task.completed ? 'bg-status-success' : 'bg-ui-disabled'}`} />
                             <span className={task.completed ? 'line-through opacity-70' : ''}>{task.title}</span>
                         </div>
                     ))}
@@ -100,14 +100,14 @@ export const PlaylistCard: React.FC<PlaylistCardProps> = ({
                         </div>
                     )}
                     {playlistTasks.length === 0 && (
-                        <div className="text-xs text-text-secondary italic">No tasks added yet</div>
+                        <div className="text-xs text-text-secondary italic">{t('playlists.no_tasks_added', 'No tasks added yet')}</div>
                     )}
                 </div>
 
                 {/* Progress Bar */}
                 <div className="w-full h-1.5 bg-bg-main rounded-full overflow-hidden mb-4">
                     <div
-                        className="h-full bg-blue-500 transition-all duration-500"
+                        className="h-full bg-brand-primary transition-all duration-500"
                         style={{ width: `${progress}%` }}
                     />
                 </div>

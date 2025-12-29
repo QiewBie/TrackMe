@@ -87,7 +87,7 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = ({ isOpen, onClose,
                         <input
                             value={title}
                             onChange={e => setTitle(e.target.value)}
-                            className="flex-1 bg-bg-main border border-border rounded-xl px-4 py-3 font-bold text-text-primary focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                            className="flex-1 bg-bg-main border border-border rounded-xl px-4 py-3 font-bold text-text-primary focus:ring-2 focus:ring-brand-primary outline-none transition-all"
                             placeholder={t('playlists.templates.name_placeholder', 'e.g. Morning Routine')}
                         />
                     </div>
@@ -101,7 +101,7 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = ({ isOpen, onClose,
                             <button
                                 key={idx}
                                 onClick={() => setSelectedIconItem(item)}
-                                className={`aspect-square flex flex-col items-center justify-center rounded-lg hover:bg-bg-surface transition-all ${selectedIconItem.label === item.label ? 'bg-bg-surface shadow-sm ring-2 ring-blue-500' : 'opacity-70 hover:opacity-100'}`}
+                                className={`aspect-square flex flex-col items-center justify-center rounded-lg hover:bg-bg-surface transition-all ${selectedIconItem.label === item.label ? 'bg-bg-surface shadow-sm ring-2 ring-brand-primary' : 'opacity-70 hover:opacity-100'}`}
                                 title={item.label}
                             >
                                 <item.icon size={20} className={item.color} />
@@ -112,11 +112,11 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = ({ isOpen, onClose,
 
                 {/* Task List Manager */}
                 <div>
-                    <label className="block text-xs font-bold text-text-secondary uppercase mb-2">{t('playlists.templates.tasks_label', 'Default Tasks')}</label>
+                    <label className="block text-xs font-bold text-text-secondary uppercase mb-2">{t('playlists.templates.tasks_label')}</label>
                     <div className="bg-bg-main rounded-xl border border-border overflow-hidden">
                         <div className="max-h-40 overflow-y-auto custom-scrollbar p-1">
                             {defaultTasks.length === 0 ? (
-                                <p className="text-center text-sm text-text-secondary py-4 italic">{t('playlists.templates.no_tasks', 'No tasks in this preset yet.')}</p>
+                                <p className="text-center text-sm text-text-secondary py-4 italic">{t('playlists.templates.no_tasks')}</p>
                             ) : (
                                 <div className="space-y-1">
                                     {defaultTasks.map((task, i) => (
@@ -124,7 +124,7 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = ({ isOpen, onClose,
                                             <span className="text-sm font-medium text-text-primary">{task}</span>
                                             <button
                                                 onClick={() => removeTask(i)}
-                                                className="p-1 text-text-secondary hover:text-red-500 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-all"
+                                                className="p-1 text-text-secondary hover:text-status-error opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-all"
                                             >
                                                 <X size={14} />
                                             </button>
@@ -146,7 +146,7 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = ({ isOpen, onClose,
                                 <button
                                     type="submit"
                                     disabled={!newTaskName.trim()}
-                                    className="p-1.5 rounded-lg bg-bg-main text-text-secondary hover:text-blue-600 disabled:opacity-50 transition-colors"
+                                    className="p-1.5 rounded-lg bg-bg-main text-text-secondary hover:text-brand-primary disabled:opacity-50 transition-colors"
                                 >
                                     <Plus size={16} />
                                 </button>

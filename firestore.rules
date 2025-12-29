@@ -32,6 +32,15 @@ service cloud.firestore {
              cat.color is string;
     }
 
+    // Validate Playlist Schema
+    function isValidPlaylist() {
+      let pl = request.resource.data;
+      return pl.keys().hasAll(['id', 'name', 'items']) &&
+             pl.id is string &&
+             pl.name is string &&
+             pl.items is list; // items is an array of tasks/ids
+    }
+
     // --- Rules ---
     match /users/{userId} {
       // User Profile
@@ -50,7 +59,8 @@ service cloud.firestore {
       }
 
       match /playlists/{playlistId} {
-        allow read, write: if isOwner(userId); // Strict schema pending
+        allow read: if isOwner(userId);
+        allow write: if isOwner(userId) && isValidPlaylist();
       }
       
       // Allow other collections for now, but restrictive

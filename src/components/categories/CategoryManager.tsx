@@ -106,7 +106,7 @@ const CategoryManager: React.FC<CategoryManagerProps> = ({ isOpen, onClose, cate
                                     <div className="relative shrink-0">
                                         <button
                                             onClick={(e) => openPicker(e, cat.id)}
-                                            className={`w-9 h-9 rounded-xl ${editColor} flex items-center justify-center transition-transform active:scale-95 ring-2 ring-offset-2 ring-offset-white dark:ring-offset-slate-800 ring-slate-200 dark:ring-slate-700`}
+                                            className={`w-9 h-9 rounded-xl ${editColor} flex items-center justify-center transition-transform active:scale-95 ring-2 ring-offset-2 ring-offset-bg-surface ring-border-subtle`}
                                         >
                                             <div className="w-2.5 h-2.5 bg-white/50 rounded-full" />
                                         </button>
@@ -121,7 +121,7 @@ const CategoryManager: React.FC<CategoryManagerProps> = ({ isOpen, onClose, cate
                                         <button onClick={() => setEditingId(null)} className="w-9 h-9 flex items-center justify-center text-text-secondary hover:bg-bg-main rounded-xl transition-colors">
                                             <X size={18} />
                                         </button>
-                                        <button onClick={() => saveEdit(cat.id)} className="w-9 h-9 flex items-center justify-center text-white bg-blue-500 hover:bg-blue-600 rounded-xl transition-colors shadow-sm shadow-blue-500/30">
+                                        <button onClick={() => saveEdit(cat.id)} className="w-9 h-9 flex items-center justify-center text-white bg-brand-primary hover:bg-brand-hover rounded-xl transition-colors shadow-sm shadow-brand/30">
                                             <Check size={18} />
                                         </button>
                                     </div>
@@ -129,15 +129,15 @@ const CategoryManager: React.FC<CategoryManagerProps> = ({ isOpen, onClose, cate
                             ) : (
                                 <>
                                     <div className={`w-3 h-3 rounded-full ${cat.color} ml-1`} />
-                                    <span className="font-medium text-slate-700 dark:text-slate-200">{cat.name}</span>
-                                    {cat.isDefault && <span className="text-[10px] font-bold uppercase tracking-wider bg-blue-100 text-blue-600 px-2 py-0.5 rounded-full dark:bg-blue-900/30 dark:text-blue-400">{t('categories.is_default')}</span>}
+                                    <span className="font-medium text-text-primary">{cat.name}</span>
+                                    {cat.isDefault && <span className="text-[10px] font-bold uppercase tracking-wider bg-brand-subtle text-brand-primary px-2 py-0.5 rounded-full">{t('categories.is_default')}</span>}
 
                                     <div className="ml-auto flex gap-1 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
-                                        <button onClick={() => startEdit(cat)} className="w-8 h-8 flex items-center justify-center hover:bg-white dark:hover:bg-slate-700 rounded-lg text-slate-400 hover:text-blue-500 transition-colors">
+                                        <button onClick={() => startEdit(cat)} className="w-8 h-8 flex items-center justify-center hover:bg-bg-main rounded-lg text-ui-disabled hover:text-brand-primary transition-colors">
                                             <Edit2 size={16} />
                                         </button>
                                         {!cat.isDefault && (
-                                            <button onClick={() => deleteCategory(cat)} className="w-8 h-8 flex items-center justify-center hover:bg-white dark:hover:bg-slate-700 rounded-lg text-slate-400 hover:text-red-500 transition-colors">
+                                            <button onClick={() => deleteCategory(cat)} className="w-8 h-8 flex items-center justify-center hover:bg-bg-main rounded-lg text-ui-disabled hover:text-status-error transition-colors">
                                                 <Trash2 size={16} />
                                             </button>
                                         )}
@@ -153,7 +153,7 @@ const CategoryManager: React.FC<CategoryManagerProps> = ({ isOpen, onClose, cate
                     <div className="relative">
                         <button
                             onClick={(e) => openPicker(e, 'new')}
-                            className={`w-10 h-10 rounded-xl ${newColor} flex items-center justify-center transition-transform active:scale-95 ring-2 ring-offset-2 ring-offset-white dark:ring-offset-slate-900 ring-transparent hover:ring-slate-200 dark:hover:ring-slate-700`}
+                            className={`w-10 h-10 rounded-xl ${newColor} flex items-center justify-center transition-transform active:scale-95 ring-2 ring-offset-2 ring-offset-bg-surface ring-transparent hover:ring-border-subtle`}
                         >
                             <div className="w-3 h-3 bg-white/50 rounded-full" />
                         </button>
@@ -169,7 +169,7 @@ const CategoryManager: React.FC<CategoryManagerProps> = ({ isOpen, onClose, cate
 
                     <button
                         onClick={handleAdd}
-                        className="w-10 h-10 rounded-xl bg-blue-600 hover:bg-blue-700 text-white flex items-center justify-center shadow-lg shadow-blue-500/30 transition-all active:scale-95 shrink-0"
+                        className="w-10 h-10 rounded-xl bg-brand-primary hover:bg-brand-hover text-white flex items-center justify-center shadow-lg shadow-brand/30 transition-all active:scale-95 shrink-0"
                     >
                         <Plus size={18} strokeWidth={2.5} />
                     </button>
@@ -191,7 +191,7 @@ const CategoryManager: React.FC<CategoryManagerProps> = ({ isOpen, onClose, cate
                                 else setEditColor(c);
                                 setIsColorPickerOpen(false);
                             }}
-                            className={`w-8 h-8 rounded-lg ${c} hover:scale-110 transition-transform ${(isColorPickerOpen === 'new' ? newColor : editColor) === c ? 'ring-2 ring-offset-2 ring-blue-500' : ''}`}
+                            className={`w-8 h-8 rounded-lg ${c} hover:scale-110 transition-transform ${(isColorPickerOpen === 'new' ? newColor : editColor) === c ? 'ring-2 ring-offset-2 ring-brand-primary' : ''}`}
                         />
                     ))}
                 </div>,

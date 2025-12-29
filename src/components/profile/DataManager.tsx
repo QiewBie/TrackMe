@@ -48,8 +48,8 @@ const DataManager: React.FC = () => {
 
             {/* Status Alert */}
             <div className={`p-4 rounded-2xl flex items-start gap-3 border ${showSyncNote
-                ? 'bg-blue-50/50 dark:bg-blue-900/10 border-blue-100 dark:border-blue-900/30 text-blue-800 dark:text-blue-300'
-                : 'bg-amber-50/50 dark:bg-amber-900/10 border-amber-100 dark:border-amber-900/30 text-amber-800 dark:text-amber-300'
+                ? 'bg-status-info/10 border-status-info/20 text-status-info'
+                : 'bg-status-warning/10 border-status-warning/20 text-status-warning'
                 }`}>
                 {showSyncNote ? (
                     <Cloud size={20} className="shrink-0 mt-0.5" />

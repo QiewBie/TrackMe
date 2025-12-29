@@ -42,8 +42,8 @@ build/Release
 node_modules/
 jspm_packages/
 
-# Snowpack dependency directory (https://snowpack.dev/)
-web_modules/
+# TypeScript v1 declaration files
+typings/
 
 # TypeScript cache
 *.tsbuildinfo
@@ -57,7 +57,7 @@ web_modules/
 # Microbundle cache
 .rpt2_cache/
 .rts2_cache_cjs/
-.rts2_cache_esm/
+.rts2_cache_es/
 .rts2_cache_umd/
 
 # Optional REPL history
@@ -89,7 +89,7 @@ dist
 
 # Gatsby files
 .cache/
-# Comment in the public line in if your build choice is to replace public/ with a build output
+# Comment in the public line in if your project uses Gatsby and not Next.js
 # public
 
 # vuepress build output
@@ -117,12 +117,15 @@ dist
 .yarn/install-state.gz
 .pnp.*
 
-# OS metadata
-.DS_Store
-Thumbs.db
+# Firebase
+.firebase/
+firebase-debug.log
+firestore-debug.log
+ui-debug.log
 
-# IDEs
+# Editor
 .idea/
 .vscode/
 *.swp
 *.swo
+.DS_Store

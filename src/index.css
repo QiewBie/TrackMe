@@ -14,12 +14,12 @@ body,
 @layer base {
   :root {
     --bg-main: #f8fafc;
-    /* slate-50 (Ligher/Cooler than slate-100) */
+    /* slate-50 */
     --bg-surface: #ffffff;
     /* white */
 
     --text-primary: #020617;
-    /* slate-950 (Jet Black for max contrast) */
+    /* slate-950 */
     --text-secondary: #475569;
     /* slate-600 */
 
@@ -35,7 +35,7 @@ body,
     --brand-subtle: #eff6ff;
 
     --brand-accent: #6366f1;
-    /* Indigo-500 (New Accent) */
+    /* Indigo-500 */
     --brand-accent-hover: #4f46e5;
     /* Indigo-600 */
 
@@ -43,39 +43,52 @@ body,
     --status-success: #10b981;
     --status-error: #ef4444;
     --status-warning: #f59e0b;
+    --status-info: #3b82f6;
+    /* blue-500 */
+
+    /* Subtlety & Inverse */
+    --bg-subtle: #f1f5f9;
+    /* slate-100 */
+    --bg-inverse: #020617;
+    /* slate-950 */
+    --text-inverse: #f8fafc;
+    /* slate-50 */
 
     /* UI States */
     --ui-disabled: #94a3b8;
+
+    /* Shadows - Colored Glows */
+    --shadow-color: rgb(15 23 42);
   }
 
   .dark {
     --bg-main: #020617;
-    /* slate-950 (Deep Void) */
+    /* slate-950 */
     --bg-surface: #0f172a;
-    /* slate-900 (Rich Navy) */
+    /* slate-900 */
 
     --text-primary: #f8fafc;
-    /* slate-50 (Crisp White) */
+    /* slate-50 */
     --text-secondary: #94a3b8;
-    /* slate-400 (Muted) */
+    /* slate-400 */
 
     --border-color: #1e293b;
-    /* slate-800 (Subtle Edge) */
+    /* slate-800 */
     --border-subtle: #334155;
-    /* slate-700 (Visible Edge) */
+    /* slate-700 */
 
     /* Brand Colors (Dark Mode Logic) */
     --brand-primary: #3b82f6;
     /* blue-500 */
     --brand-hover: #60a5fa;
-    /* blue-400 (Lighter for hover in dark) */
+    /* blue-400 */
     --brand-active: #2563eb;
     /* blue-600 */
     --brand-subtle: rgba(59, 130, 246, 0.15);
     /* blue-500/15 */
 
     --brand-accent: #818cf8;
-    /* Indigo-400 (Lighter accent) */
+    /* Indigo-400 */
     --brand-accent-hover: #6366f1;
     /* Indigo-500 */
 
@@ -83,16 +96,21 @@ body,
     --ui-disabled: #475569;
     /* slate-600 */
 
+    /* Subtlety & Inverse */
+    --bg-subtle: #1e293b;
+    /* slate-800 */
+    --bg-inverse: #f8fafc;
+    /* slate-50 */
+    --text-inverse: #020617;
+    /* slate-950 */
+
     /* Shadows - Colored Glows */
-    --shadow-color: 15 23 42;
-    /* slate-900 rgb */
-
-    /* UI States */
-    --ui-disabled: #64748b;
-    /* slate-500 */
+    --shadow-color: rgb(15 23 42);
+    /* slate-900 rgb - fixed syntax */
   }
+}
 
-  /* UTILITIES */
+@layer utilities {
   .shadow-card {
     box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
   }
@@ -114,53 +132,7 @@ select {
   font-family: inherit;
 }
 
-/* --- CUSTOM ANIMATIONS (Legacy removed, using Tailwind config) --- */
-/* Animation Delays */
-.delay-100 {
-  animation-delay: 100ms;
-}
-
-.delay-200 {
-  animation-delay: 200ms;
-}
-
-.delay-300 {
-  animation-delay: 300ms;
-}
-
-/* 3. Анімоване закреслення тексту */
-.strikethrough-text {
-  position: relative;
-  display: inline-block;
-  transition: color 0.3s ease;
-}
-
-.strikethrough-text::after {
-  content: '';
-  position: absolute;
-  top: 50%;
-  left: 0;
-  width: 0;
-  height: 2px;
-  background-color: currentColor;
-  /* Бере колір тексту */
-  transition: width 0.4s ease-in-out;
-  opacity: 0.6;
-}
-
-.strikethrough-active {
-  @apply text-slate-400;
-}
-
-.strikethrough-active::after {
-  width: 100%;
-}
-
-.check-bounce:active {
-  @apply animate-check-bounce;
-}
-
-/* 5. Плавний скролбар */
+/* 5. Custom Scrollbar */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
@@ -175,7 +147,7 @@ select {
 }
 
 ::-webkit-scrollbar-thumb {
-  @apply bg-slate-300 dark:bg-slate-700 rounded-full hover:bg-slate-400 dark:hover:bg-slate-600 transition-colors;
+  @apply bg-border dark:bg-border-subtle rounded-full hover:bg-ui-disabled transition-colors;
 }
 
 /* 6. ProseMirror Editor Styles */
@@ -212,20 +184,14 @@ select {
 }
 
 .ProseMirror blockquote {
-  border-left: 3px solid #cbd5e1;
+  border-left: 3px solid var(--border-color);
   padding-left: 1rem;
   margin-left: 0;
   font-style: italic;
-  color: #64748b;
-}
-
-.dark .ProseMirror blockquote {
-  border-left-color: #475569;
-  color: #94a3b8;
+  color: var(--text-secondary);
 }
 
 /* 7. Recharts Focus Outline Removal */
-/* 8. Global Chart Focus Reset */
 .recharts-wrapper,
 .recharts-surface,
 .recharts-wrapper *,

@@ -36,9 +36,8 @@ export const FocusStage: React.FC<FocusStageProps> = memo(({
 
     return (
         <div className={`
-                flex-1 flex flex-col items-center justify-center relative z-10 p-6 pb-32
-                transition-all duration-500 ease-[${LAYOUT.FOCUS.TRANSITION_EASE}]
-                ${contextPanelOpen ? LAYOUT.FOCUS.SIDEBAR_SHIFT_CLASS : ''}
+                flex-1 flex flex-col items-center justify-center relative z-10 p-6
+                transition-all duration-500 ease-spring
             `}>
             <AnimatePresence mode="popLayout">
                 {activeTask ? (
@@ -61,7 +60,7 @@ export const FocusStage: React.FC<FocusStageProps> = memo(({
                         {/* Active Task Details */}
                         <div className={`
                                 flex flex-col items-center gap-6 text-center
-                                transition-all duration-700 ease-in-out
+                                transition-all duration-700 ease-spring
                                 ${isTimerRunning ? 'scale-95' : 'scale-100'} 
                                 ${(isTimerRunning && !controlsVisible) ? 'opacity-50 blur-[1px]' : 'opacity-100 blur-0'}
                             `}>
@@ -72,13 +71,12 @@ export const FocusStage: React.FC<FocusStageProps> = memo(({
                             <div className="flex flex-wrap items-center justify-center gap-3">
                                 {/* Project Badge */}
                                 {category && (
-                                    <div className="inline-flex items-center gap-2.5 px-4 py-2 rounded-full bg-bg-surface/80 backdrop-blur shadow-sm text-sm font-medium text-text-secondary border border-transparent">
+                                    <div className="inline-flex items-center gap-2.5 px-4 py-2 rounded-full bg-bg-surface/80 backdrop-blur shadow-sm text-sm font-medium text-text-secondary border border-border-subtle">
                                         <span
-                                            className="w-2.5 h-2.5 rounded-full shadow-[0_0_8px_currentColor]"
+                                            className={`w-2.5 h-2.5 rounded-full shadow-glow ${category.color}`}
                                             style={{
-                                                backgroundColor: ambientColor,
-                                                color: ambientColor
-                                            }}
+                                                '--shadow-color': ambientColor // Keep glow logic if valid, or remove if ambientColor isn't hex. Assuming ambientColor IS hex for glow, but circle color comes from class.
+                                            } as React.CSSProperties}
                                         />
                                         <span>{category.name}</span>
                                     </div>
@@ -86,7 +84,7 @@ export const FocusStage: React.FC<FocusStageProps> = memo(({
 
                                 {/* Playlist Badge */}
                                 {playlist && (
-                                    <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-bg-surface/80 backdrop-blur shadow-sm text-sm font-medium text-text-secondary">
+                                    <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-bg-surface/80 backdrop-blur shadow-sm text-sm font-medium text-text-secondary border border-border-subtle">
                                         <ListMusic size={14} />
                                         <span>{playlist.title}</span>
                                     </div>
@@ -112,11 +110,11 @@ export const FocusStage: React.FC<FocusStageProps> = memo(({
 
                         <div className="space-y-4">
                             <Heading variant="h3" className="text-text-secondary font-medium">
-                                {tasksCount > 0 ? (t('focus.ready_title') || "Ready to Focus") : (t('common.loading') || "Initializing...")}
+                                {tasksCount > 0 ? (t('focus.ready_title')) : (t('common.loading'))}
                             </Heading>
                             {tasksCount > 0 && (
                                 <Text className="text-text-secondary/60 max-w-md mx-auto">
-                                    Select a task from the sidebar or playlist to begin your flow.
+                                    {t('focus.select_task_msg')}
                                 </Text>
                             )}
                         </div>

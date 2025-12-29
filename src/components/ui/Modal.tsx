@@ -12,6 +12,7 @@ interface ModalProps {
     className?: string;
     showCloseButton?: boolean;
     disableInnerScroll?: boolean;
+    fullScreen?: boolean;
 }
 
 const Modal: React.FC<ModalProps> = ({
@@ -21,7 +22,8 @@ const Modal: React.FC<ModalProps> = ({
     title,
     className,
     showCloseButton = true,
-    disableInnerScroll = false
+    disableInnerScroll = false,
+    fullScreen = false
 }) => {
     const backdropRef = useRef<HTMLDivElement>(null);
 
@@ -40,9 +42,6 @@ const Modal: React.FC<ModalProps> = ({
             document.body.style.overflow = 'unset';
         };
     }, [isOpen, onClose]);
-
-    // Removed early return to allow AnimatePresence to work
-    // if (!isOpen) return null;
 
     const handleBackdropClick = (e: React.MouseEvent) => {
         if (e.target === backdropRef.current) {
@@ -68,7 +67,10 @@ const Modal: React.FC<ModalProps> = ({
                     />
 
                     {/* Content Layer - Interaction Wrapper */}
-                    <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 pointer-events-none">
+                    <div className={clsx(
+                        "fixed inset-0 z-[200] flex items-center justify-center pointer-events-none",
+                        fullScreen ? "p-0" : "p-4"
+                    )}>
                         <motion.div
                             key="modal-content"
                             initial={{ opacity: 0, scale: 0.95, y: 10 }}
@@ -76,7 +78,8 @@ const Modal: React.FC<ModalProps> = ({
                             exit={{ opacity: 0, scale: 0.95, y: 10 }}
                             transition={{ duration: 0.2, ease: "easeOut" }}
                             className={clsx(
-                                "bg-bg-surface rounded-2xl shadow-2xl w-full max-h-[90vh] overflow-hidden flex flex-col pointer-events-auto will-change-transform",
+                                "bg-bg-surface shadow-2xl overflow-hidden flex flex-col pointer-events-auto will-change-transform",
+                                fullScreen ? "!w-full !max-w-none !h-full !max-h-screen !rounded-none" : "rounded-2xl w-full max-h-[90vh]",
                                 className || "max-w-md"
                             )}
                             onClick={e => e.stopPropagation()}

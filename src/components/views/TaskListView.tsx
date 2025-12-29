@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next';
 import DateRangePicker from '../shared/DateRangePicker';
 import TaskInput from '../tasks/TaskInput';
 import TaskItem from '../tasks/TaskItem';
-import TotalTimeDisplay from '../analytics/TotalTimeDisplay';
+import DurationDisplay from '../analytics/DurationDisplay';
 import { filterTasks, splitTasksByStatus } from '../../utils/dateHelpers';
 import { Task, Category, FilterType, DateRange, ProjectNote } from '../../types';
 import { Virtuoso } from 'react-virtuoso';
@@ -148,7 +148,7 @@ const TaskListView: React.FC<TaskListViewProps> = ({
 
                 <div className="w-full md:w-auto bg-bg-surface px-5 py-3 rounded-xl border border-border shadow-sm flex items-center justify-between md:block">
                     <p className="text-xs font-bold text-text-secondary uppercase mb-0 md:mb-1">{t('tasks.total_time')}</p>
-                    <TotalTimeDisplay tasks={filteredTasks} />
+                    <DurationDisplay tasks={filteredTasks} />
                 </div>
             </div>
 

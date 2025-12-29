@@ -3,10 +3,10 @@ import { filterTasks, splitTasksByStatus } from '../dateHelpers';
 import { Task } from '../../types';
 
 const mockTasks: Task[] = [
-    { id: '1', title: 'Task 1', categoryId: '1', timeSpent: 100, isRunning: false, completed: false, createdAt: '2023-01-01T10:00:00.000Z', subtasks: [] },
-    { id: '2', title: 'Task 2', categoryId: '2', timeSpent: 200, isRunning: false, completed: true, createdAt: '2023-01-02T10:00:00.000Z', completedAt: '2023-01-02T11:00:00.000Z', subtasks: [] },
-    { id: '3', title: 'Task 3', categoryId: '1', timeSpent: 300, isRunning: false, completed: false, createdAt: '2023-01-03T10:00:00.000Z', subtasks: [] },
-    { id: '4', title: 'Task 4', categoryId: null, timeSpent: 50, isRunning: false, completed: false, createdAt: '2023-01-01T15:00:00.000Z', subtasks: [] },
+    { id: '1', title: 'Task 1', categoryId: '1', cachedTotalTime: 100, isRunning: false, completed: false, createdAt: '2023-01-01T10:00:00.000Z', subtasks: [] },
+    { id: '2', title: 'Task 2', categoryId: '2', cachedTotalTime: 200, isRunning: false, completed: true, createdAt: '2023-01-02T10:00:00.000Z', completedAt: '2023-01-02T11:00:00.000Z', subtasks: [] },
+    { id: '3', title: 'Task 3', categoryId: '1', cachedTotalTime: 300, isRunning: false, completed: false, createdAt: '2023-01-03T10:00:00.000Z', subtasks: [] },
+    { id: '4', title: 'Task 4', categoryId: null, cachedTotalTime: 50, isRunning: false, completed: false, createdAt: '2023-01-01T15:00:00.000Z', subtasks: [] },
 ];
 
 describe('dateHelpers', () => {

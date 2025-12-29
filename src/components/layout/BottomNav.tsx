@@ -3,13 +3,13 @@ import { NavLink } from 'react-router-dom';
 import { LayoutDashboard, PieChart, Play, Pause, ListMusic, User } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { clsx } from 'clsx';
-import { useTimer } from '../../context/TimerContext';
+import { useActiveTimer } from '../../context/ActiveTimerContext';
 import { useHaptic } from '../../hooks/useHaptic';
 import { useUI } from '../../context/UIContext';
 
 const BottomNav = () => {
     const { t } = useTranslation();
-    const { activeTimers } = useTimer();
+    const { activeTimers } = useActiveTimer();
     const isFocusing = Object.keys(activeTimers).length > 0;
     const haptics = useHaptic();
     const { setMobileMenuOpen } = useUI();
@@ -42,7 +42,7 @@ const BottomNav = () => {
                         className={({ isActive }) => clsx(
                             "flex flex-col items-center justify-center w-full h-full transition-colors relative",
                             isActive
-                                ? item.isPrimary ? "text-purple-500" : "text-brand"
+                                ? "text-brand-primary"
                                 : "text-text-secondary hover:text-text-primary"
                         )}
                     >

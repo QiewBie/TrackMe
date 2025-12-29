@@ -1,13 +1,13 @@
 import { Suspense, lazy, useEffect } from 'react';
 import { Routes, Route, useOutletContext, useLocation } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
-import { TimerProvider } from './context/TimerContext';
+import { ActiveTimerProvider } from './context/ActiveTimerContext';
 import { UIProvider } from './context/UIContext';
 import { TaskProvider, useTaskContext } from './context/TaskContext';
 import { CategoryProvider, useCategoryContext } from './context/CategoryContext';
 import { PlaylistProvider } from './context/PlaylistContext';
 import { SoundProvider } from './context/SoundContext';
-import { SessionProvider } from './context/SessionContext';
+import { FocusSessionProvider, useFocusContext } from './context/FocusSessionContext';
 import Dashboard, { DashboardContextType } from './components/Dashboard';
 import TaskListView from './components/views/TaskListView';
 
@@ -32,10 +32,11 @@ const Loading = () => {
 // Wrappers to consume context from Dashboard Outlet
 const TaskListWrapper = () => {
   const {
-    tasks, addTask, toggleComplete,
-    toggleTimer
+    tasks, addTask, toggleComplete
   } = useTaskContext();
   const { categories } = useCategoryContext();
+  const { startSession, activeSession, isPaused, pauseSession, resumeSession } = useFocusContext();
+
   const {
     filter, scrollContainer,
     getProjectNote, saveProjectNote,
@@ -43,12 +44,21 @@ const TaskListWrapper = () => {
     onDeleteTask
   } = useOutletContext<DashboardContextType>();
 
+  const handleToggleTimer = (id: string) => {
+    if (activeSession?.taskId === id) {
+      if (isPaused) resumeSession();
+      else pauseSession();
+    } else {
+      startSession(id);
+    }
+  };
+
   return (
     <TaskListView
       tasks={tasks} categories={categories} filter={filter}
       onAdd={addTask} onToggleComplete={toggleComplete}
       onEdit={onEdit}
-      onToggleTimer={toggleTimer} onDelete={onDeleteTask}
+      onToggleTimer={handleToggleTimer} onDelete={onDeleteTask}
       scrollContainer={scrollContainer}
       getProjectNote={getProjectNote}
       saveProjectNote={saveProjectNote}
@@ -140,16 +150,12 @@ const AppContent = () => {
         } />
         <Route path="focus" element={
           <Suspense fallback={<Loading />}>
-            <PageTransitionWrapper noPadding>
-              <FocusView />
-            </PageTransitionWrapper>
+            <FocusView />
           </Suspense>
         } />
         <Route path="focus/:id" element={
           <Suspense fallback={<Loading />}>
-            <PageTransitionWrapper noPadding>
-              <FocusView />
-            </PageTransitionWrapper>
+            <FocusView />
           </Suspense>
         } />
       </Route>
@@ -158,7 +164,6 @@ const AppContent = () => {
   );
 };
 
-import TaskOrchestrator from './components/logic/TaskOrchestrator';
 
 // ...
 
@@ -173,10 +178,9 @@ export default function App() {
   return (
     <AuthProvider>
       <StorageProvider>
-        <TimerProvider>
-          <SessionProvider>
+        <ActiveTimerProvider>
+          <FocusSessionProvider>
             <TaskProvider>
-              <TaskOrchestrator />
               <CategoryProvider>
                 <PlaylistProvider>
                   <SoundProvider>
@@ -185,8 +189,8 @@ export default function App() {
                 </PlaylistProvider>
               </CategoryProvider>
             </TaskProvider>
-          </SessionProvider>
-        </TimerProvider>
+          </FocusSessionProvider>
+        </ActiveTimerProvider>
       </StorageProvider>
     </AuthProvider>
   );

@@ -1,6 +1,7 @@
 import React from 'react';
 import Button from '../ui/Button';
 import Modal from '../ui/Modal';
+import { useTranslation } from 'react-i18next';
 
 interface ConfirmationModalProps {
     isOpen: boolean;
@@ -18,17 +19,18 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
     onConfirm,
     title,
     message,
-    confirmLabel = "Видалити",
+    confirmLabel,
     confirmVariant = 'danger'
 }) => {
+    const { t } = useTranslation();
     // Removed early return to let Modal handle animation via AnimatePresence
     // if (!isOpen) return null;
 
     const getVariantClass = () => {
         switch (confirmVariant) {
-            case 'primary': return 'bg-blue-600 hover:bg-blue-700 shadow-blue-500/20';
-            case 'secondary': return 'bg-slate-600 hover:bg-slate-700 shadow-slate-500/20';
-            default: return 'bg-red-500 hover:bg-red-600 shadow-red-500/20';
+            case 'primary': return 'bg-brand-primary hover:bg-brand-secondary shadow-brand/20';
+            case 'secondary': return 'bg-bg-subtle hover:bg-bg-emphasized text-text-primary shadow-sm border border-border';
+            default: return 'bg-status-error hover:opacity-90 shadow-status-error/20';
         }
     };
 

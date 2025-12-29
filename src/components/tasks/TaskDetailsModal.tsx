@@ -114,8 +114,8 @@ const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({ task, isOpen, onClo
                                     <span className={clsx(
                                         "px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider border",
                                         currentTask.completed
-                                            ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/20"
-                                            : "bg-blue-500/10 text-blue-600 border-blue-500/20"
+                                            ? "bg-status-success/10 text-status-success border-status-success/20"
+                                            : "bg-brand-primary/10 text-brand-primary border-brand-primary/20"
                                     )}>
                                         {currentTask.completed ? t('task_details.status_completed') : t('task_details.status_in_progress')}
                                     </span>
@@ -135,7 +135,7 @@ const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({ task, isOpen, onClo
                             <Button
                                 variant="icon"
                                 onClick={onClose}
-                                className="text-slate-400 hover:text-slate-600 dark:hover:text-white"
+                                className="text-text-secondary hover:text-text-primary"
                                 icon={X}
                             />
                         </div>
@@ -153,7 +153,7 @@ const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({ task, isOpen, onClo
                                         <textarea
                                             value={currentTask.description || ''}
                                             onChange={e => setEditedTask(prev => prev ? { ...prev, description: e.target.value } : null)}
-                                            className="w-full bg-bg-main border-0 rounded-xl p-4 text-sm outline-none min-h-[160px] resize-none text-text-primary focus:ring-2 focus:ring-blue-500/20 transition-all placeholder:text-text-secondary/50 leading-relaxed"
+                                            className="w-full bg-bg-main border-0 rounded-xl p-4 text-sm outline-none min-h-[160px] resize-none text-text-primary focus:ring-2 focus:ring-brand-primary/20 transition-all placeholder:text-text-secondary/50 leading-relaxed"
                                             placeholder={t('task_details.description_placeholder')}
                                         />
                                     </div>
@@ -178,8 +178,8 @@ const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({ task, isOpen, onClo
                                                             className={clsx(
                                                                 "w-5 h-5 rounded border flex items-center justify-center transition-colors shrink-0",
                                                                 subtask.completed
-                                                                    ? 'bg-blue-500 border-blue-500 text-white'
-                                                                    : 'border-slate-300 dark:border-slate-600 hover:border-blue-500 bg-white dark:bg-slate-800'
+                                                                    ? 'bg-brand-primary border-brand-primary text-white'
+                                                                    : 'border-border-subtle hover:border-brand-primary bg-bg-surface'
                                                             )}
                                                         >
                                                             {subtask.completed && <Check size={12} strokeWidth={3} />}
@@ -194,7 +194,7 @@ const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({ task, isOpen, onClo
                                                             }}
                                                             className={clsx(
                                                                 "flex-1 bg-transparent text-sm outline-none py-1 border-b border-transparent rounded transition-all",
-                                                                subtask.completed ? 'text-slate-400 line-through decoration-slate-300' : 'text-slate-700 dark:text-slate-200'
+                                                                subtask.completed ? 'text-ui-disabled line-through decoration-border' : 'text-text-primary'
                                                             )}
                                                         />
                                                         <button
@@ -202,19 +202,19 @@ const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({ task, isOpen, onClo
                                                                 const updatedSubtasks = currentTask.subtasks.filter(s => s.id !== subtask.id);
                                                                 setEditedTask(prev => prev ? { ...prev, subtasks: updatedSubtasks } : null);
                                                             }}
-                                                            className="text-slate-400 hover:text-red-500 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-all p-1.5 hover:bg-red-50 dark:hover:bg-red-900/20 rounded"
+                                                            className="text-text-secondary hover:text-status-error opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-all p-1.5 hover:bg-status-error/10 rounded"
                                                         >
                                                             <X size={14} />
                                                         </button>
                                                     </div>
                                                 ))}
                                                 <div className="flex items-center gap-3 p-3 bg-bg-main/50">
-                                                    <div className="w-5 h-5 flex items-center justify-center text-slate-300">
+                                                    <div className="w-5 h-5 flex items-center justify-center text-text-secondary">
                                                         <ListPlus size={16} />
                                                     </div>
                                                     <input
                                                         placeholder={t('task_details.add_subtask_placeholder')}
-                                                        className="flex-1 bg-transparent text-sm outline-none placeholder:text-slate-400"
+                                                        className="flex-1 bg-transparent text-sm outline-none placeholder:text-text-secondary"
                                                         onKeyDown={(e) => {
                                                             if (e.key === 'Enter') {
                                                                 const val = e.currentTarget.value.trim();
@@ -250,8 +250,8 @@ const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({ task, isOpen, onClo
                                                 className="w-full flex items-center gap-3 bg-bg-surface border border-border rounded-xl px-3 py-2.5 text-sm font-medium hover:border-brand-primary transition-colors"
                                             >
                                                 <span className={`w-2.5 h-2.5 rounded-full ${selectedCategory?.color}`}></span>
-                                                <span className="truncate flex-1 text-left dark:text-slate-200">{selectedCategory?.name}</span>
-                                                <ChevronRight className={clsx("text-slate-400 transition-transform", isCategoryOpen && 'rotate-90')} size={16} />
+                                                <span className="truncate flex-1 text-left text-text-primary">{selectedCategory?.name}</span>
+                                                <ChevronRight className={clsx("text-text-secondary transition-transform", isCategoryOpen && 'rotate-90')} size={16} />
                                             </button>
 
                                             <AnimatePresence>
@@ -260,7 +260,7 @@ const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({ task, isOpen, onClo
                                                         initial={{ opacity: 0, y: 5 }}
                                                         animate={{ opacity: 1, y: 0 }}
                                                         exit={{ opacity: 0, y: 5 }}
-                                                        className="absolute top-full left-0 mt-2 w-full bg-white dark:bg-slate-800 rounded-xl shadow-xl border border-slate-200 dark:border-slate-700 p-1 z-20 max-h-60 overflow-y-auto custom-scrollbar"
+                                                        className="absolute top-full left-0 mt-2 w-full bg-bg-surface rounded-xl shadow-xl border border-border p-1 z-20 max-h-60 overflow-y-auto custom-scrollbar"
                                                     >
                                                         {categories.map(c => (
                                                             <button
@@ -269,7 +269,7 @@ const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({ task, isOpen, onClo
                                                                 className={clsx(
                                                                     "w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors",
                                                                     currentTask.categoryId === c.id
-                                                                        ? "bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400"
+                                                                        ? "bg-brand-subtle text-brand-primary"
                                                                         : "text-text-secondary hover:bg-bg-main"
                                                                 )}
                                                             >
@@ -312,11 +312,11 @@ const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({ task, isOpen, onClo
                                                         initial={{ opacity: 0, y: 5 }}
                                                         animate={{ opacity: 1, y: 0 }}
                                                         exit={{ opacity: 0, y: 5 }}
-                                                        className="absolute top-full left-0 mt-2 w-full bg-white dark:bg-slate-800 rounded-xl shadow-xl border border-slate-200 dark:border-slate-700 p-1 z-20 overflow-hidden"
+                                                        className="absolute top-full left-0 mt-2 w-full bg-bg-surface rounded-xl shadow-xl border border-border p-1 z-20 overflow-hidden"
                                                     >
                                                         <button
                                                             onClick={() => { setEditedTask(prev => prev ? { ...prev, priority: undefined } : null); setIsPriorityOpen(false); }}
-                                                            className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
+                                                            className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-text-secondary hover:bg-bg-main transition-colors"
                                                         >
                                                             <X size={14} /> {t('task_details.clear_priority')}
                                                         </button>
@@ -381,7 +381,7 @@ const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({ task, isOpen, onClo
                             <Button
                                 onClick={() => { if (currentTask) onSave(currentTask); onClose(); }}
                                 icon={Save}
-                                className="shadow-lg shadow-blue-500/20"
+                                className="shadow-lg shadow-brand/20"
                             >
                                 {t('task_details.save_changes')}
                             </Button>

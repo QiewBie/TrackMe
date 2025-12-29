@@ -1,12 +1,14 @@
 import React, { memo } from 'react';
 import { Play, Pause, SkipForward, CheckCircle } from 'lucide-react';
 import { clsx } from 'clsx';
+import Button from '../ui/Button';
+import { useTranslation } from 'react-i18next';
 
 interface SessionControlsProps {
     isTimerRunning: boolean;
     onToggle: () => void;
-    onComplete: () => void;
     onSkip: () => void;
+    onComplete: () => void;
     canSkip?: boolean;
     className?: string;
 }
@@ -14,53 +16,58 @@ interface SessionControlsProps {
 export const SessionControls: React.FC<SessionControlsProps> = memo(({
     isTimerRunning,
     onToggle,
-    onComplete,
     onSkip,
+    onComplete,
     canSkip = true,
     className
 }) => {
+    const { t } = useTranslation();
     return (
         <div className={clsx(
-            "flex items-center gap-6 p-3 px-6 rounded-2xl bg-bg-surface shadow-[0_8px_30px_rgb(0,0,0,0.12)] border border-border/60 dark:border-white/10 transition-all hover:scale-[1.02]",
+            "flex items-center justify-center gap-6 md:gap-10 p-6 rounded-3xl bg-bg-surface/90 backdrop-blur-xl shadow-2xl border border-border-subtle ring-1 ring-black/5 transition-all w-fit mx-auto",
             className
         )}>
-            <button
+            <Button
+                variant="ghost"
+                size="lg"
                 onClick={onComplete}
-                className="group p-4 rounded-xl hover:bg-emerald-500/10 text-text-secondary hover:text-emerald-500 transition-all active:scale-95 duration-200"
-                title="Complete Task"
+                className="rounded-2xl text-text-secondary hover:text-status-success hover:bg-status-success/10 !p-0 !h-14 !w-14 md:!h-16 md:!w-16 flex items-center justify-center transition-transform active:scale-95"
+                title={t('focus.controls.complete')}
             >
-                <CheckCircle size={28} className="group-hover:stroke-[2.5px] transition-all duration-200" />
-            </button>
+                <CheckCircle size={24} className="md:w-8 md:h-8" />
+            </Button>
 
-            <button
+            <Button
+                variant="primary"
+                size="lg"
                 onClick={onToggle}
                 className={clsx(
-                    "p-6 rounded-2xl text-white shadow-lg transition-all hover:scale-105 active:scale-95 duration-200 ease-out",
-                    isTimerRunning
-                        ? "bg-brand hover:bg-brand-hover shadow-brand/30"
-                        : "bg-brand hover:bg-brand-hover shadow-brand/30"
+                    "shadow-xl shadow-brand/20 !p-0 !h-20 !w-20 md:!h-24 md:!w-24 rounded-3xl flex items-center justify-center transition-transform active:scale-95",
+                    isTimerRunning ? "bg-brand hover:bg-brand-hover" : "bg-brand hover:bg-brand-hover"
                 )}
             >
                 {isTimerRunning ? (
-                    <Pause size={32} fill="currentColor" />
+                    <Pause size={32} fill="currentColor" className="md:w-12 md:h-12" />
                 ) : (
-                    <Play size={32} fill="currentColor" className="ml-1" />
+                    <Play size={32} fill="currentColor" className="ml-1 md:w-12 md:h-12" />
                 )}
-            </button>
+            </Button>
 
-            <button
+            <Button
+                variant="ghost"
+                size="lg"
                 onClick={canSkip ? onSkip : undefined}
                 disabled={!canSkip}
                 className={clsx(
-                    "p-4 rounded-xl transition-all active:scale-95 duration-200",
+                    "rounded-2xl !p-0 !h-14 !w-14 md:!h-16 md:!w-16 flex items-center justify-center transition-transform active:scale-95",
                     canSkip
-                        ? "hover:bg-bg-main text-text-secondary hover:text-text-primary"
-                        : "text-white/20 cursor-not-allowed hover:bg-transparent"
+                        ? "text-text-secondary hover:text-text-primary hover:bg-text-secondary/5"
+                        : "text-ui-disabled cursor-not-allowed"
                 )}
-                title={canSkip ? "Skip to End" : "Last Task"}
+                title={canSkip ? t('focus.controls.skip') : t('focus.controls.last_task')}
             >
-                <SkipForward size={28} />
-            </button>
+                <SkipForward size={24} className="md:w-8 md:h-8" />
+            </Button>
         </div>
     );
 });

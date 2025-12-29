@@ -15,11 +15,11 @@ interface PlaylistEditorModalProps {
 }
 
 // Memoized Item Component to prevent re-renders during drag
-const PlaylistTaskItem = React.memo(({ taskId, task, onRemove }: { taskId: string, task: Task, onRemove: (id: string) => void }) => {
+const PlaylistTaskItem = React.memo(({ taskId, task, onRemove, t }: { taskId: string, task: Task, onRemove: (id: string) => void, t: any }) => {
     return (
         <Reorder.Item value={taskId} className="touch-none select-none">
             <div className="flex items-center gap-3 p-3 bg-bg-surface rounded-xl border border-border shadow-sm">
-                <div className="cursor-grab active:cursor-grabbing text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+                <div className="cursor-grab active:cursor-grabbing text-text-tertiary hover:text-text-primary">
                     <GripVertical size={20} />
                 </div>
                 <div className="flex-1 min-w-0">
@@ -27,8 +27,8 @@ const PlaylistTaskItem = React.memo(({ taskId, task, onRemove }: { taskId: strin
                 </div>
                 <button
                     onClick={() => onRemove(taskId)}
-                    className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
-                    aria-label="Remove from playlist"
+                    className="p-2 text-text-tertiary hover:text-status-error hover:bg-status-error/10 rounded-lg transition-colors"
+                    aria-label={t('playlists.editor.remove_task', 'Remove from playlist')}
                 >
                     <Trash2 size={18} />
                 </button>
@@ -74,7 +74,7 @@ const PlaylistEditorModal: React.FC<PlaylistEditorModalProps> = ({
                 className="flex-1 overflow-y-auto px-4 py-2 custom-scrollbar"
                 style={{ contain: 'content' }}
             >
-                <p className="text-sm text-slate-500 dark:text-slate-400 mb-4">
+                <p className="text-sm text-text-secondary mb-4">
                     {t('playlists.editor.subtitle', 'Drag to reorder. Swipe or click trash to remove.')}
                 </p>
 
@@ -89,13 +89,14 @@ const PlaylistEditorModal: React.FC<PlaylistEditorModalProps> = ({
                                 taskId={taskId}
                                 task={task}
                                 onRemove={handleRemove}
+                                t={t}
                             />
                         );
                     })}
                 </Reorder.Group>
 
                 {items.length === 0 && (
-                    <div className="text-center py-10 text-slate-400 italic">
+                    <div className="text-center py-10 text-text-tertiary italic">
                         {t('playlists.editor.empty', 'No tasks in this playlist.')}
                     </div>
                 )}

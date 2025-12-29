@@ -1,84 +1,97 @@
-# ⚡ Time Tracker "Deep Flow"
+# ⚡ Deep Flow: Time Tracker (V2)
 
-![License](https://img.shields.io/badge/license-MIT-blue.svg)
-![React](https://img.shields.io/badge/react-18-61DAFB.svg?logo=react)
-![TypeScript](https://img.shields.io/badge/typescript-5-3178C6.svg?logo=typescript)
-![Tailwind](https://img.shields.io/badge/tailwind-3-38B2AC.svg?logo=tailwindcss)
+A premium, offline-first productivity workspace designed for deep work. Built with a robust **Ledger-Based Architecture**, it prioritizes data integrity, immersive focus, and strict local privacy.
 
-A premium, offline-first productivity tool designed to help you enter and sustain deep work states. Built with modern web technologies and a focus on aesthetics and performance.
+## ✨ Core Features
 
-**Live Demo:** [https://trackme-0001.web.app/](https://trackme-0001.web.app/)
+### 🧠 Focus & Flow
+*   **Immersive Session Engine**: A dedicated `FocusView` overlay that blocks distractions.
+*   **Timer Modes**: Customizable Work, Short Break, and Long Break configurations.
+*   **Dynamic Ambience**: Integrated audio engine (`useAudio`) mixing Rain, Forest, Café, and Fireplace soundscapes.
+*   **Task Queue**: Auto-advancing playlist system ("General Queue" or specific Playlists).
+
+### 📊 Analytics & Data (Ledger V2)
+*   **Immutable Logging**: Time is not stored as a mutable counter but as specific `TimeLog` entries (`startTime`, `duration`, `projectId`).
+*   **Source of Truth**: Dashboards derive metrics (Total Time, Velocity, Heatmaps) directly from the raw ledger, ensuring 100% accuracy.
+*   **Metrics**:
+    *   **Activity Heatmap**: Github-style consistency tracking.
+    *   **Velocity Chart**: 14-day trend analysis.
+    *   **Efficiency**: Completion rates and average session duration.
+    *   **Distribution**: Project-based time breakdown.
+
+### 🌍 Localization (i18n)
+*   **Multi-language Support**: Fully localized in English (`en`) and Ukrainian (`uk`).
+*   **Dynamic Loading**: Locale-specific date formatting (via `date-fns` and `i18n.language` detection).
+*   **Keys**: Centralized JSON translation files (`src/locales/*`).
+
+### 💾 Data Persistence & Management
+*   **Offline-First**: All data is stored locally in the browser (`localStorage`) via the `TimeLogRepository`.
+*   **Data Portability**: Full JSON Export/Import capabilities (`useDataPersistence`) for backups or device migration.
+*   **Safe Storage**: Sub-collection storage pattern to prevent monolithic data corruption.
+
+### 🎨 Design System
+*   **Semantic Tokens**: Styles use functional names (`bg-brand-primary`, `text-status-error`) rather than raw colors, enabling seamless theming.
+*   **Dark Mode**: First-class support with automatic switching.
+*   **Motion**: Framer Motion integration for smooth page transitions and micro-interactions.
 
 ---
 
-## 🚀 Features
+## 🏗️ Technical Architecture
 
-*   **Focus Timer**: Customizable Pomodoro/Flow timer with "Deep Flow" mode.
-*   **Task Management**: Drag-and-drop organization, subtasks, and priority levels.
-*   **Ambience**: Integrated soundscapes (Rain, Forest, Café, Night) to mask distractions.
-*   **Playlists**: Create reusable task routines (e.g., "Morning Standup", "Coding Session").
-*   **Analytics**: Visualize your productivity with Heatmaps and Velocity Charts.
-*   **Offline First**: All data is stored locally in your browser. Privacy by design.
-*   **Internationalization**: Fully localized in English and Ukrainian (🇺🇦).
+### Tech Stack
+*   **Core**: React 18, TypeScript, Vite
+*   **State**: React Context API (`FocusSessionContext`, `UIContext`) + Custom Hooks
+*   **Styling**: Tailwind CSS (Semantic), Framer Motion, Lucide Icons
+*   **Charts**: Recharts
+*   **Utils**: date-fns, dnd-kit, react-i18next
+
+### Data Flow
+1.  **Session Context**: Manages the active "Live" state (ticking timer).
+2.  **Flush Strategy**: When a user pauses or stops, the session duration is "flushed" to a static `TimeLog`.
+3.  **Repository**: The `TimeLogRepository` writes the log to persistent storage.
+4.  **Reactivity**: Listeners (`TimeLedger.subscribe`) update the UI (analytics, task totals) instantly.
+
+### Directory Structure
+```
+src/
+├── components/     # UI Building Blocks
+│   ├── analytics/  # Charts & Stats Widgets
+│   ├── focus/      # Session View & Timer Logic
+│   ├── input/      # Rich Text & Forms
+│   ├── layout/     # Sidebar, Nav, Modals
+│   ├── playlist/   # Playlist Manager & Editors
+│   └── ui/         # Atomic Primitives (Button, Badge, Card)
+├── context/        # Global State (Auth, Session, UI)
+├── hooks/          # Logic (useFocusSession, useTimeLedger)
+├── locales/        # i18n JSON files
+├── services/       # Storage Adapters & Repositories
+├── types/          # TypeScript Interfaces (Task, TimeLog)
+└── utils/          # Helpers (Formatters, Themes, Backup)
+```
 
 ---
 
-## 🛠️ Getting Started
-
-### Prerequisites
-*   Node.js v18+
-*   npm or pnpm
+## 🛠️ Setup & Development
 
 ### Installation
+```bash
+git clone <repository-url>
+cd time-tracker
+npm install
+```
 
-1.  **Clone the repository**
-    ```bash
-    git clone https://github.com/your-username/time-tracker.git
-    cd time-tracker
-    ```
-
-2.  **Install dependencies**
-    ```bash
-    npm install
-    ```
-
-3.  **Run Development Server**
-    ```bash
-    npm run dev
-    ```
-    Open [http://localhost:5173](http://localhost:5173) to view it in the browser.
-
-4.  **Build for Production**
-    ```bash
-    npm run build
-    ```
+### Commands
+*   `npm run dev`: Start local development server (Port 5173).
+*   `npm run build`: Compile for production.
+*   `npm run preview`: Preview the production build locally.
+*   `npm run lint`: Run ESLint check.
 
 ---
 
-## 📚 Documentation
-
-*   [**Architecture**](./docs/ARCHITECTURE.md): Understanding the "Context Forest" pattern and state management.
-*   [**Development Guide**](./docs/DEVELOPMENT_GUIDE.md): How to add new features and workflows.
-*   [**Design System**](./docs/DESIGN_SYSTEM.md): Colors, Typography, and UI Primitives.
-*   [**Project State**](./docs/PROJECT_STATE.md): Current feature status and roadmap.
+## 🔒 Privacy & Security
+*   **Zero-Knowledge**: No data is sent to external servers. Everything resides in the user's LocalStorage.
+*   **Export**: Users own their data via the JSON Export feature.
 
 ---
 
-## 🏗️ Tech Stack
-*   **Core**: React 18, TypeScript, Vite
-*   **Backend**: Firebase (Firestore, Auth, Analytics) + LocalStorage Fallback
-*   **Styling**: Tailwind CSS (Semantic Tokens), Framer Motion
-*   **State**: Context API + Hooks (Granular Architecture)
-*   **Utils**: date-fns, i18next, @dnd-kit/core, Tiptap, Recharts
-
-## 🤝 Contributing
-
-1.  Fork the Project
-2.  Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
-3.  Commit your Changes (`git commit -m 'Add some AmazingFeature'`)
-4.  Push to the Branch (`git push origin feature/AmazingFeature`)
-5.  Open a Pull Request
-
----
-
-*2025 Deep Flow Tracker. Built with focus.*
+*Current State: Production Ready (v0.2.1)*

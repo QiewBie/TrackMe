@@ -25,13 +25,13 @@ const LoginView: React.FC = () => {
         <div className="min-h-screen w-full flex items-center justify-center bg-bg-main text-text-primary relative overflow-hidden">
             {/* Background Effects */}
             <div className="absolute inset-0 overflow-hidden pointer-events-none">
-                <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-blue-500/20 rounded-full blur-[100px]" />
-                <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-purple-500/20 rounded-full blur-[100px]" />
+                <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-brand-primary/20 rounded-full blur-[100px]" />
+                <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-brand-secondary/20 rounded-full blur-[100px]" />
             </div>
 
             <div className="z-10 bg-bg-surface p-8 rounded-card shadow-2xl max-w-md w-full border border-border text-center space-y-8">
                 <div className="space-y-2">
-                    <h1 className="text-4xl font-black bg-clip-text text-transparent bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500">
+                    <h1 className="text-4xl font-black bg-clip-text text-transparent bg-gradient-to-r from-brand-primary via-brand-tertiary to-brand-secondary">
                         Deep Flow
                     </h1>
                     <p className="text-text-secondary">

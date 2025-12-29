@@ -18,16 +18,31 @@ export interface Task {
     title: string;
     description?: string;
     categoryId: string | null;
-    timeSpent: number;
+    /** @deprecated Migrating to TimeLogs. Use cachedTotalTime instead. */
+    savedTime?: number;
     isRunning: boolean;
     completed: boolean;
     createdAt: string; // ISO Date string
     completedAt?: string; // ISO Date string
     lastStartTime?: number; // Timestamp for timer logic
-    savedTime?: number; // Accumulated time in seconds
     focusOffset?: number; // Time spent when the current focus set started
+
+    // NEW: Source of Truth Cache
+    cachedTotalTime: number; // Sum of all TimeLogs duration
+
     priority?: 'low' | 'medium' | 'high';
     subtasks: SubTask[];
+}
+
+export interface TimeLog {
+    id: string;
+    taskId: string;
+    userId?: string;
+    startTime: string; // ISO 8601
+    endTime?: string;  // ISO 8601
+    duration: number;  // Seconds
+    type: 'auto' | 'manual' | 'migration';
+    note?: string;     // Optional context
 }
 
 export interface ProjectNote {
@@ -75,6 +90,12 @@ export interface Session {
     startTime: string; // ISO String
     endTime?: string;  // ISO String (undefined = active)
     duration: number;  // Seconds (calculated on completion)
+    remainingTime?: number; // Snapshot of checking for pauses/resumes
+    status?: 'active' | 'paused' | 'completed';
+    config?: {
+        mode: 'focus' | 'break';
+        duration: number;
+    };
     legacy?: boolean;  // If migrated from old counter
 }
 

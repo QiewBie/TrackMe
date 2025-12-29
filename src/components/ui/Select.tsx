@@ -47,7 +47,7 @@ const Select: React.FC<SelectProps> = ({
             <button
                 type="button"
                 onClick={() => setIsOpen(!isOpen)}
-                className="flex items-center justify-between gap-2 w-full bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white pl-4 pr-3 py-2.5 rounded-xl text-sm font-medium border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-blue-500/20 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all min-h-[44px]"
+                className="flex items-center justify-between gap-2 w-full bg-bg-surface text-text-primary pl-4 pr-3 py-2.5 rounded-xl text-sm font-medium border border-border focus:ring-2 focus:ring-brand-primary/20 hover:bg-bg-subtle transition-all min-h-[44px]"
             >
                 <div className="flex-1 text-left truncate">
                     {renderValue ? renderValue(selectedOption) : (selectedOption?.label || placeholder)}
@@ -56,7 +56,7 @@ const Select: React.FC<SelectProps> = ({
             </button>
 
             {isOpen && (
-                <div className="absolute top-full left-0 mt-2 w-full min-w-[200px] bg-white dark:bg-slate-800 rounded-xl shadow-xl border border-slate-200 dark:border-slate-700 p-1 z-50 animate-pop-in max-h-60 overflow-y-auto custom-scrollbar origin-top-left">
+                <div className="absolute top-full left-0 mt-2 w-full min-w-[200px] bg-bg-surface rounded-xl shadow-xl border border-border p-1 z-50 animate-pop-in max-h-60 overflow-y-auto custom-scrollbar origin-top-left">
                     {options.map(option => (
                         <button
                             key={option.value}
@@ -65,8 +65,8 @@ const Select: React.FC<SelectProps> = ({
                             className={clsx(
                                 "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors text-left",
                                 value === option.value
-                                    ? "bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400"
-                                    : "text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700"
+                                    ? "bg-brand-primary/10 text-brand-primary"
+                                    : "text-text-secondary hover:bg-bg-subtle"
                             )}
                         >
                             {renderOption ? renderOption(option) : option.label}

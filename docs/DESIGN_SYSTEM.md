@@ -80,3 +80,16 @@ To manage the complex mobile layout, we enforce strict Z-Indices:
 *   `z-[90]`: **Backdrop** (Overlay for sidebar).
 *   `z-[40]`: **Sticky Headers**.
 *   `z-[0-30]`: Page Content.
+---
+
+## 6. Content & Localization
+All user-facing text must be internationalized.
+
+*   **Keys**: defined in `src/locales/{lang}/translation.json`.
+*   **Usage**: `const { t } = useTranslation()`.
+*   **Pattern**: Use descriptive nested keys (e.g., `nav.dashboard` not just `dashboard`).
+*   **Dates**: Never hardcode formats. Use `date-fns` with the active locale.
+
+---
+
+*2025 Deep Flow Design System*

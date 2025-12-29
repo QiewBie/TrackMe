@@ -2,57 +2,76 @@ import React, { memo } from 'react';
 import { X, CheckSquare, Plus, CheckCircle, GripVertical } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Heading, Text } from '../ui/Typography';
+import Input from '../ui/Input';
+import Button from '../ui/Button';
 import { Task, Category } from '../../types';
-import { Reorder, useDragControls } from 'framer-motion';
+import { Reorder, useDragControls, motion } from 'framer-motion';
 
 // Draggable Item Component (Internal)
 // We need to pass the color mapping logic in or use style
 const DraggableQueueItem = memo(({ task, categoryColor, categoryName, onSelect, isActive }: { task: Task, categoryColor: string, categoryName: string, onSelect: (t: Task) => void, isActive?: boolean }) => {
     const controls = useDragControls();
 
-    // Simple color fallback if token usage is complex, but better to use prop
     return (
         <Reorder.Item
             value={task}
             dragListener={false}
             dragControls={controls}
-            className="mb-2 relative"
+            className="relative"
+            style={{ touchAction: 'none' }}
         >
-            <button
-                type="button"
-                className={`
-                    group w-full p-4 rounded-xl border flex items-center gap-4 transition-all cursor-pointer relative overflow-hidden text-left
-                    ${isActive
-                        ? 'bg-brand/5 border-brand/20 ring-1 ring-brand/10'
-                        : 'bg-bg-surface border-border hover:border-border/80 hover:bg-bg-main'
-                    } 
-                    ${task.completed ? 'opacity-60' : ''}
-                `}
-                onClick={() => onSelect(task)}
+            <div className={`              
+                group w-full p-4 rounded-xl border flex items-center gap-4 transition-all duration-300 relative overflow-hidden text-left
+                ${task.completed ? 'cursor-default opacity-80 bg-status-success/5 border-status-success/20' : 'cursor-pointer'}
+                ${!task.completed && isActive
+                    ? 'bg-brand/10 border-brand shadow-[0_0_20px_-5px_rgba(59,130,246,0.15)] ring-1 ring-brand/20'
+                    : !task.completed ? 'bg-bg-surface border-border-subtle hover:border-border hover:shadow-sm' : ''
+                } 
+            `}
+                onClick={() => !task.completed && onSelect(task)}
             >
+                {isActive && !task.completed && (
+                    <motion.div
+                        layoutId="active-glow"
+                        className="absolute inset-0 bg-brand/5"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        transition={{ duration: 0.3 }}
+                    />
+                )}
+
                 <div className={`
-                    w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors shrink-0
-                    ${task.completed ? 'bg-status-success border-status-success' : 'border-border group-hover:border-text-secondary'}
+                    w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors shrink-0 z-10
+                    ${task.completed
+                        ? 'bg-status-success border-status-success'
+                        : isActive
+                            ? 'border-brand text-brand'
+                            : 'border-text-secondary/30 group-hover:border-text-primary'
+                    }
                 `}>
                     {task.completed && <CheckCircle size={12} className="text-white" />}
+                    {!task.completed && isActive && <motion.div layoutId="active-dot" className="w-2.5 h-2.5 rounded-full bg-brand shadow-sm" />}
                 </div>
 
-                <div className="flex-1 min-w-0">
-                    <div className={`font-medium truncate ${task.completed ? 'text-text-secondary line-through' : 'text-text-primary'}`}>
+                <div className="flex-1 min-w-0 z-10">
+                    <div className={`font-medium truncate transition-colors ${task.completed ? 'text-text-secondary line-through decoration-status-success/50' : isActive ? 'text-brand font-bold' : 'text-text-primary'}`}>
                         {task.title}
                     </div>
                     {categoryName && (
-                        <div className="text-xs text-text-secondary/80 mt-1 flex items-center gap-1.5">
-                            <div className={`w-2 h-2 rounded-full shadow-[0_0_4px_currentColor] ${categoryColor}`} />
+                        <div className="text-xs text-text-secondary/70 mt-1 flex items-center gap-1.5">
+                            <div
+                                className={`w-2 h-2 rounded-full shadow-sm ${categoryColor}`}
+                            />
                             {categoryName}
                         </div>
                     )}
                 </div>
 
-                <div className="opacity-0 group-hover:opacity-100 p-2 cursor-grab active:cursor-grabbing text-text-secondary hover:text-text-primary transition-opacity" onPointerDown={(e) => controls.start(e)}>
-                    <GripVertical size={16} />
+                <div className="opacity-0 group-hover:opacity-100 p-2 -mr-2 cursor-grab active:cursor-grabbing text-text-secondary/50 hover:text-text-primary transition-all z-10" onPointerDown={(e) => controls.start(e)}>
+                    <GripVertical size={18} />
                 </div>
-            </button>
+            </div>
         </Reorder.Item>
     );
 });
@@ -62,6 +81,7 @@ interface FocusSidebarProps {
     isOpen: boolean;
     onClose: () => void;
     activeTask: Task | undefined;
+    activePlaylist?: { title: string } | null; // Use partial type or import Playlist
     queue: Task[];
     categories: Category[];
     onToggleSubtask: (subId: string) => void;
@@ -74,6 +94,7 @@ export const FocusSidebar: React.FC<FocusSidebarProps> = memo(({
     isOpen,
     onClose,
     activeTask,
+    activePlaylist,
     queue,
     categories,
     onToggleSubtask,
@@ -88,46 +109,59 @@ export const FocusSidebar: React.FC<FocusSidebarProps> = memo(({
             {/* Backdrop for mobile */}
             {isOpen && (
                 <div
-                    className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[60] lg:hidden"
+                    className="fixed inset-0 bg-black/40 backdrop-blur-sm z-overlay lg:hidden"
                     onClick={onClose}
                 />
             )}
 
             <div className={`
-                fixed inset-y-0 right-0 w-full md:w-[400px] bg-bg-main/95 backdrop-blur-xl border-l border-border/50 
-                flex flex-col z-[70] shadow-2xl transform transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]
+                fixed inset-y-0 right-0 w-full md:w-sidebar-focus bg-bg-surface border-l border-border 
+                flex flex-col z-modal shadow-2xl transform transition-transform duration-500 ease-spring
                 ${isOpen ? 'translate-x-0' : 'translate-x-full'}
             `}>
                 {/* Panel Header */}
-                <div className="h-20 shrink-0 flex items-center justify-between px-6 border-b border-border/40">
-                    <Heading variant="h4" className="flex items-center gap-2 text-text-primary">
-                        {t('focus.session_details') || "Session Details"}
-                    </Heading>
-                    <button
+                <div className="h-16 shrink-0 flex items-center justify-between px-6 border-b border-border bg-bg-surface">
+                    <div className="flex flex-row items-center gap-3">
+                        <Heading variant="h4" className="text-text-primary font-bold tracking-tight text-base whitespace-nowrap">
+                            {t('focus.session_details')}
+                        </Heading>
+                        {activePlaylist && (
+                            <div className="flex items-center gap-2 pl-4 border-l-2 border-border-subtle h-6 shrink-0 min-w-0">
+                                <span className="w-2 h-2 rounded-full bg-brand shrink-0 shadow-sm"></span>
+                                <Text className="text-sm text-text-primary font-bold truncate tracking-tight">
+                                    {activePlaylist.title}
+                                </Text>
+                            </div>
+                        )}
+                    </div>
+                    <Button
+                        variant="icon"
                         onClick={onClose}
-                        className="p-2 -mr-2 hover:bg-white/5 rounded-xl text-text-secondary transition-colors"
-                    >
-                        <X size={22} />
-                    </button>
+                        className="-mr-2"
+                        icon={X}
+                    />
                 </div>
 
-                <div className="flex-1 overflow-y-auto custom-scrollbar p-6 space-y-10">
+                <div className="flex-1 overflow-y-auto custom-scrollbar p-6 lg:p-8 space-y-12">
                     {/* Subtasks */}
-                    <section className="space-y-4">
+                    <section className="space-y-6">
                         <div className="flex items-center justify-between">
                             <Text variant="caption" weight="bold" className="uppercase text-text-secondary/60 tracking-wider text-xs">
                                 {t('task_details.subtasks_label')}
                             </Text>
-                            <span className="px-2 py-0.5 rounded-full bg-bg-surface text-xs font-medium text-text-secondary">
+                            <span className="px-2.5 py-1 rounded-md bg-transparent text-xs font-semibold text-text-secondary">
                                 {activeTask?.subtasks?.filter(s => s.completed).length || 0}/{activeTask?.subtasks?.length || 0}
                             </span>
                         </div>
 
-                        <div className="space-y-2">
+                        <div className="space-y-3">
                             {activeTask?.subtasks?.map(subtask => (
-                                <div key={subtask.id} className="flex items-start gap-3 p-3 rounded-lg bg-bg-surface/50 border border-transparent hover:border-border/50 transition-all group">
-                                    <button onClick={() => onToggleSubtask(subtask.id)} className={`mt-0.5 w-5 h-5 rounded border flex items-center justify-center transition-all ${subtask.completed ? 'bg-brand border-brand' : 'border-border group-hover:border-brand/50'}`}>
-                                        {subtask.completed && <CheckSquare size={12} className="text-white" />}
+                                <div key={subtask.id} className="flex items-start gap-3 p-2 rounded-lg hover:bg-bg-main/50 transition-colors group">
+                                    <button
+                                        onClick={() => onToggleSubtask(subtask.id)}
+                                        className={`mt-0.5 w-4 h-4 rounded border flex items-center justify-center transition-all ${subtask.completed ? 'bg-status-success border-status-success' : 'border-border-subtle group-hover:border-brand'}`}
+                                    >
+                                        {subtask.completed && <CheckSquare size={10} className="text-white" />}
                                     </button>
                                     <span className={`text-sm leading-snug ${subtask.completed ? 'text-text-secondary line-through decoration-text-secondary/50' : 'text-text-primary'}`}>
                                         {subtask.title}
@@ -143,9 +177,14 @@ export const FocusSidebar: React.FC<FocusSidebarProps> = memo(({
                                 onAddSubtask(input.value.trim());
                                 input.value = '';
                             }}>
-                                <div className="flex items-center gap-3 mt-4 px-3 py-2 text-text-secondary hover:text-text-primary transition-colors cursor-text group border-b border-transparent focus-within:border-brand/50">
-                                    <Plus size={16} className="text-text-secondary group-hover:text-brand transition-colors" />
-                                    <input name="newStep" placeholder={t('focus.add_step_placeholder') || "Add subtask..."} className="bg-transparent text-sm w-full placeholder:text-text-secondary/50 focus:outline-none" autoComplete="off" />
+                                <div className="mt-4">
+                                    <Input
+                                        name="newStep"
+                                        placeholder={t('focus.add_step_placeholder')}
+                                        containerClassName="w-full"
+                                        className="w-full"
+                                        autoComplete="off"
+                                    />
                                 </div>
                             </form>
                         </div>
@@ -169,7 +208,7 @@ export const FocusSidebar: React.FC<FocusSidebarProps> = memo(({
                             ))}
                             {queue.length === 0 && (
                                 <div className="p-8 text-center text-text-secondary/50 italic text-sm border-2 border-dashed border-border/30 rounded-xl">
-                                    {t('focus.queue_empty') || "No more tasks in queue"}
+                                    {t('focus.queue_empty')}
                                 </div>
                             )}
                         </Reorder.Group>

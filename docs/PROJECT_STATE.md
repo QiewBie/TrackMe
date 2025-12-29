@@ -1,53 +1,53 @@
-# Project State Report (December 2025)
+# Project State Report
 
-**Version:** 0.1.0 "Deployment Ready"
-
----
-
-## 1. Current Features (Implemented)
-
-### Core Productivity
-*   **Task Management**: Full CRUD, Color-coded Categories, Priority levels.
-*   **Focus Timer**: Pomodoro & Flow modes strategy.
-*   **Ambience Soundscapes**: Integrated `AmbienceSelector` with volume control (Rain, Forest, Cafe, Night).
-*   **Playlists & Templates**: Create reusable task sessions (e.g., "Morning Routine").
-*   **Project Notes**: Rich Text Editor integration (Tiptap).
-
-### Visuals & UX (Rebranded)
-*   **Design System 2.0**: Semantic Token System (`brand`, `status`) for instant theming.
-*   **Response Dashboard**: Sidebar (Desktop) / Bottom Nav (Mobile) with Z-Index "Layer Cake".
-*   **Theming**: Robust Dark/Light mode support.
-*   **Internationalization**: Full EN/UK translation support (`i18next`).
-*   **Celebration Logic**: Confetti triggers and "All Tasks Done" screen in Focus View.
-*   **Bundle Optimization**: Lazy Loading & Vendor Chunking (~300kB initial load).
-
-### Architecture & Backend
-*   **Granular Storage**: Migrated from Monolith to Subcollection-based persistence.
-*   **Cloud Ready**: Firebase Configured and Deployable.
-*   **Adapters**: Pluggable storage interface for LocalStorage/Firestore switching.
-
-### Analytics
-*   **Activity Heatmap**: GitHub-style contribution tracking.
-*   **Charts**: Visual breakdown of time by Category and Activity.
-
-### User Profile
-*   **Local Persistence**: All data saved to Browser LocalStorage (Safe & Private).
-*   **Customization**: Avatar upload, display name.
-*   **Data Management**: Import/Export JSON support (Backup).
+**Version:** 0.2.1 "V2 Architecture - Deep Flow"
+**Status:** ✅ Production Ready
 
 ---
 
-## 2. Pending Features (Planned)
+## 1. Implemented Features
 
-### Data Sync
-*   **Cloud Backend**: Migration from LocalStorage to Supabase/Firebase for multi-device support.
-*   **Calendar Sync**: 2-way sync with Google Calendar.
+### Core Architecture (V2)
+*   ✅ **Time Log Ledger**: Complete migration from legacy counters to immutable `TimeLog` entries.
+*   ✅ **Robust Persistence**: `TimeLogRepository` handles data safety and multi-tab synchronization.
+*   ✅ **Data Portability**: Full JSON Export/Import support (`useDataPersistence`) allows users to backup and restore their entire workspace.
 
-### Analytics Scale
-*   **Weekly Reports**: Email summary of productivity.
+### Focus Experience
+*   ✅ **Immersive Focus View**: Fullscreen overlay (`fixed inset-0`) that works seamlessly on Desktop and Mobile.
+*   ✅ **Mobile UX**: Unified Top Bar with centered title and grouped controls.
+*   ✅ **Smart Queue**: Auto-advance logic for tasks, with "Skip" and "Complete" workflows.
+*   ✅ **Ambience**: Integrated soundscapes (Rain, Forest, Café, Fireplace) with volume control.
+
+### Analytics & Insights
+*   ✅ **V2 Integration**: Heatmaps, Total Time, and Projects charts pull directly from the Time Log Ledger.
+*   ✅ **Real-time Updates**: Charts reflect session progress instantly upon completion.
+*   ✅ **Detailed Metrics**: Velocity charts (14-day trend) and Efficiency stats.
+
+### Task Management
+*   ✅ **Organization**: Drag-and-drop ordering, Category tagging, Priority levels.
+*   ✅ **Rich Notes**: Tiptap editor for project notes and descriptions.
+*   ✅ **Playlists**: Create and manage reusable task lists (Templates) for routine workflows.
+
+### UI / Design System
+*   ✅ **Semantic Theming**: Fully integrated Tailwind Token System (`brand`, `status`, `bg-surface`).
+*   ✅ **Dark Mode**: First-class support with seamless switching.
+*   ✅ **Internationalization**: Fully localized in English (`en`) and Ukrainian (`uk`).
 
 ---
 
-## 3. Known Limitations
-*   **Browser Cache Dependency**: Clearing cache wipes user data. (Mitigated by Import/Export).
-*   **Mobile Safari**: Occasional scroll bounce on older iOS versions (mostly fixed with `dvh`).
+## 2. Infrastructure
+*   **Tech Stack**: React 18, Vite, TypeScript.
+*   **Storage**: LocalStorage with Adapter Pattern.
+*   **Testing**: Unit tests for core logic (`useFocusSession`, `dateHelpers`).
+*   **Backup**: JSON-based backup system with schema validation.
+
+---
+
+## 3. Future Roadmap (Post-V2)
+*   **Cloud Sync**: Implementing `FirestoreAdapter` for optional multi-device synchronization.
+*   **Timeline View**: Visualizing the day's logs on a 24h timeline.
+*   **Advanced Gamification**: Achievements and deeper streak mechanics.
+
+---
+
+*Last Updated: Dec 2025*

@@ -1,19 +1,16 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useTaskContext } from '../../context/TaskContext';
-import { useCategoryContext } from '../../context/CategoryContext';
-import { usePlaylistContext } from '../../context/PlaylistContext';
 import { Task } from '../../types';
 import { CheckCircle } from 'lucide-react';
 import Button from '../ui/Button';
 import Modal from '../ui/Modal';
 import { useSoundContext } from '../../context/SoundContext';
 import { useTranslation } from 'react-i18next';
-import { useSession } from '../../context/SessionContext';
 import { useFocusSession } from '../../hooks/useFocusSession';
 import { useUI } from '../../context/UIContext';
 import { ErrorBoundary } from '../ui/ErrorBoundary';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
+import { useFocusViewController } from '../../hooks/useFocusViewController';
 
 // UI Primitives
 import { Heading, Text } from '../ui/Typography';
@@ -21,100 +18,59 @@ import { Page } from '../ui/Layout';
 import { SessionControls } from '../focus/SessionControls';
 
 // Modular Components
-import { COLOR_HEX_MAP } from '../../constants/colors';
 import { LAYOUT } from '../../constants/layout';
 import { FocusTopBar } from '../focus/FocusTopBar';
 import { FocusSidebar } from '../focus/FocusSidebar';
 import { FocusStage } from '../focus/FocusStage';
 import { FocusSettingsModal } from '../focus/FocusSettingsModal';
+import { useFocusHotkeys } from '../../hooks/useFocusHotkeys';
 
 const FocusView = () => {
     const { t } = useTranslation();
-    const { id } = useParams();
-    const navigate = useNavigate();
-    const { tasks, updateTaskDetails, toggleComplete } = useTaskContext();
-    const { categories } = useCategoryContext();
-    const { playlists } = usePlaylistContext();
+
+    // --- Controller ---
+    const {
+        activeTask,
+        activePlaylist,
+        activeCategory,
+        ambientColor,
+        queue,
+        tasks,
+        categories,
+        navigate,
+        contextPanelOpen,
+        setContextPanelOpen,
+        isSettingsOpen,
+        setIsSettingsOpen,
+        showCompletedWarning,
+        setShowCompletedWarning,
+        showLastTaskWarning,
+        setShowLastTaskWarning,
+        controlsVisible,
+        setControlsVisible,
+        settings,
+        setSettings,
+        updateQueue
+    } = useFocusViewController();
+
+    const { updateTaskDetails, toggleComplete } = useTaskContext();
     const { playSfx } = useSoundContext();
-    const { isZenMode, setZenMode } = useUI();
+    const { isZenMode, setZenMode, setMobileMenuOpen } = useUI();
 
-    // --- State ---
-    // Lazy initialization to prevent layout shift on load
-    const [contextPanelOpen, setContextPanelOpen] = useState(() => window.innerWidth >= 1024);
-    const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-    const [showCompletedWarning, setShowCompletedWarning] = useState(false);
-    const [showLastTaskWarning, setShowLastTaskWarning] = useState(false);
-    const [controlsVisible, setControlsVisible] = useState(true);
-    const [settings, setSettings] = useState({
-        workDuration: 25,
-        shortBreak: 5,
-        longBreak: 15,
-        autoStartNext: false
-    });
-
-    const { activePlaylistId, sessionQueue, setPlaylistContext } = useSession();
-
-    // --- Route Resolution ---
-    const resolvedContext = useMemo(() => {
-        if (!id) return { type: 'none', data: null };
-        const playlist = playlists.find(p => p.id === id);
-        if (playlist) return { type: 'playlist', data: playlist };
-        const task = tasks.find(t => t.id === id);
-        if (task) return { type: 'task', data: task };
-        return { type: 'unknown', data: null };
-    }, [id, playlists, tasks]);
-
-    // --- Derived Data ---
-    const activeTask = useMemo(() => {
-        if (resolvedContext.type === 'task') return resolvedContext.data as Task;
-        if (resolvedContext.type === 'playlist') {
-            const p = resolvedContext.data as typeof playlists[0];
-            return tasks.find(t => p.taskIds.includes(t.id) && !t.completed) || tasks.find(t => p.taskIds.includes(t.id));
-        }
-        return tasks.find(t => t.isRunning);
-    }, [resolvedContext, tasks]);
-
-    const activePlaylist = useMemo(() => {
-        if (resolvedContext.type === 'playlist') return resolvedContext.data as typeof playlists[0];
-        if (activePlaylistId) return playlists.find(p => p.id === activePlaylistId) || null;
-        if (activeTask) return playlists.find(p => p.taskIds.includes(activeTask.id)) || null;
-        return null;
-    }, [resolvedContext, activePlaylistId, playlists, activeTask]);
-
-    // --- Session Hydration ---
+    // --- Mobile Logic ---
     useEffect(() => {
-        if (resolvedContext.type === 'playlist') {
-            const p = resolvedContext.data as typeof playlists[0];
-            if (activePlaylistId !== p.id) {
-                setPlaylistContext(p.id, p.taskIds);
-            }
-        }
-    }, [resolvedContext, activePlaylistId, setPlaylistContext]);
+        setMobileMenuOpen(false);
+    }, [setMobileMenuOpen]);
 
-    const activeCategory = useMemo(() =>
-        categories.find(c => String(c.id) === String(activeTask?.categoryId)),
-        [activeTask, categories]
-    );
-
-    const ambientColor = useMemo(() => {
-        if (!activeCategory?.color) return COLOR_HEX_MAP.slate;
-        return COLOR_HEX_MAP[activeCategory.color] || COLOR_HEX_MAP.slate;
-    }, [activeCategory]);
-
-    const queue = useMemo(() => {
-        if (sessionQueue && sessionQueue.length > 0) {
-            return sessionQueue.map(id => tasks.find(t => t.id === id)).filter((t): t is Task => !!t);
-        }
-        if (activePlaylist) {
-            return tasks.filter(t => activePlaylist.taskIds.includes(t.id));
-        }
-        return tasks.filter(t => !t.completed && t.id !== activeTask?.id);
-    }, [tasks, activeTask, activePlaylist, sessionQueue]);
-
-    // --- Hooks ---
-    useEffect(() => {
-        if (window.innerWidth >= 1024) setContextPanelOpen(true);
-    }, []);
+    // --- Session Logic ---
+    // Memoize handlers to prevent unstable references causing re-renders/glitches
+    const handlers = React.useMemo(() => ({
+        // Legacy handlers stubbed - SessionContext handles logic now
+        startTask: () => { },
+        stopTask: () => { },
+        updateTaskDetails,
+        playCompleteSound: () => playSfx('complete')
+    }), [activeTask, updateTaskDetails, playSfx]);
 
     const {
         isTimerRunning,
@@ -122,35 +78,59 @@ const FocusView = () => {
         timeLeft,
         startNewSet,
         showNewSetPrompt,
-        setShowNewSetPrompt
+        setShowNewSetPrompt,
+        stopSession, // V2: Use stopSession to flush logs
+        updateSessionConfig // Exposed from context
     } = useFocusSession({
         activeTask,
         settings,
-        handlers: {
-            startTask: () => updateTaskDetails({ ...activeTask!, isRunning: true, lastStartTime: Date.now() }),
-            stopTask: () => updateTaskDetails({ ...activeTask!, isRunning: false }),
-            updateTaskDetails,
-            playCompleteSound: () => playSfx('complete')
-        }
+        handlers
     });
 
+    // --- Sync Settings to Context ---
+    useEffect(() => {
+        updateSessionConfig(settings);
+    }, [settings, updateSessionConfig]);
+
+    // --- Effects ---
     useEffect(() => {
         if (!isTimerRunning) setControlsVisible(true);
-    }, [isTimerRunning]);
+    }, [isTimerRunning, setControlsVisible]);
 
     // --- Handlers ---
     const handleComplete = useCallback(() => {
-        if (activeTask) toggleComplete(activeTask.id);
+        if (activeTask) {
+            // STOP session to flush log
+            stopSession();
+            toggleComplete(activeTask.id);
+        }
         const nextTask = queue.find(t => !t.completed && t.id !== activeTask?.id);
         if (nextTask) navigate(`/focus/${nextTask.id}`);
         else setShowNewSetPrompt(true);
-    }, [activeTask, queue, toggleComplete, navigate, setShowNewSetPrompt]);
+    }, [activeTask, queue, toggleComplete, navigate, setShowNewSetPrompt, stopSession]);
 
     const handleSkip = useCallback(() => {
-        const nextTask = queue.find(t => !t.completed);
-        if (nextTask) navigate(`/focus/${nextTask.id}`);
-        else setShowLastTaskWarning(true);
-    }, [queue, navigate]);
+        if (!activeTask) return;
+
+        // Do NOT stop session here. Let switchTask handle the transition and inheritance.
+
+        const currentIndex = queue.findIndex(t => t.id === activeTask.id);
+
+        // Find next UNCOMPLETED task after current index
+        let nextTask = queue.slice(currentIndex + 1).find(t => !t.completed);
+
+        // Wrap around if no next task found in linear order
+        if (!nextTask) {
+            nextTask = queue.find(t => !t.completed && t.id !== activeTask.id);
+        }
+
+        if (nextTask) {
+            navigate(`/focus/${nextTask.id}`);
+            return;
+        }
+
+        setShowLastTaskWarning(true);
+    }, [queue, activeTask, navigate, handlers, setShowLastTaskWarning]);
 
     const handleToggleSubtask = useCallback((subId: string) => {
         if (!activeTask) return;
@@ -163,23 +143,52 @@ const FocusView = () => {
         updateTaskDetails({ ...activeTask, subtasks: [...(activeTask.subtasks || []), { id: Date.now().toString(), title, completed: false }] });
     }, [activeTask, updateTaskDetails]);
 
-    const handleBackgroundClick = () => {
-        if (isTimerRunning) setControlsVisible(prev => !prev);
-    };
+    // --- Hotkeys ---
+    useFocusHotkeys({
+        handlers: {
+            toggleTimer,
+            skipTask: handleSkip,
+            toggleZenMode: () => setZenMode(!isZenMode),
+            toggleSidebar: () => setContextPanelOpen(prev => !prev)
+        }
+    });
+
+    // --- Interaction Logic (Move-to-Wake) ---
+    const [mouseMoving, setMouseMoving] = useState(false);
+    useEffect(() => {
+        let timeout: NodeJS.Timeout;
+        const handleMouseMove = () => {
+            setControlsVisible(true);
+            setMouseMoving(true);
+            clearTimeout(timeout);
+            if (isTimerRunning) {
+                timeout = setTimeout(() => {
+                    setControlsVisible(false);
+                    setMouseMoving(false);
+                }, 3000); // Hide after 3s of stillness
+            }
+        };
+
+        window.addEventListener('mousemove', handleMouseMove);
+        window.addEventListener('touchstart', handleMouseMove);
+        return () => {
+            window.removeEventListener('mousemove', handleMouseMove);
+            window.removeEventListener('touchstart', handleMouseMove);
+            clearTimeout(timeout);
+        };
+    }, [isTimerRunning]);
 
     return (
         <Page
-            className={`relative h-[100dvh] w-full bg-bg-main overflow-hidden flex flex-col font-sans transition-all duration-500 ease-[${LAYOUT.FOCUS.TRANSITION_EASE}] ${contextPanelOpen ? LAYOUT.FOCUS.SIDEBAR_SHIFT_CLASS : ''}`}
-            onClick={handleBackgroundClick}
+            className={`w-full h-full relative bg-bg-main overflow-hidden flex flex-col font-sans transition-all duration-500 ease-spring z-30 ${contextPanelOpen ? 'md:pr-sidebar-focus' : ''}`}
         >
-            {/* Ambient Background */}
+            {/* Ambient Background - Optimized */}
             <div className="absolute inset-0 pointer-events-none overflow-hidden z-0">
-                <motion.div
-                    animate={{
-                        background: `radial-gradient(circle at 50% 50%, ${ambientColor}20 0%, transparent 60%)`,
+                <div
+                    className="absolute inset-0 w-full h-full opacity-60 dark:opacity-40 scale-150 transition-colors duration-1000 ease-in-out"
+                    style={{
+                        background: `radial-gradient(circle at 50% 50%, ${ambientColor}20 0%, transparent 60%)`
                     }}
-                    transition={{ duration: 2, ease: "easeInOut" }}
-                    className="absolute inset-0 w-full h-full opacity-60 dark:opacity-40 scale-150"
                 />
                 <div className="absolute inset-0 bg-gradient-to-b from-bg-main/50 via-bg-main/80 to-bg-main" />
             </div>
@@ -193,38 +202,51 @@ const FocusView = () => {
                 sidebarOpen={contextPanelOpen}
                 onOpenSettings={() => setIsSettingsOpen(true)}
                 onToggleSidebar={() => setContextPanelOpen(prev => !prev)}
+                onBack={() => navigate('/')}
             />
 
             {/* Main Stage */}
-            <FocusStage
-                activeTask={activeTask}
-                isTimerRunning={isTimerRunning}
-                timeLeft={timeLeft}
-                settings={settings}
-                controlsVisible={controlsVisible}
-                ambientColor={ambientColor}
-                contextPanelOpen={contextPanelOpen}
-                tasksCount={tasks.length}
-                category={activeCategory}
-                playlist={activePlaylist || undefined}
-            />
+            <AnimatePresence mode="wait">
+                <motion.div
+                    key={activeTask?.id || 'empty'}
+                    initial={{ opacity: 0, scale: 0.98 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.98 }}
+                    transition={{ duration: 0.3, ease: 'easeOut' }}
+                    className="flex-1 w-full flex flex-col items-center justify-center relative min-h-0"
+                >
+                    <FocusStage
+                        activeTask={activeTask}
+                        isTimerRunning={isTimerRunning}
+                        timeLeft={timeLeft}
+                        settings={settings}
+                        controlsVisible={controlsVisible}
+                        ambientColor={ambientColor}
+                        contextPanelOpen={contextPanelOpen}
+                        tasksCount={tasks.length}
+                        category={activeCategory}
+                        playlist={activePlaylist || undefined}
+                    />
+                </motion.div>
+            </AnimatePresence>
 
             {/* Floating Player */}
             <div
                 className={`
-                    absolute bottom-8 lg:bottom-12 left-1/2 -translate-x-1/2 z-40 w-full max-w-sm px-4 pointer-events-none
+                    absolute bottom-6 left-4 right-4 z-40 flex items-end justify-center pointer-events-none
+                    lg:bottom-12 lg:left-0 lg:right-0 lg:w-full lg:px-0
                     transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] pb-safe
                     ${(isTimerRunning && !controlsVisible) ? 'translate-y-24 opacity-0' : 'translate-y-0 opacity-100'}
-                    ${contextPanelOpen ? LAYOUT.FOCUS.PLAYER_SHIFT_CLASS : ''}
+                    ${contextPanelOpen ? 'lg:pr-[400px]' : ''}
                 `}
                 onClick={(e) => e.stopPropagation()}
             >
-                <div className="pointer-events-auto flex justify-center">
+                <div className="pointer-events-auto w-full flex justify-center px-4">
                     <SessionControls
                         isTimerRunning={isTimerRunning}
                         onToggle={toggleTimer}
-                        onComplete={handleComplete}
                         onSkip={handleSkip}
+                        onComplete={handleComplete}
                         canSkip={true}
                     />
                 </div>
@@ -235,18 +257,19 @@ const FocusView = () => {
                 isOpen={contextPanelOpen}
                 onClose={() => setContextPanelOpen(false)}
                 activeTask={activeTask}
+                activePlaylist={activePlaylist}
                 queue={queue}
                 categories={categories}
                 onToggleSubtask={handleToggleSubtask}
                 onAddSubtask={handleAddSubtask}
-                onReorder={() => { }} // Reorder visual only for now
+                onReorder={updateQueue}
                 onQueueSelect={(t) => navigate(`/focus/${t.id}`)}
             />
 
             {/* Modals & Overlays */}
             <Modal isOpen={showCompletedWarning} onClose={() => setShowCompletedWarning(false)} title={t('focus.task_completed_title')} className="max-w-sm">
                 <div className="p-8 flex flex-col items-center text-center">
-                    <div className="w-16 h-16 rounded-full bg-emerald-500/10 text-emerald-500 flex items-center justify-center mb-6 ring-4 ring-emerald-500/5"><CheckCircle size={32} /></div>
+                    <div className="w-16 h-16 rounded-full bg-status-success/10 text-status-success flex items-center justify-center mb-6 ring-4 ring-status-success/5"><CheckCircle size={32} /></div>
                     <Text className="mb-8 text-text-secondary">{t('focus.completed_warning_msg') || "Task marked as complete."}</Text>
                     <Button onClick={() => setShowCompletedWarning(false)} className="w-full">{t('common.continue') || "Continue"}</Button>
                 </div>
@@ -254,11 +277,19 @@ const FocusView = () => {
 
             <Modal isOpen={showLastTaskWarning} onClose={() => setShowLastTaskWarning(false)} title={t('focus.last_task_title') || "Last Task"} className="max-w-sm">
                 <div className="p-8 flex flex-col items-center text-center">
-                    <div className="w-16 h-16 rounded-full bg-blue-500/10 text-blue-500 flex items-center justify-center mb-6 ring-4 ring-blue-500/5"><CheckCircle size={32} /></div>
+                    <div className="w-16 h-16 rounded-full bg-brand-primary/10 text-brand-primary flex items-center justify-center mb-6 ring-4 ring-brand-primary/5"><CheckCircle size={32} /></div>
                     <Text className="mb-8 text-text-secondary">{t('focus.last_task_msg')}</Text>
                     <Button onClick={() => setShowLastTaskWarning(false)} className="w-full">{t('common.got_it')}</Button>
                 </div>
             </Modal>
+
+            {/* Settings Modal - Wired up */}
+            <FocusSettingsModal
+                isOpen={isSettingsOpen}
+                onClose={() => setIsSettingsOpen(false)}
+                settings={settings}
+                onUpdateSettings={setSettings}
+            />
 
             {showNewSetPrompt && (
                 <div className="fixed inset-0 z-[100] bg-black/95 backdrop-blur-sm flex flex-col items-center justify-center p-6 animate-in fade-in zoom-in duration-300">

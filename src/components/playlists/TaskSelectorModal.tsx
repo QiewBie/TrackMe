@@ -71,7 +71,7 @@ const TaskSelectorModal: React.FC<TaskSelectorModalProps> = ({ isOpen, onClose, 
             <div className="flex flex-col h-full p-4 space-y-4">
                 {/* Creation Area */}
                 <div className="relative z-50">
-                    <h3 className="text-xs font-bold text-slate-400 uppercase mb-2">{t('playlists.create_task')}</h3>
+                    <h3 className="text-xs font-bold text-text-secondary uppercase mb-2">{t('playlists.create_task')}</h3>
                     <TaskInput
                         categories={categories}
                         currentFilter="all"
@@ -83,7 +83,7 @@ const TaskSelectorModal: React.FC<TaskSelectorModalProps> = ({ isOpen, onClose, 
 
                 {/* Search Area */}
                 <div className="relative mb-6">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-text-tertiary" size={20} />
                     <Input
                         placeholder={t('playlists.search_placeholder') || 'Search tasks...'}
                         value={search}
@@ -95,7 +95,7 @@ const TaskSelectorModal: React.FC<TaskSelectorModalProps> = ({ isOpen, onClose, 
 
                 <div className="flex-1 overflow-y-auto space-y-2 min-h-0 pr-2 custom-scrollbar">
                     {availableTasks.length === 0 ? (
-                        <div className="text-center text-slate-500 py-8">
+                        <div className="text-center text-text-secondary py-8">
                             {t('playlists.no_tasks_found')}
                         </div>
                     ) : (
@@ -108,19 +108,19 @@ const TaskSelectorModal: React.FC<TaskSelectorModalProps> = ({ isOpen, onClose, 
                                     className={`
                                         flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all
                                         ${isSelected
-                                            ? 'border-brand bg-brand-subtle'
-                                            : 'border-border hover:bg-bg-main'}
+                                            ? 'border-brand-primary bg-brand-primary/10'
+                                            : 'border-border hover:bg-bg-surface'}
                                     `}
                                 >
-                                    <div className={isSelected ? 'text-blue-500' : 'text-slate-300'}>
+                                    <div className={isSelected ? 'text-brand-primary' : 'text-ui-disabled'}>
                                         {isSelected ? <CheckCircle2 size={24} /> : <Circle size={24} />}
                                     </div>
                                     <div className="flex-1 min-w-0">
                                         <p className="font-medium truncate text-text-primary">{task.title}</p>
-                                        <div className="flex items-center gap-2 text-xs text-slate-500">
+                                        <div className="flex items-center gap-2 text-xs text-text-tertiary">
                                             {task.categoryId && (
                                                 <span className="flex items-center gap-1">
-                                                    <span className={`w-1.5 h-1.5 rounded-full ${categories.find(c => c.id == task.categoryId)?.color || 'bg-slate-400'}`}></span>
+                                                    <span className={`w-1.5 h-1.5 rounded-full ${categories.find(c => c.id == task.categoryId)?.color || 'bg-ui-disabled'}`}></span>
                                                     {categories.find(c => c.id == task.categoryId)?.name}
                                                 </span>
                                             )}

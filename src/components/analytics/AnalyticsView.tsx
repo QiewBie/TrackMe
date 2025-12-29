@@ -1,21 +1,21 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
     PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer
 } from 'recharts';
 import { Timer } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import DateRangePicker from '../shared/DateRangePicker';
-import TotalTimeDisplay from './TotalTimeDisplay';
+import DurationDisplay from './DurationDisplay';
 import { formatDuration } from '../../utils/formatters';
 import { filterTasks } from '../../utils/dateHelpers';
-import { Task, Category, DateRange } from '../../types';
+import { Task, Category, DateRange, TimeLog } from '../../types';
 import { CHART_THEME } from '../../constants/theme';
 import ActivityHeatmap from './ActivityHeatmap';
 import StreakWidget from './StreakWidget';
 import VelocityChart from './VelocityChart';
 import EfficiencyStats from './EfficiencyStats';
 import { calculateVelocity, calculateSessionStats, calculateSessionStreak } from '../../utils/analyticsHelpers';
-import { useSession } from '../../context/SessionContext';
+import { TimeLedger } from '../../services/storage/TimeLedger';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/Card';
 import Badge from '../ui/Badge';
 import PageHeader from '../ui/PageHeader';
@@ -29,8 +29,16 @@ interface AnalyticsViewProps {
 const AnalyticsView: React.FC<AnalyticsViewProps> = ({ tasks, categories }) => {
     const { t } = useTranslation();
 
-    // Context: Get REAL history
-    const { sessionsHistory } = useSession();
+    // V2: Fetch logs directly from Repository
+    const [logs, setLogs] = useState<TimeLog[]>([]);
+
+    useEffect(() => {
+        // Initial load
+        setLogs(TimeLedger.getAllLogs());
+        // Subscribe to real-time updates
+        const unsubscribe = TimeLedger.subscribe(setLogs);
+        return unsubscribe;
+    }, []);
 
     // 0. Date Filter State
     const [dateFilter, setDateFilter] = useState<DateRange>(() => {
@@ -47,51 +55,47 @@ const AnalyticsView: React.FC<AnalyticsViewProps> = ({ tasks, categories }) => {
     // A. Filtered Data (for specific range metrics)
     const filteredTasks = useMemo(() => filterTasks(tasks, dateFilter), [tasks, dateFilter]);
 
-    // Filter Sessions by Date Range
-    const filteredSessions = useMemo(() => {
-        if (!sessionsHistory.length) return [];
-        // Helper to check if session startTime is within range
-        return sessionsHistory.filter(s => {
-            // simplified: check simple string compare for ISO date part
-            const sessionDate = s.startTime.split('T')[0];
+    // Filter Logs by Date Range
+    const filteredLogs = useMemo(() => {
+        if (!logs.length) return [];
+        // Helper to check if log startTime is within range
+        return logs.filter(l => {
+            const sessionDate = l.startTime.split('T')[0];
             return sessionDate >= dateFilter.start && sessionDate <= dateFilter.end;
         });
-    }, [sessionsHistory, dateFilter]);
+    }, [logs, dateFilter]);
 
 
     // B. Global Derived Metrics (Streak depends on history, not filter)
-    // USE SESSION STREAK!
-    const streak = useMemo(() => calculateSessionStreak(sessionsHistory), [sessionsHistory]);
+    const streak = useMemo(() => calculateSessionStreak(logs), [logs]);
 
     // C. Velocity Data (Last 14 Days fixed Trend)
     const velocityData = useMemo(() => calculateVelocity(tasks, 14), [tasks]);
 
     // D. Efficiency (Based on Filtered Selection)
-    // USE SESSION STATS!
-    const efficiency = useMemo(() => calculateSessionStats(filteredSessions), [filteredSessions]);
+    const efficiency = useMemo(() => calculateSessionStats(filteredLogs), [filteredLogs]);
 
-    // Calculate Total Time from Sessions
+    // Calculate Total Time from Logs
     const totalSelectedTime = useMemo(() => {
-        return filteredSessions.reduce((acc, s) => acc + (s.duration || 0), 0);
-    }, [filteredSessions]);
+        return filteredLogs.reduce((acc, l) => acc + (l.duration || 0), 0);
+    }, [filteredLogs]);
 
     // E. Pie Chart Data (Time per Project)
-    // Update to use SESSIONS duration if possible, or stick to task.timeSpent for now (as migration backfilled it).
-    // Let's stick to task.timeSpent for Pie Chart for now as it maps categories easier involved with Tasks.
+    // Using cachedTotalTime (Source of Truth V2)
     const projectData = useMemo(() => {
         const data = categories.map(cat => {
             const duration = filteredTasks
                 .filter(t => String(t.categoryId) === String(cat.id))
-                .reduce((acc, t) => acc + t.timeSpent, 0);
+                .reduce((acc, t) => acc + (t.cachedTotalTime || 0), 0); // V2: Use cachedTotalTime
             return { name: cat.name, value: duration, color: cat.color.replace('bg-', '') };
         }).filter(d => d.value > 0);
 
         const noProjectDuration = filteredTasks
             .filter(t => !t.categoryId)
-            .reduce((acc, t) => acc + t.timeSpent, 0);
+            .reduce((acc, t) => acc + (t.cachedTotalTime || 0), 0); // V2: Use cachedTotalTime
 
         if (noProjectDuration > 0) {
-            data.push({ name: t('analytics.no_project', 'No Project'), value: noProjectDuration, color: 'slate-400' });
+            data.push({ name: t('analytics.no_project', 'No Project'), value: noProjectDuration, color: 'text-tertiary' });
         }
         return data.sort((a, b) => b.value - a.value);
     }, [categories, filteredTasks, t]);
@@ -108,7 +112,9 @@ const AnalyticsView: React.FC<AnalyticsViewProps> = ({ tasks, categories }) => {
             'blue-500': '#3b82f6', 'red-500': '#ef4444', 'green-500': '#22c55e',
             'amber-500': '#f59e0b', 'purple-500': '#a855f7', 'pink-500': '#ec4899',
             'cyan-500': '#06b6d4', 'indigo-500': '#6366f1', 'slate-500': '#64748b',
-            'emerald-500': '#10b981', 'slate-400': '#94a3b8'
+            'emerald-500': '#10b981', 'slate-400': '#94a3b8',
+            'text-tertiary': '#94a3b8', // Semantic mapping
+            'bg-surface': '#1e293b'
         };
         return colors[twClass] || '#cbd5e1';
     };
@@ -130,10 +136,9 @@ const AnalyticsView: React.FC<AnalyticsViewProps> = ({ tasks, categories }) => {
                 </div>
 
                 {/* 2. Total Time (Filtered) */}
-                {/* 2. Total Time (Filtered) */}
                 <Card className="flex items-center gap-3 p-4 relative overflow-hidden">
                     {/* Icon */}
-                    <div className="p-3 rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400 shrink-0 z-10">
+                    <div className="p-3 rounded-xl bg-brand-primary/10 text-brand-primary shrink-0 z-10">
                         <Timer size={24} />
                     </div>
 
@@ -142,7 +147,7 @@ const AnalyticsView: React.FC<AnalyticsViewProps> = ({ tasks, categories }) => {
                         <span className="text-xs font-bold text-text-secondary uppercase tracking-wider mb-0.5">
                             {t('analytics.total_time')}
                         </span>
-                        <TotalTimeDisplay
+                        <DurationDisplay
                             overrideSeconds={totalSelectedTime}
                             formatter={(val) => formatDuration(val, durationLabels)}
                             className="text-2xl font-black text-text-primary tracking-tight leading-none"
@@ -175,7 +180,7 @@ const AnalyticsView: React.FC<AnalyticsViewProps> = ({ tasks, categories }) => {
                     </CardHeader>
                     <CardContent className="flex flex-col h-full pt-0">
                         {projectData.length > 0 ? (
-                            <div className="flex-1 min-h-0 relative outline-none" role="img" aria-label="Project Time Distribution" style={{ outline: 'none' }} tabIndex={-1}>
+                            <div className="flex-1 min-h-0 relative outline-none" role="img" aria-label={t('analytics.time_distribution', 'Project Time Distribution')} style={{ outline: 'none' }} tabIndex={-1}>
                                 {/* Center Text: Top Project - Placed BEFORE chart to be in background */}
                                 <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                                     <div className="text-center">

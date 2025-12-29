@@ -11,7 +11,7 @@ const StreakWidget: React.FC<StreakWidgetProps> = ({ current, max }) => {
     const { t } = useTranslation();
 
     return (
-        <div className="bg-gradient-to-br from-orange-500 to-amber-500 dark:from-orange-600 dark:to-amber-600 rounded-2xl px-4 py-3 text-white shadow-lg relative overflow-hidden group h-full flex items-center justify-between">
+        <div className="bg-gradient-to-br from-orange-500 to-amber-500 dark:from-orange-600 dark:to-amber-600 rounded-3xl px-4 py-3 text-white shadow-sm relative overflow-hidden group h-full flex items-center justify-between">
             {/* Background Decoration */}
             <div className="absolute right-0 top-1/2 -translate-y-1/2 opacity-10 transform translate-x-1/4">
                 <Flame size={80} />
@@ -30,8 +30,8 @@ const StreakWidget: React.FC<StreakWidgetProps> = ({ current, max }) => {
             </div>
 
             <div className="relative z-10 flex flex-col items-end justify-center">
-                <div className="flex items-center gap-1.5 text-xs bg-white/20 px-2.5 py-1 rounded-lg backdrop-blur-sm">
-                    <Trophy size={12} className="text-yellow-200" />
+                <div className="flex items-center gap-1.5 text-xs bg-white/10 px-2.5 py-1 rounded-lg backdrop-blur-sm">
+                    <Trophy size={12} className="text-amber-200" />
                     <span>
                         {t('analytics.best_streak', 'Best')}: <b>{max}</b>
                     </span>

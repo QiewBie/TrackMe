@@ -157,7 +157,7 @@ const PlaylistManager = () => {
                     </Heading>
                     <div className="flex flex-wrap gap-4">
                         {templates.map(template => (
-                            <div key={template.id} className="group flex items-center gap-3 pl-3 pr-2 py-2 bg-bg-surface border border-border rounded-xl hover:border-blue-400 dark:hover:border-blue-500 transition-all shadow-sm hover:shadow-md cursor-pointer"
+                            <div key={template.id} className="group flex items-center gap-3 pl-3 pr-2 py-2 bg-bg-surface border border-border rounded-xl hover:border-brand-primary transition-all shadow-sm hover:shadow-md cursor-pointer"
                                 onClick={() => createFromTemplate(template.id)}
                             >
                                 <div className={`p-2 rounded-lg bg-bg-main ${template.color}`}>
@@ -195,11 +195,11 @@ const PlaylistManager = () => {
                 <motion.button
                     initial={{ opacity: 0, scale: 0.9 }}
                     animate={{ opacity: 1, scale: 1 }}
-                    className="flex flex-col h-full min-h-[200px] md:min-h-[300px] w-full rounded-3xl border-2 border-dashed border-border hover:border-blue-400 dark:hover:border-blue-500 hover:bg-bg-surface transition-all cursor-pointer group items-center justify-center gap-4 text-text-secondary hover:text-blue-500 outline-none focus:ring-4 focus:ring-blue-500/20"
+                    className="flex flex-col h-full min-h-[200px] md:min-h-[300px] w-full rounded-3xl border-2 border-dashed border-border hover:border-brand-primary hover:bg-bg-surface transition-all cursor-pointer group items-center justify-center gap-4 text-text-secondary hover:text-brand-primary outline-none focus:ring-4 focus:ring-brand-primary/20"
                     onClick={() => setCreateModalOpen(true)}
                     type="button"
                 >
-                    <div className="w-16 h-16 rounded-full bg-bg-main group-hover:bg-blue-50 dark:group-hover:bg-blue-900/30 flex items-center justify-center transition-colors">
+                    <div className="w-16 h-16 rounded-full bg-bg-main group-hover:bg-brand-primary/10 flex items-center justify-center transition-colors">
                         <Plus size={32} />
                     </div>
                     <span className="font-bold text-lg">{t('playlists.create_new', 'Create New Playlist')}</span>

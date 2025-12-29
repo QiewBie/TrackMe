@@ -57,7 +57,7 @@ const Sidebar: React.FC<SidebarProps> = ({
             </div>
 
             {/* Content */}
-            <div className="flex-1 overflow-y-auto p-4 space-y-6 custom-scrollbar">
+            <div className="flex-1 overflow-y-auto p-4 pb-24 space-y-6 custom-scrollbar">
                 <div className="animate-slide-in delay-100">
                     <p className="px-3 text-xs font-bold text-text-secondary uppercase mb-2 hidden lg:block">{t('navigation.title')}</p>
                     <NavLink
@@ -67,7 +67,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                         className={({ isActive }) => clsx(
                             "w-full items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-bold transition-all mb-1 hidden lg:flex",
                             isActive
-                                ? "bg-brand text-white shadow-lg shadow-brand/20 translate-x-1"
+                                ? "bg-brand-primary text-white shadow-lg shadow-brand-primary/20 translate-x-1"
                                 : "text-text-secondary hover:bg-bg-main hover:text-text-primary"
                         )}
                     >
@@ -81,7 +81,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                         className={({ isActive }) => clsx(
                             "w-full items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-bold transition-all mb-1 hidden lg:flex",
                             isActive
-                                ? "bg-brand text-white shadow-lg shadow-brand/20 translate-x-1"
+                                ? "bg-brand-primary text-white shadow-lg shadow-brand-primary/20 translate-x-1"
                                 : "text-text-secondary hover:bg-bg-main hover:text-text-primary"
                         )}
                     >
@@ -109,7 +109,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                             "w-full flex items-center justify-start gap-3 px-5 py-3.5 lg:px-4 lg:py-2.5 rounded-xl transition-all mb-1",
                             "text-base lg:text-sm font-bold active:scale-[0.98]", // Unified scale
                             filter === 'all'
-                                ? "bg-brand-subtle text-brand-active shadow-sm translate-x-1"
+                                ? "bg-brand-subtle text-brand-primary shadow-sm translate-x-1"
                                 : "text-text-secondary hover:bg-bg-main hover:text-text-primary"
                         )}
                         onClick={() => { setFilter('all'); setMobileMenuOpen(false) }}
@@ -125,7 +125,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                                 "w-full flex items-center gap-3 px-5 py-3.5 lg:px-4 lg:py-2.5 rounded-xl transition-all mt-1 group",
                                 "text-base lg:text-sm font-bold active:scale-[0.98]",
                                 String(filter) === String(c.id)
-                                    ? "bg-brand-subtle text-brand-active shadow-sm translate-x-1"
+                                    ? "bg-brand-subtle text-brand-primary shadow-sm translate-x-1"
                                     : "text-text-secondary hover:bg-bg-main hover:text-text-primary"
                             )}
                         >
@@ -146,7 +146,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                     className={({ isActive }) =>
                         clsx("w-full items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-bold transition-all mb-1 hidden lg:flex",
                             isActive
-                                ? "bg-blue-600 text-white shadow-lg shadow-blue-500/20 translate-x-1"
+                                ? "bg-brand text-white shadow-lg shadow-brand/20 translate-x-1"
                                 : "text-text-secondary hover:bg-bg-main hover:text-text-primary"
                         )
                     }
@@ -168,7 +168,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                 >
                     {({ isActive }) => (
                         <>
-                            <div className={`transition-all duration-300 relative z-20 ${isActive ? 'scale-110 drop-shadow-md' : 'group-hover:scale-110 group-hover:text-blue-500'}`}>
+                            <div className={`transition-all duration-300 relative z-20 ${isActive ? 'scale-110 drop-shadow-md' : 'group-hover:scale-110 group-hover:text-brand-accent'}`}>
                                 <Zap size={20} className={isActive ? 'fill-white text-white' : ''} />
                             </div>
 
@@ -205,7 +205,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                 >
                     {({ isActive }) => (
                         <>
-                            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white font-bold text-sm shrink-0 shadow-md">
+                            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-brand-primary to-brand-hover flex items-center justify-center text-white font-bold text-sm shrink-0 shadow-md">
                                 {user.avatar ? (
                                     <img src={user.avatar} alt={user.name} className="w-full h-full rounded-full object-cover" />
                                 ) : (
@@ -213,16 +213,16 @@ const Sidebar: React.FC<SidebarProps> = ({
                                 )}
                             </div>
                             <div className="flex-1 text-left min-w-0">
-                                <p className="font-bold text-text-primary text-sm truncate group-hover:text-blue-600 transition-colors">{user.name}</p>
+                                <p className="font-bold text-text-primary text-sm truncate group-hover:text-brand-hover transition-colors">{user.name}</p>
                                 <p className="text-xs text-text-secondary truncate">
                                     {user.role === 'User' ? t('sidebar.role_user') : user.role}
                                 </p>
                             </div>
-                            <UserIcon size={16} className="text-slate-400 group-hover:text-blue-500 transition-colors" />
+                            <UserIcon size={16} className="text-ui-disabled group-hover:text-brand-accent transition-colors" />
 
                             {/* Active Indicator */}
                             <div className={clsx(
-                                "absolute right-0 top-0 bottom-0 w-1 bg-blue-500 transition-transform duration-300",
+                                "absolute right-0 top-0 bottom-0 w-1 bg-brand-primary transition-transform duration-300",
                                 isActive ? "translate-x-0" : "translate-x-full"
                             )} />
                         </>

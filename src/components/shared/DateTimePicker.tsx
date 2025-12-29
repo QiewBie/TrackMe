@@ -6,7 +6,8 @@ import {
     startOfWeek, endOfWeek, eachDayOfInterval, isSameDay,
     isSameMonth, isToday, parseISO
 } from 'date-fns';
-import { uk } from 'date-fns/locale';
+import { uk, enUS } from 'date-fns/locale';
+import { useTranslation } from 'react-i18next';
 import { Calendar as CalendarIcon, ChevronLeft, ChevronRight } from 'lucide-react';
 
 interface DateTimePickerProps {
@@ -17,6 +18,9 @@ interface DateTimePickerProps {
 }
 
 const DateTimePicker: React.FC<DateTimePickerProps> = ({ label, value, onChange, disabled }) => {
+    const { t, i18n } = useTranslation();
+    const dateLocale = i18n.language === 'uk' ? uk : enUS;
+
     const [isOpen, setIsOpen] = useState(false);
     const parsedDate = value ? parseISO(value) : null;
     const [viewDate, setViewDate] = useState<Date>(() => parsedDate || new Date());
@@ -94,6 +98,12 @@ const DateTimePicker: React.FC<DateTimePickerProps> = ({ label, value, onChange,
     const hours = Array.from({ length: 24 }, (_, i) => i);
     const minutes = Array.from({ length: 60 }, (_, i) => i);
 
+    // Generate week days dynamically based on locale
+    const weekDays = Array.from({ length: 7 }, (_, i) => {
+        const d = new Date(Date.UTC(2021, 5, 7 + i)); // Mon Jun 07 2021 is a Monday
+        return format(d, 'iiiiii', { locale: dateLocale });
+    });
+
     return (
         <div className="relative">
             {label && <p className="text-xs text-slate-400 mb-2 font-bold uppercase">{label}</p>}
@@ -109,7 +119,7 @@ const DateTimePicker: React.FC<DateTimePickerProps> = ({ label, value, onChange,
             >
                 <span className="flex items-center gap-2">
                     <CalendarIcon size={16} className="text-slate-400" />
-                    {value ? format(parseISO(value), 'd MMM yyyy, HH:mm', { locale: uk }) : '—'}
+                    {value ? format(parseISO(value), 'd MMM yyyy, HH:mm', { locale: dateLocale }) : '—'}
                 </span>
                 {!disabled && <ChevronRight size={16} className={`text-slate-400 transition-transform ${isOpen ? 'rotate-90' : ''}`} />}
             </button>
@@ -123,14 +133,14 @@ const DateTimePicker: React.FC<DateTimePickerProps> = ({ label, value, onChange,
                     <div className="flex justify-between items-center mb-4">
                         <button onClick={handlePrevMonth} className="p-1 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg text-slate-500"><ChevronLeft size={20} /></button>
                         <span className="font-bold text-slate-800 dark:text-white capitalize">
-                            {format(viewDate, 'LLLL yyyy', { locale: uk })}
+                            {format(viewDate, 'LLLL yyyy', { locale: dateLocale })}
                         </span>
                         <button onClick={handleNextMonth} className="p-1 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg text-slate-500"><ChevronRight size={20} /></button>
                     </div>
 
                     <div className="grid grid-cols-7 mb-2">
-                        {['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Нд'].map(d => (
-                            <div key={d} className="text-center text-xs font-bold text-slate-400 py-1">{d}</div>
+                        {weekDays.map(d => (
+                            <div key={d} className="text-center text-xs font-bold text-slate-400 py-1 uppercase">{d}</div>
                         ))}
                     </div>
 
@@ -164,7 +174,7 @@ const DateTimePicker: React.FC<DateTimePickerProps> = ({ label, value, onChange,
 
                     <div className="flex gap-2 h-32">
                         <div className="flex-1 flex flex-col">
-                            <span className="text-[10px] font-bold text-slate-400 uppercase mb-1 text-center">Години</span>
+                            <span className="text-[10px] font-bold text-slate-400 uppercase mb-1 text-center">{t('common.hours')}</span>
                             <div className="flex-1 overflow-y-auto custom-scrollbar bg-slate-50 dark:bg-slate-800/50 rounded-lg p-1">
                                 {hours.map(h => (
                                     <button
@@ -181,7 +191,7 @@ const DateTimePicker: React.FC<DateTimePickerProps> = ({ label, value, onChange,
                             </div>
                         </div>
                         <div className="flex-1 flex flex-col">
-                            <span className="text-[10px] font-bold text-slate-400 uppercase mb-1 text-center">Хвилини</span>
+                            <span className="text-[10px] font-bold text-slate-400 uppercase mb-1 text-center">{t('common.minutes')}</span>
                             <div className="flex-1 overflow-y-auto custom-scrollbar bg-slate-50 dark:bg-slate-800/50 rounded-lg p-1">
                                 {minutes.map(m => (
                                     <button
@@ -204,7 +214,7 @@ const DateTimePicker: React.FC<DateTimePickerProps> = ({ label, value, onChange,
                             onClick={() => { onChange(new Date().toISOString()); setIsOpen(false); }}
                             className="text-xs font-bold text-blue-600 hover:text-blue-700 dark:text-blue-400 uppercase tracking-wider"
                         >
-                            Зараз
+                            {t('common.now')}
                         </button>
                     </div>
                 </div>,

@@ -74,7 +74,7 @@ export const CreatePlaylistModal: React.FC<CreatePlaylistModalProps> = ({
                         value={title}
                         onChange={e => setTitle(e.target.value)}
                         placeholder={t('playlists.name_placeholder', 'My Focus Session')}
-                        className="w-full bg-bg-main border border-border rounded-xl px-4 py-3 font-bold text-text-primary focus:ring-2 focus:ring-blue-500 outline-none text-lg"
+                        className="w-full bg-bg-main border border-border rounded-xl px-4 py-3 font-bold text-text-primary focus:ring-2 focus:ring-brand-primary outline-none text-lg"
                     />
                 </div>
 
@@ -98,7 +98,7 @@ export const CreatePlaylistModal: React.FC<CreatePlaylistModalProps> = ({
                                 type="button"
                                 onClick={handleQuickCreate}
                                 disabled={!newTaskName.trim()}
-                                className="p-1.5 bg-blue-500 text-white rounded-lg disabled:opacity-50"
+                                className="p-1.5 bg-brand-primary text-white rounded-lg disabled:opacity-50"
                             >
                                 <Plus size={16} />
                             </button>
@@ -112,7 +112,7 @@ export const CreatePlaylistModal: React.FC<CreatePlaylistModalProps> = ({
                             placeholder={t('playlists.search_placeholder', 'Search existing tasks...')}
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}
-                            className="w-full pl-9 pr-4 py-2 bg-bg-surface border border-border rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500/20"
+                            className="w-full pl-9 pr-4 py-2 bg-bg-surface border border-border rounded-xl text-sm outline-none focus:ring-2 focus:ring-brand-primary/20"
                         />
                     </div>
 
@@ -130,19 +130,19 @@ export const CreatePlaylistModal: React.FC<CreatePlaylistModalProps> = ({
                                         key={task.id}
                                         onClick={() => handleToggle(task.id)}
                                         className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all ${isSelected
-                                            ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/30'
-                                            : 'border-slate-200 dark:border-slate-700 hover:bg-white dark:hover:bg-slate-800'
+                                            ? 'border-brand-primary bg-brand-primary/10'
+                                            : 'border-border hover:bg-bg-surface'
                                             }`}
                                     >
-                                        <div className={isSelected ? 'text-blue-500' : 'text-slate-300'}>
+                                        <div className={isSelected ? 'text-brand-primary' : 'text-ui-disabled'}>
                                             {isSelected ? <CheckCircle2 size={20} /> : <Circle size={20} />}
                                         </div>
                                         <div className="flex-1 min-w-0">
                                             <p className="font-medium truncate dark:text-slate-200 text-sm">{task.title}</p>
                                             {task.categoryId && (
                                                 <span className="flex items-center gap-1.5 mt-0.5">
-                                                    <span className={`w-1.5 h-1.5 rounded-full ${categories.find(c => c.id == task.categoryId)?.color || 'bg-slate-400'}`}></span>
-                                                    <span className="text-[10px] text-slate-500 uppercase font-bold tracking-wider">{categories.find(c => c.id == task.categoryId)?.name}</span>
+                                                    <span className={`w-1.5 h-1.5 rounded-full ${categories.find(c => c.id == task.categoryId)?.color || 'bg-ui-disabled'}`}></span>
+                                                    <span className="text-[10px] text-text-tertiary uppercase font-bold tracking-wider">{categories.find(c => c.id == task.categoryId)?.name}</span>
                                                 </span>
                                             )}
                                         </div>

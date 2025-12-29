@@ -41,11 +41,11 @@ const ActivityHeatmap: React.FC<ActivityHeatmapProps> = ({ tasks, daysBack = 364
 
     // 2. Color Scale
     const getColor = (count: number) => {
-        if (count === 0) return 'bg-slate-200 dark:bg-slate-700/50';
-        if (count <= 2) return 'bg-blue-300 dark:bg-blue-900/60';
-        if (count <= 4) return 'bg-blue-500 dark:bg-blue-700';
-        if (count <= 6) return 'bg-blue-600 dark:bg-blue-500';
-        return 'bg-blue-800 dark:bg-blue-400';
+        if (count === 0) return 'bg-bg-subtle';
+        if (count <= 2) return 'bg-brand-primary/30';
+        if (count <= 4) return 'bg-brand-primary/60';
+        if (count <= 6) return 'bg-brand-primary/80';
+        return 'bg-brand-primary';
     };
 
     // 3. Grid Layout Logic (Weeks as Columns)
@@ -102,13 +102,13 @@ const ActivityHeatmap: React.FC<ActivityHeatmapProps> = ({ tasks, daysBack = 364
                                         }}
                                         className={clsx(
                                             "w-[14px] h-[14px] sm:w-[16px] sm:h-[16px] rounded-[3px] transition-all relative cursor-pointer",
-                                            (isHovered || isSelected) ? "ring-2 ring-slate-400 dark:ring-slate-500 z-10 scale-110" : "hover:ring-1 hover:ring-slate-300",
+                                            (isHovered || isSelected) ? "ring-2 ring-text-secondary z-10 scale-110" : "hover:ring-1 hover:ring-border",
                                             getColor(day.count)
                                         )}
                                     >
                                         {/* Desktop Tooltip (Hover only) - Hidden on touch via media query ideally, or just rely on click logic */}
                                         {isHovered && !selectedDayAndCount && (
-                                            <div className="hidden md:block absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-slate-900 text-white text-xs rounded shadow-xl pointer-events-none whitespace-nowrap z-50">
+                                            <div className="hidden md:block absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-bg-inverse text-text-inverse text-xs rounded shadow-xl pointer-events-none whitespace-nowrap z-50">
                                                 {format(day.date, 'MMM d')}: {day.count}
                                             </div>
                                         )}
@@ -121,14 +121,14 @@ const ActivityHeatmap: React.FC<ActivityHeatmapProps> = ({ tasks, daysBack = 364
             </div>
 
             {/* Info Panel & Legend */}
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-t dark:border-slate-800 pt-4">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-t border-border pt-4">
 
                 {/* Active Selection Info */}
                 <div className="h-5 flex items-center">
                     {selectedDayAndCount ? (
                         <div className="text-sm font-medium animate-in fade-in slide-in-from-left-2 duration-200">
                             <span className="text-text-primary">{format(selectedDayAndCount.date, 'MMMM d, yyyy')}:</span>
-                            <span className="ml-2 font-bold text-blue-600 dark:text-blue-400">
+                            <span className="ml-2 font-bold text-brand-primary">
                                 {selectedDayAndCount.count} {t('analytics.tasks_completed_short', 'tasks')}
                             </span>
                         </div>
@@ -143,11 +143,11 @@ const ActivityHeatmap: React.FC<ActivityHeatmapProps> = ({ tasks, daysBack = 364
                 <div className="flex items-center gap-2 text-xs text-text-secondary">
                     <span>{t('analytics.less')}</span>
                     <div className="flex gap-1">
-                        <div className="w-3 h-3 rounded-[1px] bg-slate-200 dark:bg-slate-700/50"></div>
-                        <div className="w-3 h-3 rounded-[1px] bg-blue-300 dark:bg-blue-900/60"></div>
-                        <div className="w-3 h-3 rounded-[1px] bg-blue-500 dark:bg-blue-700"></div>
-                        <div className="w-3 h-3 rounded-[1px] bg-blue-600 dark:bg-blue-500"></div>
-                        <div className="w-3 h-3 rounded-[1px] bg-blue-800 dark:bg-blue-400"></div>
+                        <div className="w-3 h-3 rounded-[1px] bg-bg-subtle"></div>
+                        <div className="w-3 h-3 rounded-[1px] bg-brand-primary/30"></div>
+                        <div className="w-3 h-3 rounded-[1px] bg-brand-primary/60"></div>
+                        <div className="w-3 h-3 rounded-[1px] bg-brand-primary/80"></div>
+                        <div className="w-3 h-3 rounded-[1px] bg-brand-primary"></div>
                     </div>
                     <span>{t('analytics.more')}</span>
                 </div>

@@ -139,8 +139,8 @@ export const calculateEfficiency = (tasks: Task[]) => {
     const totalActive = tasks.length;
     const completionRate = totalActive > 0 ? (completedTasks.length / totalActive) * 100 : 0;
 
-    const validCompleted = completedTasks.filter(t => t.timeSpent > 0);
-    const totalTime = validCompleted.reduce((acc, t) => acc + t.timeSpent, 0);
+    const validCompleted = completedTasks.filter(t => t.cachedTotalTime > 0);
+    const totalTime = validCompleted.reduce((acc, t) => acc + t.cachedTotalTime, 0);
     const avgDuration = validCompleted.length > 0 ? totalTime / validCompleted.length : 0;
 
     return {
@@ -149,20 +149,21 @@ export const calculateEfficiency = (tasks: Task[]) => {
     };
 };
 
-import { Session } from '../types/models';
+import { Session, TimeLog } from '../types/models';
 
 /**
- * Calculates total time spent per day based on Sessions.
+ * Calculates total time spent per day based on Sessions or TimeLogs.
  */
-export const calculateDailyTime = (sessions: Session[], daysBack = 14): { date: string; fullDate: string; seconds: number }[] => {
+export const calculateDailyTime = (items: Array<Session | TimeLog>, daysBack = 14): { date: string; fullDate: string; seconds: number }[] => {
     const end = new Date();
     const start = subDays(end, daysBack - 1);
     const days = eachDayOfInterval({ start, end });
 
     return days.map(day => {
         const dateKey = format(day, 'yyyy-MM-dd');
-        const daySessions = sessions.filter(s => isSameDay(parseISO(s.startTime), day));
-        const totalSeconds = daySessions.reduce((acc, s) => acc + (s.duration || 0), 0);
+        // Both Session and TimeLog have startTime (ISO string) and duration (number)
+        const dayItems = items.filter(s => isSameDay(parseISO(s.startTime), day));
+        const totalSeconds = dayItems.reduce((acc, s) => acc + (s.duration || 0), 0);
 
         return {
             date: format(day, 'dd.MM'),
@@ -173,21 +174,21 @@ export const calculateDailyTime = (sessions: Session[], daysBack = 14): { date: 
 };
 
 /**
- * Calculates efficiency stats from Sessions.
+ * Calculates efficiency stats from Sessions/Logs.
  */
-export const calculateSessionStats = (sessions: Session[]) => {
-    if (sessions.length === 0) return { avgSessionDuration: 0, totalTime: 0 };
-    const totalTime = sessions.reduce((acc, s) => acc + (s.duration || 0), 0);
-    const avgSessionDuration = totalTime / sessions.length;
+export const calculateSessionStats = (items: Array<Session | TimeLog>) => {
+    if (items.length === 0) return { avgSessionDuration: 0, totalTime: 0 };
+    const totalTime = items.reduce((acc, s) => acc + (s.duration || 0), 0);
+    const avgSessionDuration = totalTime / items.length;
     return { avgSessionDuration, totalTime };
 };
 
 /**
- * Calculates streak based on Session activity (any work done).
+ * Calculates streak based on Session/Log activity (any work done).
  */
-export const calculateSessionStreak = (sessions: Session[]): { current: number; max: number } => {
+export const calculateSessionStreak = (items: Array<Session | TimeLog>): { current: number; max: number } => {
     const activeDates = new Set<string>();
-    sessions.forEach(s => activeDates.add(format(parseISO(s.startTime), 'yyyy-MM-dd')));
+    items.forEach(s => activeDates.add(format(parseISO(s.startTime), 'yyyy-MM-dd')));
     return calculateStreakFromDates(activeDates);
 };
 

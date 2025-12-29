@@ -3,6 +3,7 @@ import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Placeholder from '@tiptap/extension-placeholder';
 import { Bold, Italic, List, ListOrdered, Heading1, Heading2, Quote, RemoveFormatting } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 interface RichTextEditorProps {
     content: string;
@@ -39,15 +40,18 @@ const MenuButton = ({
 const RichTextEditor: React.FC<RichTextEditorProps> = ({
     content,
     onChange,
-    placeholder = 'Write something...',
+    placeholder,
     editable = true,
     className = ''
 }) => {
+    const { t } = useTranslation();
+    const resolvedPlaceholder = placeholder || t('editor.placeholder');
+
     const editor = useEditor({
         extensions: [
             StarterKit,
             Placeholder.configure({
-                placeholder,
+                placeholder: resolvedPlaceholder,
             }),
         ],
         content: content,

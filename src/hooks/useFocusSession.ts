@@ -1,5 +1,6 @@
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { Task } from '../types';
+import { useFocusContext } from '../context/FocusSessionContext';
 
 export type SessionState = 'idle' | 'work' | 'shortBreak' | 'longBreak';
 
@@ -20,117 +21,103 @@ interface UseFocusSessionProps {
 }
 
 export const useFocusSession = ({ activeTask, settings, handlers }: UseFocusSessionProps) => {
-    const { startTask, stopTask, updateTaskDetails, playCompleteSound } = handlers;
+    // We now rely on SessionContext for the source of truth
+    const {
+        timeLeft,
+        isPaused,
+        activeSession,
+        startSession,
+        pauseSession,
+        resumeSession,
+        stopSession,
+        updateSessionConfig
+    } = useFocusContext();
 
-    const [sessionState, setSessionState] = useState<SessionState>('idle');
+    const { playCompleteSound } = handlers;
+
     const [showNewSetPrompt, setShowNewSetPrompt] = useState(false);
 
-    // --- Time Calculation Logic ---
-    const [, forceUpdate] = useState(0);
+    // Derive Session State purely for UI compatibility
+    // In future, SessionContext should own this 'mode' (work/break)
+    const [localSessionState, setLocalSessionState] = useState<SessionState>('idle');
 
+    // Sync Local State with Context
     useEffect(() => {
-        if (!activeTask?.isRunning && sessionState === 'idle') return;
+        if (activeSession && !isPaused) {
+            setLocalSessionState('work');
+        } else if (activeSession && isPaused) {
+            setLocalSessionState('idle');
+        } else {
+            setLocalSessionState('idle');
+        }
+    }, [activeSession, isPaused]);
 
-        // Force update for UI counter
-        forceUpdate(n => n + 1);
-        const interval = setInterval(() => forceUpdate(n => n + 1), 1000);
-        return () => clearInterval(interval);
-    }, [activeTask?.isRunning, sessionState]);
-
-    const now = Date.now();
-
-    // Calculate Total Time Spent on Task
-    const totalTimeSpent = useMemo(() => {
-        if (!activeTask) return 0;
-        const currentSession = activeTask.isRunning
-            ? Math.max(0, Math.floor((now - (activeTask.lastStartTime || now)) / 1000))
-            : 0;
-        return activeTask.timeSpent + currentSession;
-    }, [activeTask, now]);
-
-    // Calculate Time Left in Current Set
-    // workDuration is in minutes, convert to seconds
-    const currentOffset = activeTask?.focusOffset || 0;
-    const timeLeft = Math.max(0, (settings.workDuration * 60) - (totalTimeSpent - currentOffset));
-
-    // --- Auto-Stop Logic ---
+    // --- Completion Logic ---
     useEffect(() => {
-        if (sessionState === 'work' && timeLeft === 0 && activeTask?.isRunning) {
-            // Session Complete
-            stopTask(activeTask.id);
+        // If timeLeft hits 0 and we were working
+        if (activeSession && timeLeft === 0 && !isPaused) {
             playCompleteSound();
             setShowNewSetPrompt(true);
-            setSessionState('idle');
+            setLocalSessionState('idle');
+            // We should prob stop/pause the session in context to stop the tick
+            pauseSession();
         }
-    }, [timeLeft, sessionState, activeTask, stopTask, playCompleteSound]);
+    }, [timeLeft, isPaused, activeSession, playCompleteSound, pauseSession]);
 
-    // --- Initialization Logic ---
-    // Check overtime on mount / task change
-    useEffect(() => {
-        if (!activeTask) return;
-
-        // If we load a task and we are already past the set duration
-        const offset = activeTask.focusOffset || 0;
-        const spentInSet = totalTimeSpent - offset;
-        const _timeLeft = Math.max(0, (settings.workDuration * 60) - spentInSet);
-
-        if (_timeLeft === 0 && totalTimeSpent > 0 && !showNewSetPrompt) {
-            setShowNewSetPrompt(true);
-        }
-    }, [activeTask?.id]); // Only check when switching to a new task
 
     // --- Actions ---
 
     const startNewSet = useCallback(() => {
         if (!activeTask) return;
 
-        // "Commit" the current time as the new offset
-        updateTaskDetails({
-            ...activeTask,
-            focusOffset: totalTimeSpent
+        // Start a fresh session via Context
+        startSession(activeTask.id, {
+            workDuration: settings.workDuration,
+            shortBreak: settings.shortBreak,
+            longBreak: settings.longBreak
         });
 
-        setSessionState('work');
         setShowNewSetPrompt(false);
-        startTask(activeTask.id);
-    }, [activeTask, totalTimeSpent, updateTaskDetails, startTask]);
+    }, [activeTask, settings, startSession]);
 
     const toggleTimer = useCallback(() => {
         if (!activeTask) return;
 
-        if (sessionState === 'idle' || !activeTask.isRunning) {
-            // Start
-            if (timeLeft === 0) {
-                // If 0, it means we finished previous set. 
-                // We should probably start a new set automatically?
-                // Logic in View was: handleStartNewSet()
-                startNewSet();
-            } else {
-                setSessionState('work');
-                startTask(activeTask.id);
-            }
+        if (!activeSession) {
+            // Start fresh
+            startNewSet();
         } else {
-            // Pause
-            stopTask(activeTask.id);
-            setSessionState('idle');
+            // Toggle
+            if (isPaused) {
+                resumeSession();
+            } else {
+                pauseSession();
+            }
         }
-    }, [activeTask, sessionState, timeLeft, startTask, stopTask, startNewSet]);
+    }, [activeTask, activeSession, isPaused, startNewSet, resumeSession, pauseSession]);
 
     const resetSession = useCallback(() => {
-        setSessionState('idle');
+        stopSession();
+        setLocalSessionState('idle');
         setShowNewSetPrompt(false);
-    }, []);
+    }, [stopSession]);
+
+    // Calculate total time strictly for display if needed, 
+    // but the UI should rely on Task.cachedTotalTime for "Total" (V2 Source of Truth)
+    const totalTimeSpent = activeTask?.cachedTotalTime || 0;
 
     return {
-        sessionState,
-        setSessionState, // Expose for manual overrides like breaks
+        sessionState: localSessionState,
+        setSessionState: setLocalSessionState,
         showNewSetPrompt,
         setShowNewSetPrompt,
-        timeLeft,
-        totalTimeSpent,
-        isTimerRunning: activeTask?.isRunning || false,
+        timeLeft,             // From Context
+        totalTimeSpent,       // From Task Data
+        isTimerRunning: !isPaused && !!activeSession,
         toggleTimer,
         startNewSet,
-        resetSession
+        resetSession,
+        stopSession, // Expose for manual stops (Complete/Skip)
+        updateSessionConfig
     };
 };

@@ -34,10 +34,14 @@ export default {
         bg: {
           main: 'var(--bg-main)',
           surface: 'var(--bg-surface)',
+          subtle: 'var(--bg-subtle)', // Added
+          inverse: 'var(--bg-inverse)', // Added
         },
         text: {
           primary: 'var(--text-primary)',
           secondary: 'var(--text-secondary)',
+          inverse: 'var(--text-inverse)', // Added
+          tertiary: 'var(--ui-disabled)', // Map tertiary to disabled color for now or add specific token
         },
         border: {
           DEFAULT: 'var(--border-color)',
@@ -55,14 +59,33 @@ export default {
           success: 'var(--status-success)',
           error: 'var(--status-error)',
           warning: 'var(--status-warning)',
+          info: 'var(--status-info)', // Added
         },
         ui: {
           disabled: 'var(--ui-disabled)',
         }
       },
-      borderRadius: {
-        'card': '1.5rem', // 24px - for large containers
-        'input': '0.75rem', // 12px - for inputs and list items
+      'card': '1.5rem', // 24px - for large containers
+      'input': '0.75rem', // 12px - for inputs and list items
+
+      zIndex: {
+        'overlay': '60',
+        'modal': '70',
+        'popover': '80',
+        'toast': '90',
+      },
+      width: {
+        'sidebar-focus': '400px',
+      },
+      spacing: {
+        'sidebar-focus': '400px',
+      },
+      boxShadow: {
+        'glow': '0 0 20px -5px var(--shadow-color)',
+        'glow-lg': '0 0 30px -10px var(--shadow-color)',
+      },
+      transitionTimingFunction: {
+        'spring': 'cubic-bezier(0.16, 1, 0.3, 1)',
       },
       keyframes: {
         slideIn: {

@@ -31,19 +31,20 @@ export const FocusSettingsModal: React.FC<FocusSettingsModalProps> = ({ isOpen, 
                             <button
                                 key={m}
                                 onClick={() => onUpdateSettings({ ...settings, workDuration: m })}
-                                className={`p-4 rounded-xl border font-bold text-lg transition-all ${settings.workDuration === m ? 'bg-brand border-brand text-white shadow-lg shadow-brand/20' : 'bg-bg-surface border-border hover:border-brand/50 text-text-secondary'}`}
+                                className={`p-4 rounded-xl border font-bold text-lg transition-all ${settings.workDuration === m ? 'bg-brand border-brand text-white shadow-glow' : 'bg-bg-surface border-border hover:border-brand/50 text-text-secondary'}`}
+                                style={settings.workDuration === m ? { '--shadow-color': 'var(--brand-primary)' } as React.CSSProperties : {}}
                             >
-                                {m} <span className="text-xs font-normal opacity-60 ml-1">min</span>
+                                {m} <span className="text-xs font-normal opacity-60 ml-1">{t('common.minutes_short')}</span>
                             </button>
                         ))}
                     </div>
                 </section>
 
-                {/* Auto-Start (Example of expansion) */}
+                {/* Auto-Start */}
                 <section className="flex items-center justify-between p-4 rounded-xl bg-bg-surface/50 border border-border">
                     <div className="space-y-1">
-                        <Text className="text-text-primary font-medium">{t('focus.auto_start_next') || "Auto-start Next Task"}</Text>
-                        <Text className="text-xs text-text-secondary">Automatically start timer when switching tasks</Text>
+                        <Text className="text-text-primary font-medium">{t('focus.auto_start_next')}</Text>
+                        <Text className="text-xs text-text-secondary">{t('focus.auto_start_next_desc')}</Text>
                     </div>
                     <button
                         onClick={() => onUpdateSettings({ ...settings, autoStartNext: !settings.autoStartNext })}

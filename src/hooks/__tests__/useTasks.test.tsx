@@ -8,8 +8,8 @@ const mockStartTimer = vi.fn();
 const mockStopTimer = vi.fn();
 const mockActiveTimers = {};
 
-vi.mock('../../context/TimerContext', () => ({
-    useTimer: () => ({
+vi.mock('../../context/ActiveTimerContext', () => ({
+    useActiveTimer: () => ({
         startTimer: mockStartTimer,
         stopTimer: mockStopTimer,
         activeTimers: mockActiveTimers
@@ -72,7 +72,7 @@ describe('useTasks Hook', () => {
 
         // Check time accumulation (approximate due to test execution time, but with setSystemTime it should be exact if logic uses Date.now())
         // Our logic: sessionTime = (now - lastStartTime) / 1000
-        expect(result.current.tasks[0].timeSpent).toBe(5);
+        expect(result.current.tasks[0].cachedTotalTime).toBe(5);
 
         vi.useRealTimers();
 

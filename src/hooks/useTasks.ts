@@ -2,20 +2,19 @@ import { useCallback, useEffect, useState } from 'react';
 import { differenceInSeconds, parseISO } from 'date-fns';
 import { Task } from '../types';
 import { useStorage } from '../context/StorageContext';
+import { TimeLedger } from '../services/storage/TimeLedger';
+import { FinalMigration } from '../services/migration/FinalMigration';
 
-// Helper to calculate session time and update task state
+// Helper to update task state without touching time (Time is now Log-based)
 const createStoppedTask = (task: Task): Task => {
-    const now = Date.now();
-    const sessionTime = Math.floor((now - (task.lastStartTime || now)) / 1000);
     return {
         ...task,
         isRunning: false,
-        timeSpent: task.timeSpent + sessionTime,
-        savedTime: (task.savedTime || 0) + sessionTime
+        // timeSpent is deprecated, we don't update it anymore.
+        // cachedTotalTime will be updated via Repository subscription.
     };
 };
 
-// Define side-effect interfaces
 interface TaskCallbacks {
     onStart?: (id: string) => void;
     onStop?: (id: string) => void;
@@ -27,13 +26,25 @@ export const useTasks = ({ onStart, onStop, checkActiveTimer }: TaskCallbacks = 
     const [tasks, setTasks] = useState<Task[]>([]);
     const [isLoading, setIsLoading] = useState(true);
 
-    // Initial Load
+    // 1. Initial Load & Hydrate Cache
     useEffect(() => {
         let isMounted = true;
         const loadTasks = async () => {
+            // V2 PURGE: Run migration once to ensure all legacy data is in logs
+            // and 'timeSpent' is removed from storage.
+            await FinalMigration.run();
+
             const loaded = await storage.getItem<Task[]>('tasks');
             if (isMounted) {
-                if (loaded) setTasks(loaded);
+                if (loaded) {
+                    // Hydrate cache from Repo
+                    // Note: 'timeSpent' is gone now. cachedTotalTime comes purely from Logs.
+                    const hydrated = loaded.map(t => ({
+                        ...t,
+                        cachedTotalTime: TimeLedger.getAggregatedTime(t.id)
+                    }));
+                    setTasks(hydrated);
+                }
                 setIsLoading(false);
             }
         };
@@ -41,7 +52,18 @@ export const useTasks = ({ onStart, onStop, checkActiveTimer }: TaskCallbacks = 
         return () => { isMounted = false; };
     }, [storage]);
 
-    // Sync tasks with active timers on mount (after load)
+    // 2. Subscribe to TimeLog updates (Auto-Refresh)
+    useEffect(() => {
+        const unsubscribe = TimeLedger.subscribe(() => {
+            setTasks(prev => prev.map(t => ({
+                ...t,
+                cachedTotalTime: TimeLedger.getAggregatedTime(t.id)
+            })));
+        });
+        return unsubscribe;
+    }, []);
+
+    // 3. Sync with Active Timers (Legacy / UI Safety)
     useEffect(() => {
         if (tasks.length > 0 && checkActiveTimer && onStart) {
             tasks.forEach(task => {
@@ -51,7 +73,7 @@ export const useTasks = ({ onStart, onStop, checkActiveTimer }: TaskCallbacks = 
             });
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [tasks.length]); // Check once when tasks are loaded
+    }, [tasks.length]);
 
     const addTask = useCallback(async (title: string, catId: string | number, autoStart = false) => {
         const newId = crypto.randomUUID();
@@ -60,7 +82,7 @@ export const useTasks = ({ onStart, onStop, checkActiveTimer }: TaskCallbacks = 
             title,
             categoryId: catId ? String(catId) : null,
             description: '',
-            timeSpent: 0,
+            cachedTotalTime: 0,
             savedTime: 0,
             lastStartTime: autoStart ? Date.now() : undefined,
             isRunning: autoStart,
@@ -70,28 +92,22 @@ export const useTasks = ({ onStart, onStop, checkActiveTimer }: TaskCallbacks = 
             subtasks: []
         };
 
-        // Handle auto-start side effects
         if (autoStart) {
-            // Stop other running tasks
             const tasksToStop = tasks.filter(t => t.isRunning);
             tasksToStop.forEach(t => onStop?.(t.id));
 
-            // Optimistic update
             setTasks(prev => {
                 const stopped = prev.map(t => t.isRunning ? createStoppedTask(t) : t);
                 return [newTask, ...stopped];
             });
 
-            // Persist stops
             await Promise.all(tasksToStop.map(t => storage.saveTask(createStoppedTask(t))));
             onStart?.(newId);
         } else {
             setTasks(prev => [newTask, ...prev]);
         }
 
-        // Persist new task
         await storage.saveTask(newTask);
-
         return newId;
     }, [tasks, onStart, onStop, storage]);
 
@@ -100,18 +116,15 @@ export const useTasks = ({ onStart, onStop, checkActiveTimer }: TaskCallbacks = 
         if (!task) return;
 
         if (task.isRunning) {
-            // --- STOPPING ---
+            // STOP
             onStop?.(id);
             const stoppedTask = createStoppedTask(task);
-
             setTasks(prev => prev.map(t => t.id === id ? stoppedTask : t));
             await storage.saveTask(stoppedTask);
         } else {
-            // --- STARTING ---
-            // Stop others
+            // START
             const tasksToStop = tasks.filter(t => t.isRunning && t.id !== id);
             tasksToStop.forEach(t => onStop?.(t.id));
-
             onStart?.(id);
 
             const startedTask = { ...task, isRunning: true, lastStartTime: Date.now() };
@@ -122,7 +135,6 @@ export const useTasks = ({ onStart, onStop, checkActiveTimer }: TaskCallbacks = 
                 return t;
             }));
 
-            // Persist all changes
             await Promise.all([
                 storage.saveTask(startedTask),
                 ...tasksToStop.map(t => storage.saveTask(createStoppedTask(t)))
@@ -134,10 +146,8 @@ export const useTasks = ({ onStart, onStop, checkActiveTimer }: TaskCallbacks = 
         const task = tasks.find(t => t.id === id);
         if (!task || task.isRunning) return;
 
-        // Stop others
         const tasksToStop = tasks.filter(t => t.isRunning);
         tasksToStop.forEach(t => onStop?.(t.id));
-
         onStart?.(id);
 
         const startedTask = { ...task, isRunning: true, lastStartTime: Date.now() };
@@ -160,7 +170,6 @@ export const useTasks = ({ onStart, onStop, checkActiveTimer }: TaskCallbacks = 
 
         onStop?.(id);
         const stoppedTask = createStoppedTask(task);
-
         setTasks(prev => prev.map(t => t.id === id ? stoppedTask : t));
         await storage.saveTask(stoppedTask);
     }, [tasks, onStop, storage]);
@@ -168,9 +177,10 @@ export const useTasks = ({ onStart, onStop, checkActiveTimer }: TaskCallbacks = 
     const deleteTask = async (id: string) => {
         const task = tasks.find(t => t.id === id);
         if (task?.isRunning) onStop?.(id);
-
         setTasks(p => p.filter(t => t.id !== id));
         await storage.deleteTask(id);
+        // Also clean up logs
+        TimeLedger.deleteLogsForTask(id);
     };
 
     const toggleComplete = async (id: string) => {
@@ -193,26 +203,39 @@ export const useTasks = ({ onStart, onStop, checkActiveTimer }: TaskCallbacks = 
         await storage.saveTask(updatedTask);
     };
 
+    // V2: Handle Updates (Manual Edits) via Delta Logs
     const updateTaskDetails = async (updatedTask: Task) => {
-        // We need to calculate newTimeSpent logic here if logic demands it, 
-        // but it seems the component passing updatedTask might have done it?
-        // Checking original: The logic WAS in the hook. Copying it back.
-
         const original = tasks.find(t => t.id === updatedTask.id);
         if (!original) return;
 
-        let newTimeSpent = updatedTask.timeSpent;
-        const datesChanged = original.createdAt !== updatedTask.createdAt || original.completedAt !== updatedTask.completedAt;
-
-        if (datesChanged && updatedTask.completedAt && updatedTask.createdAt) {
-            const start = parseISO(updatedTask.createdAt);
-            const end = parseISO(updatedTask.completedAt);
-            const diff = differenceInSeconds(end, start);
-            newTimeSpent = diff > 0 ? diff : 0;
+        // Detect Time Change (Manual Edit in UI)
+        // We compare cachedTotalTime because the UI updates that field for display
+        if (updatedTask.cachedTotalTime !== original.cachedTotalTime) {
+            const delta = updatedTask.cachedTotalTime - original.cachedTotalTime;
+            if (delta !== 0) {
+                TimeLedger.saveLog({
+                    id: crypto.randomUUID(),
+                    taskId: updatedTask.id,
+                    startTime: new Date().toISOString(),
+                    duration: delta,
+                    type: 'manual',
+                    note: 'Manual Adjustment'
+                });
+                // We let the subscription callback update the task's cachedTotalTime
+            }
         }
 
-        const finalTask = { ...updatedTask, timeSpent: newTimeSpent };
+        // We still save other fields (title, desc)
+        // But reset timeSpent to original or just ignore it in DB?
+        // The DB 'tasks' table still has 'timeSpent' column. We should probably keep it synced for now
+        // to avoid confusion if we rollback, but ideally it's ignored.
+        // Let's explicitly NOT update timeSpent in the Task Object sent to storage, 
+        // to prevent overwriting the source of truth with stale data?
+        // Actually, for safety, let's allow it but know it's deprecated.
 
+        const finalTask = { ...updatedTask };
+
+        // Optimistic UI update (Subscription will overwrite this eventually)
         setTasks(prev => prev.map(t => t.id === updatedTask.id ? finalTask : t));
         await storage.saveTask(finalTask);
     };
@@ -222,15 +245,13 @@ export const useTasks = ({ onStart, onStop, checkActiveTimer }: TaskCallbacks = 
             if (prev.some(t => t.id === task.id)) return prev;
             return [task, ...prev];
         });
-        // Check if it already exists to avoid overwrite? 
-        // Logic says "restore", so we likely want to save it.
         await storage.saveTask(task);
     };
 
     return {
         isLoading,
         tasks,
-        setTasks, // exposing setTasks might be dangerous now if used directly to bulk update
+        setTasks,
         addTask,
         toggleTimer,
         startTask,
@@ -241,4 +262,5 @@ export const useTasks = ({ onStart, onStop, checkActiveTimer }: TaskCallbacks = 
         restoreTask
     };
 };
+
 

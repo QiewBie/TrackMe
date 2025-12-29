@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { useTimer } from '../context/TimerContext';
+import { useActiveTimer } from '../context/ActiveTimerContext';
 
 /**
  * Updates the site favicon dynamically based on timer state.
@@ -7,7 +7,7 @@ import { useTimer } from '../context/TimerContext';
  * - Running: Red Pause Icon (active)
  */
 export const useDynamicFavicon = () => {
-    const { activeTimers } = useTimer();
+    const { activeTimers } = useActiveTimer();
     const isRunning = Object.keys(activeTimers).length > 0;
 
     useEffect(() => {

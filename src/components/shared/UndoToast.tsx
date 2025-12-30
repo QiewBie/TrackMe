@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { RotateCcw, X } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 interface UndoToastProps {
     onUndo: () => void;
@@ -7,7 +8,9 @@ interface UndoToastProps {
     message?: string;
 }
 
-const UndoToast: React.FC<UndoToastProps> = ({ onUndo, onClose, message = "Завдання видалено" }) => {
+const UndoToast = ({ onUndo, onClose, message }: UndoToastProps) => {
+    const { t } = useTranslation();
+    const displayMessage = message || t('common.task_deleted');
     const [progress, setProgress] = useState(100);
 
     // Timer Logic
@@ -46,14 +49,14 @@ const UndoToast: React.FC<UndoToastProps> = ({ onUndo, onClose, message = "За�
                     style={{ width: `${progress}%` }}
                 />
 
-                <span className="font-bold text-sm flex-1 truncate">{message}</span>
+                <span className="font-bold text-sm flex-1 truncate">{displayMessage}</span>
 
                 <button
                     onClick={onUndo}
                     className="flex items-center gap-2 px-3 py-1.5 bg-bg-main rounded-lg hover:bg-bg-subtle transition-colors text-xs font-bold whitespace-nowrap active:scale-95 text-brand-primary"
                 >
                     <RotateCcw size={14} />
-                    Відновити
+                    {t('common.undo')}
                 </button>
 
                 <button onClick={onClose} className="p-1 rounded-md hover:bg-bg-main text-ui-disabled hover:text-text-primary transition-colors active:scale-90">

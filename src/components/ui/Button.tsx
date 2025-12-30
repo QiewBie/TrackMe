@@ -1,10 +1,11 @@
-import React, { memo } from 'react';
+import * as React from 'react';
+import { memo } from 'react';
 import { clsx } from 'clsx';
 import { LucideIcon } from 'lucide-react';
 
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
     variant?: 'primary' | 'secondary' | 'danger' | 'menu' | 'menuActive' | 'icon' | 'ghost'; // Added ghost
-    size?: 'sm' | 'md' | 'lg';
+    size?: 'sm' | 'md' | 'lg' | 'icon';
     icon?: LucideIcon;
     children?: React.ReactNode;
 }
@@ -16,7 +17,8 @@ const Button: React.FC<ButtonProps> = memo(({ children, onClick, variant = 'prim
     const sizes: Record<string, string> = {
         sm: "px-3 py-1.5 text-xs",
         md: "px-4 py-2.5 text-sm",
-        lg: "px-6 py-3.5 text-base"
+        lg: "px-6 py-3.5 text-base",
+        icon: "p-2"
     };
 
     const variants: Record<string, string> = {

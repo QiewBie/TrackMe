@@ -2,15 +2,15 @@ import * as React from 'react';
 import { forwardRef } from 'react';
 import { clsx } from 'clsx';
 
-interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
+interface TextareaProps extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {
     label?: string;
     error?: string;
     containerClassName?: string;
     variant?: 'default' | 'ghost';
 }
 
-const Input = forwardRef<HTMLInputElement, InputProps>(({ className, label, error, containerClassName, variant = 'default', ...props }, ref) => {
-    const baseStyles = "w-full outline-none transition-all font-medium placeholder-text-tertiary text-text-primary disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-ui-disabled/10";
+const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(({ className, label, error, containerClassName, variant = 'default', ...props }, ref) => {
+    const baseStyles = "w-full outline-none transition-all font-medium placeholder-text-tertiary text-text-primary disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-ui-disabled/10 custom-scrollbar resize-none";
 
     const variants = {
         default: "bg-bg-surface border rounded-xl px-4 py-3 focus:ring-2 focus:ring-brand-primary/20 focus:bg-bg-surface",
@@ -28,7 +28,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(({ className, label, erro
                     {label}
                 </label>
             )}
-            <input
+            <textarea
                 ref={ref}
                 className={clsx(
                     baseStyles,
@@ -45,6 +45,6 @@ const Input = forwardRef<HTMLInputElement, InputProps>(({ className, label, erro
     );
 });
 
-Input.displayName = 'Input';
+Textarea.displayName = 'Textarea';
 
-export default Input;
+export default Textarea;

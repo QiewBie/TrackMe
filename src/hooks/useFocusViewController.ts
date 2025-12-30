@@ -57,10 +57,28 @@ export const useFocusViewController = () => {
         if (resolvedContext.type === 'task') return resolvedContext.data as Task;
         if (resolvedContext.type === 'playlist') {
             const p = resolvedContext.data as typeof playlists[0];
-            return tasks.find(t => p.taskIds.includes(t.id) && !t.completed) || tasks.find(t => p.taskIds.includes(t.id));
+            // Fix: Return undefined if all tasks are completed. Do NOT fallback to first task.
+            return tasks.find(t => p.taskIds.includes(t.id) && !t.completed) || undefined;
         }
-        // Fallback Logic: Running Task -> Last Active Task -> First Incomplete Task in Queue? (Maybe too aggressive)
-        return tasks.find(t => t.isRunning) || (lastActiveId ? tasks.find(t => t.id === lastActiveId) : undefined);
+
+        // Fallback Logic: Running Task -> Last Active Task -> First Incomplete Task in Queue?
+        const candidate = tasks.find(t => t.isRunning) || (lastActiveId ? tasks.find(t => t.id === lastActiveId) : undefined);
+
+        // CRITICAL FIX: If we have an active playlist (from context), we MUST NOT select a task 
+        // that is completed, or one that is not in the playlist (if we want strict scope).
+        // Check if candidate matches active playlist logic
+        if (activePlaylistId && candidate) {
+            const p = playlists.find(pl => pl.id === activePlaylistId);
+            if (p) {
+                // If the candidate task is IN the playlist but COMPLETED, discard it to show "All Done".
+                if (p.taskIds.includes(candidate.id) && candidate.completed) {
+                    // Try to find ANY incomplete task in this playlist instead
+                    return tasks.find(t => p.taskIds.includes(t.id) && !t.completed) || undefined;
+                }
+            }
+        }
+
+        return candidate;
     }, [resolvedContext, tasks, lastActiveId]);
 
     // Persist active task
@@ -73,9 +91,9 @@ export const useFocusViewController = () => {
 
     const activePlaylist = useMemo(() => {
         if (resolvedContext.type === 'playlist') return resolvedContext.data as typeof playlists[0];
-        if (activePlaylistId) return playlists.find(p => p.id === activePlaylistId) || null;
-        if (activeTask) return playlists.find(p => p.taskIds.includes(activeTask.id)) || null;
-        return null;
+        if (activePlaylistId) return playlists.find(p => p.id === activePlaylistId) || undefined;
+        if (activeTask) return playlists.find(p => p.taskIds.includes(activeTask.id)) || undefined;
+        return undefined;
     }, [resolvedContext, activePlaylistId, playlists, activeTask]);
 
     // --- Session Hydration ---
@@ -112,7 +130,15 @@ export const useFocusViewController = () => {
     const queue = useMemo(() => {
         // Priority 1: Explicit Session Queue
         if (sessionQueue && sessionQueue.length > 0) {
-            return sessionQueue.map(id => tasks.find(t => t.id === id)).filter((t): t is Task => !!t);
+            // FIX: Filter to ensure tasks actually exist (handles deletion)
+            // AND if there is an active playlist, restrict to its taskIds (strict sync)
+            return sessionQueue
+                .map(id => tasks.find(t => t.id === id))
+                .filter((t): t is Task => {
+                    if (!t) return false;
+                    if (activePlaylist && !activePlaylist.taskIds.includes(t.id)) return false; // Strict Playlist Sync
+                    return true;
+                });
         }
         // Priority 2: Active Playlist
         if (activePlaylist) {

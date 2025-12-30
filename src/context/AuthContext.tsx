@@ -1,4 +1,5 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import * as React from 'react';
+import { createContext, useContext, useState, useEffect } from 'react';
 import { User } from '../types';
 import { authService, mapFirebaseUser } from '../services/auth/firebaseAuth';
 import { auth } from '../lib/firebase';
@@ -17,7 +18,7 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }: { children: React.ReactNode }) => {
     const [user, setUser] = useState<User | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [isGuest, setIsGuest] = useState(false);
@@ -48,8 +49,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setIsLoading(true);
         try {
             await authService.loginWithGoogle();
-        } catch (error) {
-            console.error(error);
+        } catch (error: any) {
+            if (error?.code !== 'auth/popup-closed-by-user') {
+                console.error("Login failed:", error);
+            } else {
+                console.log("Login popup closed by user.");
+            }
         } finally {
             setIsLoading(false);
         }

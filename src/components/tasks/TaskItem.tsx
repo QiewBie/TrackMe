@@ -1,8 +1,10 @@
-import React, { memo } from 'react';
+import * as React from 'react';
+import { memo } from 'react';
 import { clsx } from 'clsx';
 import { CheckCircle, Play, Pause, Edit3, Trash2, CheckSquare } from 'lucide-react';
+import Button from '../ui/Button';
 import { useFocusContext } from '../../context/FocusSessionContext';
-import TimerDisplay from './TimerDisplay';
+import TaskTimerWidget from './TaskTimerWidget';
 import { Task, Category } from '../../types';
 import { useTranslation } from 'react-i18next';
 
@@ -28,9 +30,9 @@ const TaskItem: React.FC<TaskItemProps> = memo(({ task, categories, onToggleComp
         <div
             style={style}
             className={clsx(
-                "group relative flex flex-col sm:flex-row items-center p-4 bg-bg-surface rounded-2xl border-2 transition-all duration-300 gap-3 sm:gap-0",
+                "group relative flex flex-col sm:flex-row items-center p-4 bg-bg-surface rounded-2xl border transition-all duration-300 gap-3 sm:gap-0",
                 task.completed
-                    ? "border-dashed border-status-success/30 bg-status-success/5"
+                    ? "border-transparent bg-status-success/5"
                     : (isTimerActive
                         ? "border-amber-500/50 shadow-[0_0_30px_-5px_rgba(245,158,11,0.3)] scale-[1.01] bg-amber-50/10 dark:bg-amber-900/10"
                         : "border-border hover:border-brand-primary hover:shadow-card")
@@ -50,7 +52,7 @@ const TaskItem: React.FC<TaskItemProps> = memo(({ task, categories, onToggleComp
                             : "border-border-subtle group-hover:border-brand-primary hover:bg-brand-primary/10"
                     )}>
                         <div className={clsx(
-                            "w-3 h-3 rounded-full bg-white transition-transform duration-300",
+                            "w-3 h-3 rounded-full bg-text-inverse transition-transform duration-300",
                             task.completed ? "scale-100 opacity-100" : "scale-0 opacity-0 bg-brand-primary group-active:scale-75 group-active:opacity-50"
                         )} />
                     </div>
@@ -94,7 +96,7 @@ const TaskItem: React.FC<TaskItemProps> = memo(({ task, categories, onToggleComp
 
             {/* Right Section: Timer & Actions */}
             <div className="flex items-center justify-between w-full sm:w-auto sm:justify-end gap-2 md:gap-3 pl-9 sm:pl-0 border-t border-border-subtle pt-2 sm:pt-0 sm:border-t-0">
-                <TimerDisplay
+                <TaskTimerWidget
                     task={task}
                     className={clsx("text-base md:text-xl mr-auto sm:mr-2 font-mono tabular-nums",
                         task.completed ? "text-text-secondary" : (isTimerActive ? "text-text-primary" : "text-text-secondary")
@@ -102,23 +104,23 @@ const TaskItem: React.FC<TaskItemProps> = memo(({ task, categories, onToggleComp
                 />
 
                 <div className="flex items-center gap-1">
-                    <button
+                    <Button
+                        variant="icon"
                         onClick={() => onDelete(task)}
-                        className="p-2 text-text-secondary hover:text-status-error hover:bg-status-error/10 rounded-lg transition-colors"
+                        className="text-text-secondary hover:text-status-error hover:bg-status-error/10"
                         title={t('common.delete')}
                         aria-label={t('task_details.delete_task')}
-                    >
-                        <Trash2 size={18} />
-                    </button>
+                        icon={Trash2}
+                    />
 
-                    <button
+                    <Button
+                        variant="icon"
                         onClick={() => onEdit(task)}
-                        className="p-2 text-text-secondary hover:text-brand-primary hover:bg-brand-primary/10 rounded-lg transition-colors"
+                        className="text-text-secondary hover:text-brand-primary hover:bg-brand-primary/10"
                         title={t('tasks.edit')}
                         aria-label={t('tasks.edit')}
-                    >
-                        <Edit3 size={18} />
-                    </button>
+                        icon={Edit3}
+                    />
 
                     {!task.completed && (
                         <button
@@ -136,7 +138,7 @@ const TaskItem: React.FC<TaskItemProps> = memo(({ task, categories, onToggleComp
                     )}
                 </div>
             </div>
-        </div>
+        </div >
     );
 });
 

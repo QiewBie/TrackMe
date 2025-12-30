@@ -1,6 +1,8 @@
-import React, { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react';
+import * as React from 'react';
+import { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react';
 import { Session } from '../types/models';
 import { localStorageAdapter } from '../services/storage/LocalStorageAdapter';
+import { TimeLedger } from '../services/storage/TimeLedger';
 
 // Types
 export interface SessionConfig {
@@ -168,104 +170,158 @@ export const FocusSessionProvider: React.FC<{ children: React.ReactNode }> = ({ 
 
     // 5. Actions
 
-    // Helper to suspend current
-    const suspendCurrent = useCallback(() => {
-        if (activeSession) {
-            const suspended: Session = {
-                ...activeSession,
-                remainingTime: timeLeft,
-                status: 'paused'
-            };
+    // 4. Persistence Helpers
 
-            setSuspendedSessions(prev => {
-                const next = { ...prev, [activeSession.taskId]: suspended };
-                persistSuspended(next);
-                return next;
+    /**
+     * "Smart Suspend":
+     * 1. Saves the time elapsed in this *segment* to TimeLedger (for stats).
+     * 2. Saves the current 'remainingTime' to suspendedSessions (for resume).
+     */
+    const suspendAndLog = useCallback((session: Session, currentTimeLeft: number) => {
+        // Calculate time spent in *this specific active segment*
+        // We rely on the fact that when we started/resumed, we set activeSession.remainingTime
+        // to the correct value (either full duration or resumed value).
+        // So Delta = StartRemaining - EndRemaining.
+
+        const startRemaining = session.remainingTime ?? (session.config?.duration ? session.config.duration * 60 : 0);
+        const delta = Math.max(0, startRemaining - currentTimeLeft);
+
+        // A. Log the Delta (so Dashboard updates immediately)
+        if (delta > 0) {
+            TimeLedger.saveLog({
+                id: crypto.randomUUID(),
+                taskId: session.taskId,
+                startTime: session.startTime, // Technically this is start of segment. Ideally should be Now - Delta? 
+                // But reusing session.startTime is "okay" if we just care about aggregation.
+                // Better: we don't care about precise timestamp of log, just the duration.
+                duration: delta,
+                type: 'auto',
+                note: 'Session Paused/Switched'
             });
         }
-    }, [activeSession, timeLeft]);
 
-    const startSession = useCallback((taskId: string, config?: Partial<SessionConfig>) => {
-        // 1. Suspend current if exists
-        suspendCurrent();
-
-        // 2. Check if we have a suspended session for this task? 
-        // Logic: if startSession is called explicitly, users usually want a NEW session?
-        // Or should we resume? 
-        // Convention: startSession = FRESH start or RESUME if exact same?
-        // Let's assume startSession forces fresh, switchTask uses resume.
-
-        const finalConfig = { ...sessionConfig, ...config };
-        const durationSec = finalConfig.workDuration * 60;
-
-        const newSession: Session = {
-            id: crypto.randomUUID(),
-            taskId,
-            startTime: new Date().toISOString(),
-            duration: 0,
-            remainingTime: durationSec,
-            status: 'active',
-            config: {
-                mode: 'focus',
-                duration: finalConfig.workDuration
-            }
+        // B. Update Suspended State (for Resume)
+        const suspended: Session = {
+            ...session,
+            remainingTime: currentTimeLeft,
+            status: 'paused',
+            // Update startTime to now so next resume treats it as a new segment? 
+            // Or keep original start? 
+            // Better: update 'remainingTime' is enough for our logic.
         };
 
-        setActiveSession(newSession);
-        setTimeLeft(durationSec);
-        setIsPaused(false);
-
-        // Clean up from suspended if it was there (since we started fresh)
         setSuspendedSessions(prev => {
-            const next = { ...prev };
-            delete next[taskId];
+            const next = { ...prev, [session.taskId]: suspended };
             persistSuspended(next);
             return next;
         });
-    }, [suspendCurrent]);
 
-    const switchTask = useCallback((taskId: string) => {
-        // 1. Check if we differ
-        if (activeSession?.taskId === taskId) return;
+    }, []);
 
-        // 2. Suspend current
+
+    const startSession = useCallback((taskId: string, config?: Partial<SessionConfig>) => {
+        // 1. Suspend Old (if any)
         if (activeSession) {
-            // Can't use suspendCurrent() easily because of closure staleness if not careful,
-            // but we can inline logic or ensure dependencies.
-            // Let's inline to be safe and atomic.
-
-            const suspended: Session = {
-                ...activeSession,
-                remainingTime: timeLeft,
-                status: 'paused'
-            };
-
-            // We update state later, but need to construct the new object now
-            const newSuspendedMap = { ...suspendedSessions, [activeSession.taskId]: suspended };
-            setSuspendedSessions(newSuspendedMap); // Schedule update
-            persistSuspended(newSuspendedMap);
+            suspendAndLog(activeSession, timeLeft);
         }
 
-        // 3. Try to Load Existing Session for target Task
+        // 2. Start Request
+        // If startSession is called explicitly (e.g. "Play" button on task list), 
+        // we check if we should RESUME or START FRESH.
+        // Convention: If undefined config, assume RESUME preference if exists.
+        // If config is provided (e.g. user changed settings), maybe fresh?
+        // Let's check suspended first.
+
+        setSuspendedSessions(prev => {
+            const existing = prev[taskId];
+
+            // If we found a suspended session and we are NOT forced to overwrite (logic decision)
+            // For now, let's say: generic startSession always resumes if possible unless logic says otherwise?
+            // Actually, usually "Play" on a task with progress means Resume.
+
+            if (existing) {
+                // RESUME
+                // We must ensure its remainingTime is valid.
+                const resumeTime = existing.remainingTime ?? (sessionConfig.workDuration * 60);
+
+                // We need to set activeSession to this existing one.
+                // BUT we need to update its 'startTime' so the log calculation makes sense later 
+                // (though our logic uses remainingTime diff so start doesn't matter much for math, only metadata).
+
+                const resumedSession = {
+                    ...existing,
+                    startTime: new Date().toISOString(),
+                    status: 'active' as const
+                };
+
+                setActiveSession(resumedSession);
+                setTimeLeft(resumeTime);
+                setIsPaused(false);
+
+                // Remove from suspended (moved to active)
+                const next = { ...prev };
+                delete next[taskId];
+                persistSuspended(next);
+                return next;
+            } else {
+                // FRESH START
+                const finalConfig = { ...sessionConfig, ...config };
+                const durationSec = finalConfig.workDuration * 60;
+
+                const newSession: Session = {
+                    id: crypto.randomUUID(),
+                    taskId,
+                    startTime: new Date().toISOString(),
+                    duration: 0,
+                    remainingTime: durationSec,
+                    status: 'active',
+                    config: {
+                        mode: 'focus',
+                        duration: finalConfig.workDuration
+                    }
+                };
+
+                setActiveSession(newSession);
+                setTimeLeft(durationSec);
+                setIsPaused(false);
+                return prev; // No change to suspended map (except we verified it didnt exist)
+            }
+        });
+    }, [activeSession, timeLeft, sessionConfig, suspendAndLog]);
+
+    const switchTask = useCallback((taskId: string) => {
+        if (activeSession?.taskId === taskId) return;
+
+        // 1. Suspend Current
+        if (activeSession) {
+            suspendAndLog(activeSession, timeLeft);
+        }
+
+        // 2. Resume Target or Start New
+        // Logic similar to startSession but we don't start immediately?
+        // switchTask is usually used by FocusView to swap context. 
+        // FocusView mounts and likely calls resumeSession() or checks state.
+
+        // Let's see if we have it suspended
         const existingSession = suspendedSessions[taskId];
 
         if (existingSession) {
-            // RESUME
+            // RESUME (Paused)
             setActiveSession(existingSession);
             setTimeLeft(existingSession.remainingTime || 0);
-            setIsPaused(true); // Auto-pause on switch
+            setIsPaused(true); // Switch usually starts paused? Or should it auto-play?
+            // User asked for "Resume session", so let's keep it paused until they click play?
+            // OR if they clicked "Play" on dashboard, it calls startSession not switchTask.
         } else {
-            // CREATE NEW (Implicit start)
-            // Independent Timer Logic: Always start fresh for new tasks.
+            // NEW (Paused)
             const durationSec = sessionConfig.workDuration * 60;
-
             const newSession: Session = {
                 id: crypto.randomUUID(),
                 taskId,
                 startTime: new Date().toISOString(),
                 duration: 0,
                 remainingTime: durationSec,
-                status: 'paused', // Start paused on switch
+                status: 'paused',
                 config: {
                     mode: 'focus',
                     duration: sessionConfig.workDuration
@@ -276,7 +332,7 @@ export const FocusSessionProvider: React.FC<{ children: React.ReactNode }> = ({ 
             setIsPaused(true);
         }
 
-    }, [activeSession, timeLeft, suspendedSessions, sessionConfig]);
+    }, [activeSession, timeLeft, suspendedSessions, sessionConfig, suspendAndLog]);
 
     // 4. React to Config Changes (Retroactively update fresh sessions)
     useEffect(() => {
@@ -357,14 +413,20 @@ export const FocusSessionProvider: React.FC<{ children: React.ReactNode }> = ({ 
         if (!activeSession) return;
 
         const endTime = new Date().toISOString();
-        const duration = activeSession.config?.duration
-            ? (activeSession.config.duration * 60) - timeLeft
-            : 0;
+
+        // Calculate Delta for valid stats
+        // Same logic as suspendAndLog
+        const startRemaining = activeSession.remainingTime ?? (activeSession.config?.duration ? activeSession.config.duration * 60 : 0);
+        const delta = Math.max(0, startRemaining - timeLeft);
 
         const completedSession: Session = {
             ...activeSession,
             endTime,
-            duration: Math.max(0, duration),
+            duration: delta, // Store only the delta of this segment? Or total? 
+            // The 'Session' object in history tracks a single continuous session (usually).
+            // If we are multi-segment, the history might be confusing.
+            // BUT 'sessionsHistory' is legacy. The real truth is TimeLedger.
+            // Let's store delta here too for consistency.
             status: 'completed',
             remainingTime: 0
         };
@@ -374,6 +436,18 @@ export const FocusSessionProvider: React.FC<{ children: React.ReactNode }> = ({ 
             localStorageAdapter.setItem(SESSIONS_KEY, updated);
             return updated;
         });
+
+        // Save to TimeLedger
+        if (delta > 0) {
+            TimeLedger.saveLog({
+                id: crypto.randomUUID(),
+                taskId: activeSession.taskId,
+                startTime: activeSession.startTime,
+                duration: delta,
+                type: 'auto',
+                note: 'Session Completed'
+            });
+        }
 
         setActiveSession(null);
         setTimeLeft(0);

@@ -1,6 +1,7 @@
-import React, { memo } from 'react';
+import * as React from 'react';
+import { memo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { TimerDisplay } from './TimerDisplay';
+import { FocusTimerDisplay } from './FocusTimerDisplay';
 import { Heading, Text } from '../ui/Typography';
 import { ListMusic } from 'lucide-react';
 import { Task, Category, Playlist } from '../../types';
@@ -51,7 +52,7 @@ export const FocusStage: React.FC<FocusStageProps> = memo(({
                     >
                         {/* Live Timer */}
                         <div className="w-full relative z-20 pointer-events-none">
-                            <TimerDisplay
+                            <FocusTimerDisplay
                                 timeLeft={timeLeft}
                                 isTimerRunning={isTimerRunning}
                             />
@@ -102,7 +103,7 @@ export const FocusStage: React.FC<FocusStageProps> = memo(({
                         className="w-full max-w-2xl flex flex-col items-center gap-8 text-center"
                     >
                         <div className={`w-full relative z-20 grayscale opacity-50 ${!tasksCount ? 'animate-pulse' : ''}`}>
-                            <TimerDisplay
+                            <FocusTimerDisplay
                                 timeLeft={settings.workDuration * 60}
                                 isTimerRunning={false}
                             />

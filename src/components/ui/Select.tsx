@@ -52,7 +52,7 @@ const Select: React.FC<SelectProps> = ({
                 <div className="flex-1 text-left truncate">
                     {renderValue ? renderValue(selectedOption) : (selectedOption?.label || placeholder)}
                 </div>
-                <ChevronDown size={16} className={clsx("text-slate-400 transition-transform", isOpen && "rotate-180")} />
+                <ChevronDown size={16} className={clsx("text-text-secondary transition-transform", isOpen && "rotate-180")} />
             </button>
 
             {isOpen && (

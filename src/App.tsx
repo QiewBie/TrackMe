@@ -129,7 +129,7 @@ const AppContent = () => {
         <Route index element={<PageTransitionWrapper><TaskListWrapper /></PageTransitionWrapper>} />
         <Route path="analytics" element={
           <Suspense fallback={<Loading />}>
-            <PageTransitionWrapper>
+            <PageTransitionWrapper noPadding>
               <AnalyticsWrapper />
             </PageTransitionWrapper>
           </Suspense>

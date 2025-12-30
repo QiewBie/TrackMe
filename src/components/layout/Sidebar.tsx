@@ -1,4 +1,4 @@
-import React from 'react';
+import * as React from 'react';
 import {
     LayoutDashboard, User as UserIcon, Settings,
     Folder, ListMusic, PlayCircle, Sun, Moon, Languages, Zap
@@ -42,8 +42,8 @@ const Sidebar: React.FC<SidebarProps> = ({
 
     return (
         <aside className={clsx(
-            "flex-shrink-0 flex flex-col bg-bg-surface border-r border-border z-[100] transition-all duration-500 ease-[cubic-bezier(0.25,1,0.5,1)] will-change-[width,transform]",
-            "fixed top-0 bottom-16 lg:bottom-0 left-0 lg:static",
+            "flex-shrink-0 flex flex-col bg-bg-surface border-r border-border z-[110] transition-all duration-500 ease-[cubic-bezier(0.25,1,0.5,1)] will-change-[width,transform]",
+            "fixed top-0 bottom-0 left-0 lg:static",
             // Mobile logic
             isMobileMenuOpen ? "translate-x-0 shadow-2xl w-72" : "-translate-x-full w-72",
             // Desktop logic
@@ -64,11 +64,11 @@ const Sidebar: React.FC<SidebarProps> = ({
                         to="/"
                         end
                         onClick={handleNavClick}
-                        className={({ isActive }) => clsx(
-                            "w-full items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-bold transition-all mb-1 hidden lg:flex",
+                        className={({ isActive }: { isActive: boolean }) => clsx(
+                            "w-full items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-bold transition-all mb-1 hidden lg:flex outline-none focus-visible:ring-2 focus-visible:ring-brand-primary/50",
                             isActive
                                 ? "bg-brand-primary text-white shadow-lg shadow-brand-primary/20 translate-x-1"
-                                : "text-text-secondary hover:bg-bg-main hover:text-text-primary"
+                                : "text-text-secondary hover:bg-bg-main hover:text-text-primary active:scale-95 active:bg-bg-subtle"
                         )}
                     >
                         <LayoutDashboard size={20} />
@@ -78,11 +78,11 @@ const Sidebar: React.FC<SidebarProps> = ({
                     <NavLink
                         to="/analytics"
                         onClick={handleNavClick}
-                        className={({ isActive }) => clsx(
-                            "w-full items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-bold transition-all mb-1 hidden lg:flex",
+                        className={({ isActive }: { isActive: boolean }) => clsx(
+                            "w-full items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-bold transition-all mb-1 hidden lg:flex outline-none focus-visible:ring-2 focus-visible:ring-brand-primary/50",
                             isActive
                                 ? "bg-brand-primary text-white shadow-lg shadow-brand-primary/20 translate-x-1"
-                                : "text-text-secondary hover:bg-bg-main hover:text-text-primary"
+                                : "text-text-secondary hover:bg-bg-main hover:text-text-primary active:scale-95 active:bg-bg-subtle"
                         )}
                     >
                         <FolderKanban size={20} />
@@ -143,7 +143,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                 <NavLink
                     to="/playlists"
                     onClick={handleNavClick}
-                    className={({ isActive }) =>
+                    className={({ isActive }: { isActive: boolean }) =>
                         clsx("w-full items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-bold transition-all mb-1 hidden lg:flex",
                             isActive
                                 ? "bg-brand text-white shadow-lg shadow-brand/20 translate-x-1"
@@ -158,7 +158,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                 <NavLink
                     to="/focus"
                     onClick={handleNavClick}
-                    className={({ isActive }) =>
+                    className={({ isActive }: { isActive: boolean }) =>
                         clsx("w-full items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-bold transition-all mb-1 hidden lg:flex group relative overflow-hidden",
                             isActive
                                 ? "text-white shadow-lg shadow-purple-500/30 ring-1 ring-purple-400"
@@ -166,7 +166,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                         )
                     }
                 >
-                    {({ isActive }) => (
+                    {({ isActive }: { isActive: boolean }) => (
                         <>
                             <div className={`transition-all duration-300 relative z-20 ${isActive ? 'scale-110 drop-shadow-md' : 'group-hover:scale-110 group-hover:text-brand-accent'}`}>
                                 <Zap size={20} className={isActive ? 'fill-white text-white' : ''} />
@@ -196,14 +196,14 @@ const Sidebar: React.FC<SidebarProps> = ({
                 <NavLink
                     to="/profile"
                     onClick={handleNavClick}
-                    className={({ isActive }) => clsx(
+                    className={({ isActive }: { isActive: boolean }) => clsx(
                         "w-full items-center gap-3 p-3 rounded-xl border-2 transition-all group relative overflow-hidden hidden lg:flex",
                         isActive
                             ? "bg-brand-subtle border-brand-subtle"
                             : "bg-bg-main hover:bg-bg-surface border-border"
                     )}
                 >
-                    {({ isActive }) => (
+                    {({ isActive }: { isActive: boolean }) => (
                         <>
                             <div className="w-10 h-10 rounded-full bg-gradient-to-br from-brand-primary to-brand-hover flex items-center justify-center text-white font-bold text-sm shrink-0 shadow-md">
                                 {user.avatar ? (

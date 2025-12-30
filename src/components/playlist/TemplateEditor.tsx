@@ -1,8 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import * as React from 'react';
+import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { X, Plus, Sunrise, Sun, Flame, Zap, Clock, Briefcase, Code, Monitor, Database, Cpu, Book, GraduationCap, Coffee, Dumbbell, Heart, Music, Gamepad2, Star } from 'lucide-react';
 import Modal from '../ui/Modal';
 import Button from '../ui/Button';
+import Input from '../ui/Input';
 
 // Configuration
 export const AVAILABLE_ICONS = [
@@ -84,10 +86,11 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = ({ isOpen, onClose,
                         <div className={`p-3 rounded-xl bg-bg-main ${selectedIconItem.color}`}>
                             <selectedIconItem.icon size={24} />
                         </div>
-                        <input
+                        <Input
                             value={title}
                             onChange={e => setTitle(e.target.value)}
-                            className="flex-1 bg-bg-main border border-border rounded-xl px-4 py-3 font-bold text-text-primary focus:ring-2 focus:ring-brand-primary outline-none transition-all"
+                            className="font-bold border-transparent focus:border-brand-primary/50"
+                            containerClassName="flex-1"
                             placeholder={t('playlists.templates.name_placeholder', 'e.g. Morning Routine')}
                         />
                     </div>
@@ -120,11 +123,11 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = ({ isOpen, onClose,
                             ) : (
                                 <div className="space-y-1">
                                     {defaultTasks.map((task, i) => (
-                                        <div key={i} className="flex items-center justify-between p-2 pl-3 rounded-lg hover:bg-bg-surface border border-transparent hover:border-slate-200 dark:hover:border-slate-700 group transition-all">
+                                        <div key={i} className="flex items-center justify-between p-2 pl-3 rounded-lg hover:bg-bg-surface border border-transparent hover:border-border group transition-all">
                                             <span className="text-sm font-medium text-text-primary">{task}</span>
                                             <button
                                                 onClick={() => removeTask(i)}
-                                                className="p-1 text-text-secondary hover:text-status-error opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-all"
+                                                className="p-1 text-text-secondary hover:text-status-error transition-all"
                                             >
                                                 <X size={14} />
                                             </button>
@@ -137,11 +140,12 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = ({ isOpen, onClose,
                         {/* Add Input */}
                         <form onSubmit={handleAddTask} className="border-t border-border p-2 bg-bg-surface">
                             <div className="flex gap-2">
-                                <input
+                                <Input
                                     value={newTaskName}
-                                    onChange={e => setNewTaskName(e.target.value)}
+                                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewTaskName(e.target.value)}
                                     placeholder={t('playlists.templates.add_task_placeholder', 'Add task...')}
-                                    className="flex-1 bg-transparent text-sm px-2 outline-none text-text-primary placeholder-text-secondary"
+                                    className="bg-transparent border-none focus:ring-0 px-2 h-auto py-1 shadow-none"
+                                    containerClassName="flex-1"
                                 />
                                 <button
                                     type="submit"

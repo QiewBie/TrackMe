@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
+import * as React from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { clsx } from 'clsx';
 import {
@@ -9,6 +10,7 @@ import {
 import { uk, enUS } from 'date-fns/locale';
 import { useTranslation } from 'react-i18next';
 import { Calendar as CalendarIcon, ChevronLeft, ChevronRight } from 'lucide-react';
+import Button from '../ui/Button';
 
 interface DateTimePickerProps {
     label?: string;
@@ -106,45 +108,45 @@ const DateTimePicker: React.FC<DateTimePickerProps> = ({ label, value, onChange,
 
     return (
         <div className="relative">
-            {label && <p className="text-xs text-slate-400 mb-2 font-bold uppercase">{label}</p>}
+            {label && <p className="text-xs text-text-secondary mb-2 font-bold uppercase">{label}</p>}
             <button
                 ref={triggerRef}
                 onClick={() => !disabled && setIsOpen(!isOpen)}
                 disabled={disabled}
                 className={clsx(
-                    "w-full flex items-center justify-between bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm outline-none transition-all text-left",
-                    disabled ? "opacity-50 cursor-not-allowed text-slate-400" : "hover:border-blue-400 dark:hover:border-blue-500 text-slate-700 dark:text-slate-200",
-                    isOpen && "ring-2 ring-blue-500 border-transparent"
+                    "w-full flex items-center justify-between bg-bg-surface border border-border rounded-lg px-3 py-2 text-sm outline-none transition-all text-left",
+                    disabled ? "opacity-50 cursor-not-allowed text-text-secondary" : "hover:border-brand-primary text-text-primary",
+                    isOpen && "ring-2 ring-brand-primary border-transparent"
                 )}
             >
                 <span className="flex items-center gap-2">
-                    <CalendarIcon size={16} className="text-slate-400" />
+                    <CalendarIcon size={16} className="text-text-secondary" />
                     {value ? format(parseISO(value), 'd MMM yyyy, HH:mm', { locale: dateLocale }) : '—'}
                 </span>
-                {!disabled && <ChevronRight size={16} className={`text-slate-400 transition-transform ${isOpen ? 'rotate-90' : ''}`} />}
+                {!disabled && <ChevronRight size={16} className={`text-text-secondary transition-transform ${isOpen ? 'rotate-90' : ''}`} />}
             </button>
 
             {isOpen && createPortal(
                 <div
                     ref={popupRef}
-                    className="fixed z-[9999] bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 p-4 w-[320px] animate-pop-in ring-1 ring-black/5"
+                    className="fixed z-[9999] bg-bg-surface rounded-2xl shadow-2xl border border-border p-4 w-[320px] animate-pop-in ring-1 ring-black/5"
                     style={{ top: coords.top, left: coords.left }}
                 >
                     <div className="flex justify-between items-center mb-4">
-                        <button onClick={handlePrevMonth} className="p-1 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg text-slate-500"><ChevronLeft size={20} /></button>
-                        <span className="font-bold text-slate-800 dark:text-white capitalize">
+                        <Button variant="ghost" onClick={handlePrevMonth} className="p-1 h-8 w-8 text-text-secondary hover:bg-bg-main" icon={ChevronLeft} />
+                        <span className="font-bold text-text-primary capitalize">
                             {format(viewDate, 'LLLL yyyy', { locale: dateLocale })}
                         </span>
-                        <button onClick={handleNextMonth} className="p-1 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg text-slate-500"><ChevronRight size={20} /></button>
+                        <Button variant="ghost" onClick={handleNextMonth} className="p-1 h-8 w-8 text-text-secondary hover:bg-bg-main" icon={ChevronRight} />
                     </div>
 
                     <div className="grid grid-cols-7 mb-2">
                         {weekDays.map(d => (
-                            <div key={d} className="text-center text-xs font-bold text-slate-400 py-1 uppercase">{d}</div>
+                            <div key={d} className="text-center text-xs font-bold text-text-secondary py-1 uppercase">{d}</div>
                         ))}
                     </div>
 
-                    <div className="grid grid-cols-7 gap-1 mb-4 border-b border-slate-100 dark:border-slate-800 pb-4">
+                    <div className="grid grid-cols-7 gap-1 mb-4 border-b border-border-subtle pb-4">
                         {days.map(day => {
                             const isSelected = parsedDate && isSameDay(day, parsedDate);
                             const isCurrentMonth = isSameMonth(day, viewDate);
@@ -156,16 +158,16 @@ const DateTimePicker: React.FC<DateTimePickerProps> = ({ label, value, onChange,
                                     onClick={() => handleDayClick(day)}
                                     className={clsx(
                                         "h-9 w-9 rounded-lg flex items-center justify-center text-sm transition-all relative",
-                                        !isCurrentMonth && "text-slate-300 dark:text-slate-700",
+                                        !isCurrentMonth && "text-text-secondary/30",
                                         isSelected
-                                            ? "bg-blue-600 text-white shadow-lg shadow-blue-500/30 font-bold"
-                                            : "hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300",
-                                        isTodayDate && !isSelected && "text-blue-600 font-bold bg-blue-50 dark:bg-blue-900/20"
+                                            ? "bg-brand-primary text-white shadow-lg shadow-brand/30 font-bold"
+                                            : "hover:bg-bg-main text-text-primary",
+                                        isTodayDate && !isSelected && "text-brand-primary font-bold bg-brand-primary/10"
                                     )}
                                 >
                                     {format(day, 'd')}
                                     {isTodayDate && !isSelected && (
-                                        <span className="absolute bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 bg-blue-500 rounded-full"></span>
+                                        <span className="absolute bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 bg-brand-primary rounded-full"></span>
                                     )}
                                 </button>
                             )
@@ -174,15 +176,15 @@ const DateTimePicker: React.FC<DateTimePickerProps> = ({ label, value, onChange,
 
                     <div className="flex gap-2 h-32">
                         <div className="flex-1 flex flex-col">
-                            <span className="text-[10px] font-bold text-slate-400 uppercase mb-1 text-center">{t('common.hours')}</span>
-                            <div className="flex-1 overflow-y-auto custom-scrollbar bg-slate-50 dark:bg-slate-800/50 rounded-lg p-1">
+                            <span className="text-[10px] font-bold text-text-secondary uppercase mb-1 text-center">{t('common.hours')}</span>
+                            <div className="flex-1 overflow-y-auto custom-scrollbar bg-bg-main/50 rounded-lg p-1">
                                 {hours.map(h => (
                                     <button
                                         key={h}
                                         onClick={() => handleTimeChange('hour', h)}
                                         className={clsx(
                                             "w-full text-center py-1 rounded text-sm mb-1 tabular-nums",
-                                            parsedDate?.getHours() === h ? "bg-blue-500 text-white" : "text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700"
+                                            parsedDate?.getHours() === h ? "bg-brand-primary text-white" : "text-text-primary hover:bg-bg-surface"
                                         )}
                                     >
                                         {h.toString().padStart(2, '0')}
@@ -191,15 +193,15 @@ const DateTimePicker: React.FC<DateTimePickerProps> = ({ label, value, onChange,
                             </div>
                         </div>
                         <div className="flex-1 flex flex-col">
-                            <span className="text-[10px] font-bold text-slate-400 uppercase mb-1 text-center">{t('common.minutes')}</span>
-                            <div className="flex-1 overflow-y-auto custom-scrollbar bg-slate-50 dark:bg-slate-800/50 rounded-lg p-1">
+                            <span className="text-[10px] font-bold text-text-secondary uppercase mb-1 text-center">{t('common.minutes')}</span>
+                            <div className="flex-1 overflow-y-auto custom-scrollbar bg-bg-main/50 rounded-lg p-1">
                                 {minutes.map(m => (
                                     <button
                                         key={m}
                                         onClick={() => handleTimeChange('minute', m)}
                                         className={clsx(
                                             "w-full text-center py-1 rounded text-sm mb-1 tabular-nums",
-                                            parsedDate?.getMinutes() === m ? "bg-blue-500 text-white" : "text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700"
+                                            parsedDate?.getMinutes() === m ? "bg-brand-primary text-white" : "text-text-primary hover:bg-bg-surface"
                                         )}
                                     >
                                         {m.toString().padStart(2, '0')}
@@ -209,14 +211,15 @@ const DateTimePicker: React.FC<DateTimePickerProps> = ({ label, value, onChange,
                         </div>
                     </div>
 
-                    <div className="mt-3 pt-3 border-t border-slate-100 dark:border-slate-800 flex justify-center">
-                        <button
+                    <div className="mt-3 pt-3 border-t border-border-subtle flex justify-center">
+                        <Button
+                            variant="ghost"
                             onClick={() => { onChange(new Date().toISOString()); setIsOpen(false); }}
-                            className="text-xs font-bold text-blue-600 hover:text-blue-700 dark:text-blue-400 uppercase tracking-wider"
+                            className="text-xs font-bold text-brand-primary hover:text-brand-primary/80 uppercase tracking-wider h-auto py-2"
                         >
                             {t('common.now')}
-                        </button>
-                    </div>
+                        </Button>
+                    </div>,
                 </div>,
                 document.body
             )}

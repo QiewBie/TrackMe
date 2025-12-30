@@ -29,10 +29,18 @@ A premium, offline-first productivity workspace designed for deep work. Built wi
 *   **Data Portability**: Full JSON Export/Import capabilities (`useDataPersistence`) for backups or device migration.
 *   **Safe Storage**: Sub-collection storage pattern to prevent monolithic data corruption.
 
-### 🎨 Design System
-*   **Semantic Tokens**: Styles use functional names (`bg-brand-primary`, `text-status-error`) rather than raw colors, enabling seamless theming.
-*   **Dark Mode**: First-class support with automatic switching.
-*   **Motion**: Framer Motion integration for smooth page transitions and micro-interactions.
+### 🎨 Design System & Theming
+> Full Specification: [**See STYLE_GUIDE.md**](src/docs/STYLE_GUIDE.md)
+
+*   **Layer System**:
+    *   Canvas (`bg-bg-main`): `#f8fafc` (Light) / `#020617` (Dark).
+    *   Surface (`bg-bg-surface`): `#ffffff` (Light) / `#0f172a` (Dark).
+*   **Tokens**: Functional naming (`bg-brand-primary`, `text-ui-disabled`) ensures automatic theme adaptation.
+*   **Typography**: **Manrope** variable font. Used with strict hierarchy (H1-H4, Body, Caption).
+*   **Z-Index Stack**: Explicit layering model:
+    *   `z-40` (Mobile Sidebar)
+    *   `z-50` (Modals)
+    *   `z-[100+]` (Critical Overlays)
 
 ---
 
@@ -48,7 +56,7 @@ A premium, offline-first productivity workspace designed for deep work. Built wi
 ### Data Flow
 1.  **Session Context**: Manages the active "Live" state (ticking timer).
 2.  **Flush Strategy**: When a user pauses or stops, the session duration is "flushed" to a static `TimeLog`.
-3.  **Repository**: The `TimeLogRepository` writes the log to persistent storage.
+3.  **Ledger**: The `TimeLedger` service handles validation and writes the log to persistent storage (`localStorage`).
 4.  **Reactivity**: Listeners (`TimeLedger.subscribe`) update the UI (analytics, task totals) instantly.
 
 ### Directory Structure
@@ -57,14 +65,14 @@ src/
 ├── components/     # UI Building Blocks
 │   ├── analytics/  # Charts & Stats Widgets
 │   ├── focus/      # Session View & Timer Logic
-│   ├── input/      # Rich Text & Forms
 │   ├── layout/     # Sidebar, Nav, Modals
 │   ├── playlist/   # Playlist Manager & Editors
-│   └── ui/         # Atomic Primitives (Button, Badge, Card)
-├── context/        # Global State (Auth, Session, UI)
+│   └── ui/         # Atomic Primitives (Button, Toggle, Input, Modal)
+├── context/        # Global State (Auth, FocusSession, Task, UI)
 ├── hooks/          # Logic (useFocusSession, useTimeLedger)
 ├── locales/        # i18n JSON files
-├── services/       # Storage Adapters & Repositories
+├── services/       # Core Business Logic
+│   └── storage/    # TimeLedger & Persistence
 ├── types/          # TypeScript Interfaces (Task, TimeLog)
 └── utils/          # Helpers (Formatters, Themes, Backup)
 ```

@@ -43,15 +43,15 @@ const TaskInput: React.FC<TaskInputProps> = ({ categories, onAdd, currentFilter 
                     onChange={e => setTitle(e.target.value)}
                     placeholder={t('tasks.input_placeholder')}
                     variant="ghost"
-                    className="text-lg h-auto py-2 pl-4 md:pl-6"
+                    className="text-sm h-11 py-2.5 pl-4 md:pl-6"
                     // autoFocus removed for mobile/UX safety
                     containerClassName="w-full"
                 />
             </div>
 
-            <div className="flex flex-wrap items-center gap-2 w-full md:w-auto shrink-0">
+            <div className="flex items-center gap-2 w-full md:w-auto shrink-0">
                 {/* Custom Category Select */}
-                <div className="w-full md:w-auto min-w-[200px]">
+                <div className="flex-1 min-w-[50px] md:min-w-[200px]">
                     <Select
                         options={[
                             { value: 0, label: t('common.no_category'), color: '' },
@@ -59,19 +59,20 @@ const TaskInput: React.FC<TaskInputProps> = ({ categories, onAdd, currentFilter 
                         ]}
                         value={selectedCatId}
                         onChange={(val) => setSelectedCatId(val)}
+                        className="w-full h-11"
                         renderValue={(opt) => (
                             <div className="flex items-center gap-2">
                                 {opt?.value !== 0 && opt?.color ? (
                                     <div className={`w-2 h-2 rounded-full ${opt.color}`} />
                                 ) : (
-                                    <div className="w-2 h-2 rounded-full border border-slate-300 dark:border-slate-600" />
+                                    <div className="w-2 h-2 rounded-full border border-border-subtle" />
                                 )}
                                 <span className="truncate max-w-[100px]">{opt?.label}</span>
                             </div>
                         )}
                         renderOption={(opt) => (
                             <div className="flex items-center gap-2">
-                                <span className={`w-2 h-2 rounded-full ${opt.color || 'border border-slate-300 dark:border-slate-600'}`}></span>
+                                <span className={`w-2 h-2 rounded-full ${opt.color || 'border border-border-subtle'}`}></span>
                                 <span className="truncate">{opt.label}</span>
                             </div>
                         )}
@@ -81,11 +82,11 @@ const TaskInput: React.FC<TaskInputProps> = ({ categories, onAdd, currentFilter 
                 <Button
                     type="submit"
                     variant="primary"
-                    icon={Plus}
-                    className="flex-1 md:flex-none w-full md:w-auto py-2 px-6 rounded-xl h-11"
+                    className="h-11 w-11 p-0 rounded-xl shrink-0 shadow-lg shadow-brand/30 flex items-center justify-center"
                     disabled={!title.trim()}
+                    aria-label={t('tasks.add_button')}
                 >
-                    {t('tasks.add_button')}
+                    <Plus size={24} />
                 </Button>
             </div>
         </form >

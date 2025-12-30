@@ -1,9 +1,12 @@
-import React, { useState, useRef } from 'react';
+import * as React from 'react';
+import { useState, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import { Plus, Edit2, Trash2, Check, X } from 'lucide-react';
 
 import Modal from '../ui/Modal';
+import Button from '../ui/Button';
+import Input from '../ui/Input';
 import ConfirmationModal from '../shared/ConfirmationModal';
 import { Category } from '../../types';
 import { useClickOutside } from '../../hooks/useClickOutside';
@@ -57,7 +60,7 @@ const CategoryManager: React.FC<CategoryManagerProps> = ({ isOpen, onClose, cate
 
     const handleAdd = () => {
         if (newName.trim()) {
-            setCategories(prev => [...prev, { id: Date.now().toString(), name: newName, color: newColor }]);
+            setCategories((prev: Category[]) => [...prev, { id: Date.now().toString(), name: newName, color: newColor, isDefault: false }]);
             setNewName('');
             setNewColor(COLORS[9]);
             setIsColorPickerOpen(false);
@@ -72,7 +75,7 @@ const CategoryManager: React.FC<CategoryManagerProps> = ({ isOpen, onClose, cate
 
     const saveEdit = (id: string | number) => {
         if (editName.trim()) {
-            setCategories(prev => prev.map(c => c.id === id ? { ...c, name: editName, color: editColor } : c));
+            setCategories((prev: Category[]) => prev.map((c: Category) => c.id === id ? { ...c, name: editName, color: editColor } : c));
             setEditingId(null);
         }
     };
@@ -85,7 +88,7 @@ const CategoryManager: React.FC<CategoryManagerProps> = ({ isOpen, onClose, cate
 
     const confirmDelete = () => {
         if (categoryToDelete) {
-            setCategories(prev => prev.filter(c => c.id !== categoryToDelete.id));
+            setCategories((prev: Category[]) => prev.filter((c: Category) => c.id !== categoryToDelete.id));
             setCategoryToDelete(null);
         }
     };
@@ -98,9 +101,9 @@ const CategoryManager: React.FC<CategoryManagerProps> = ({ isOpen, onClose, cate
             className="max-w-md"
         >
             <div className="p-4 space-y-6">
-                <div className="space-y-3 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
-                    {categories.map(cat => (
-                        <div key={cat.id} className="flex items-center gap-2 p-2 px-3 bg-bg-surface rounded-xl group border border-border hover:border-brand-primary shadow-sm transition-all min-h-[56px]">
+                <div className="space-y-3 max-h-[400px] overflow-y-auto px-1 custom-scrollbar">
+                    {categories.map((cat: Category) => (
+                        <div key={cat.id} className="flex items-center gap-3 p-3 bg-bg-surface border border-border rounded-xl group hover:border-brand-primary transition-all shadow-sm">
                             {editingId === cat.id ? (
                                 <div className="flex-1 flex gap-1.5 items-center min-w-0">
                                     <div className="relative shrink-0">
@@ -111,19 +114,27 @@ const CategoryManager: React.FC<CategoryManagerProps> = ({ isOpen, onClose, cate
                                             <div className="w-2.5 h-2.5 bg-white/50 rounded-full" />
                                         </button>
                                     </div>
-                                    <input
+                                    <Input
                                         value={editName}
                                         onChange={e => setEditName(e.target.value)}
-                                        className="flex-1 bg-bg-main border border-brand-primary rounded-xl px-3 h-9 text-sm outline-none text-text-primary min-w-0"
+                                        className="bg-bg-main border-transparent focus:border-brand-primary/50 h-9"
+                                        containerClassName="flex-1"
                                         autoFocus
                                     />
                                     <div className="flex justify-end gap-1 shrink-0">
-                                        <button onClick={() => setEditingId(null)} className="w-9 h-9 flex items-center justify-center text-text-secondary hover:bg-bg-main rounded-xl transition-colors">
-                                            <X size={18} />
-                                        </button>
-                                        <button onClick={() => saveEdit(cat.id)} className="w-9 h-9 flex items-center justify-center text-white bg-brand-primary hover:bg-brand-hover rounded-xl transition-colors shadow-sm shadow-brand/30">
+                                        <Button
+                                            variant="icon"
+                                            onClick={() => setEditingId(null)}
+                                            className="w-9 h-9 text-text-secondary hover:bg-bg-main"
+                                            icon={X}
+                                        />
+                                        <Button
+                                            variant="primary"
+                                            onClick={() => saveEdit(cat.id)}
+                                            className="w-9 h-9 p-0 shadow-sm shadow-brand/30"
+                                        >
                                             <Check size={18} />
-                                        </button>
+                                        </Button>
                                     </div>
                                 </div>
                             ) : (
@@ -132,14 +143,24 @@ const CategoryManager: React.FC<CategoryManagerProps> = ({ isOpen, onClose, cate
                                     <span className="font-medium text-text-primary">{cat.name}</span>
                                     {cat.isDefault && <span className="text-[10px] font-bold uppercase tracking-wider bg-brand-subtle text-brand-primary px-2 py-0.5 rounded-full">{t('categories.is_default')}</span>}
 
-                                    <div className="ml-auto flex gap-1 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
-                                        <button onClick={() => startEdit(cat)} className="w-8 h-8 flex items-center justify-center hover:bg-bg-main rounded-lg text-ui-disabled hover:text-brand-primary transition-colors">
+                                    <div className="ml-auto flex gap-1">
+                                        <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            onClick={() => startEdit(cat)}
+                                            className="w-8 h-8 p-0 text-text-secondary hover:text-brand-primary"
+                                        >
                                             <Edit2 size={16} />
-                                        </button>
+                                        </Button>
                                         {!cat.isDefault && (
-                                            <button onClick={() => deleteCategory(cat)} className="w-8 h-8 flex items-center justify-center hover:bg-bg-main rounded-lg text-ui-disabled hover:text-status-error transition-colors">
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                onClick={() => deleteCategory(cat)}
+                                                className="w-8 h-8 p-0 text-text-secondary hover:text-status-error"
+                                            >
                                                 <Trash2 size={16} />
-                                            </button>
+                                            </Button>
                                         )}
                                     </div>
                                 </>
@@ -159,20 +180,24 @@ const CategoryManager: React.FC<CategoryManagerProps> = ({ isOpen, onClose, cate
                         </button>
                     </div>
 
-                    <input
+                    <Input
                         value={newName}
                         onChange={e => setNewName(e.target.value)}
                         onKeyDown={e => e.key === 'Enter' && handleAdd()}
                         placeholder={t('categories.new_project')}
-                        className="flex-1 bg-bg-surface border border-border rounded-xl px-4 h-10 text-sm outline-none text-text-primary focus:ring-2 focus:ring-brand-primary/20 transition-all"
+                        className="bg-bg-surface h-10 border-border focus:ring-2 focus:ring-brand-primary/20"
+                        containerClassName="flex-1"
+                        variant="default"
                     />
 
-                    <button
+                    <Button
                         onClick={handleAdd}
-                        className="w-10 h-10 rounded-xl bg-brand-primary hover:bg-brand-hover text-white flex items-center justify-center shadow-lg shadow-brand/30 transition-all active:scale-95 shrink-0"
+                        variant="primary"
+                        size="icon"
+                        className="w-10 h-10 p-0 shadow-lg shadow-brand/30 shrink-0"
                     >
-                        <Plus size={18} strokeWidth={2.5} />
-                    </button>
+                        <Plus size={24} strokeWidth={2.5} />
+                    </Button>
                 </div>
             </div>
 
@@ -204,6 +229,7 @@ const CategoryManager: React.FC<CategoryManagerProps> = ({ isOpen, onClose, cate
                 onConfirm={confirmDelete}
                 title={t('common.confirmDelete')}
                 message={t('categories.delete_msg', { name: categoryToDelete?.name })}
+                confirmLabel={t('common.delete')}
                 confirmVariant="danger"
             />
         </Modal>

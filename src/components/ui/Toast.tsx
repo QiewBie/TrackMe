@@ -28,19 +28,19 @@ const Toast: React.FC<ToastProps> = ({ message, type = 'info', isVisible, onClos
                         initial={{ opacity: 0, y: 50, scale: 0.95 }}
                         animate={{ opacity: 1, y: 0, scale: 1 }}
                         exit={{ opacity: 0, y: 20, scale: 0.95 }}
-                        className="fixed bottom-4 left-4 right-4 md:left-auto md:right-6 md:transform-none md:w-auto md:min-w-[320px] max-w-md z-[9999] flex items-center gap-4 px-4 py-3 rounded-xl shadow-2xl bg-white dark:bg-slate-800 text-slate-800 dark:text-white border border-slate-200 dark:border-slate-700 ring-1 ring-black/5 dark:ring-white/10"
+                        className="fixed bottom-4 left-4 right-4 md:left-auto md:right-6 md:transform-none md:w-auto md:min-w-[320px] max-w-md z-[9999] flex items-center gap-4 px-4 py-3 rounded-xl shadow-2xl bg-bg-surface text-text-primary border border-border ring-1 ring-black/5"
                     >
-                        <div className="shrink-0 p-2 bg-slate-100 dark:bg-white/10 rounded-full">
-                            {type === 'success' && <CheckCircle2 size={24} className="text-emerald-400" />}
-                            {type === 'error' && <AlertCircle size={24} className="text-rose-400" />}
-                            {type === 'info' && <CheckCircle2 size={24} className="text-blue-400" />}
+                        <div className="shrink-0 p-2 bg-bg-main rounded-full">
+                            {type === 'success' && <CheckCircle2 size={24} className="text-status-success" />}
+                            {type === 'error' && <AlertCircle size={24} className="text-status-error" />}
+                            {type === 'info' && <CheckCircle2 size={24} className="text-brand-primary" />}
                         </div>
 
                         <span className="font-bold text-sm md:text-base leading-snug tracking-wide flex-1">{message}</span>
 
                         <button
                             onClick={onClose}
-                            className="shrink-0 p-2 hover:bg-slate-100 dark:hover:bg-white/10 rounded-full transition-colors -mr-2"
+                            className="shrink-0 p-2 hover:bg-bg-main rounded-full transition-colors -mr-2"
                         >
                             <X size={18} />
                         </button>

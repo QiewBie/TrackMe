@@ -1,4 +1,4 @@
-import React from 'react';
+import * as React from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useNavigate, useLocation } from 'react-router-dom';
 import Button from '../ui/Button';
@@ -22,17 +22,17 @@ const LoginView: React.FC = () => {
     if (isLoading) return <div className="h-screen w-full flex items-center justify-center bg-bg-main text-text-primary">{t('common.loading')}</div>;
 
     return (
-        <div className="min-h-screen w-full flex items-center justify-center bg-bg-main text-text-primary relative overflow-hidden">
+        <div className="h-[100dvh] w-full flex items-center justify-center bg-bg-main text-text-primary relative overflow-hidden">
             {/* Background Effects */}
             <div className="absolute inset-0 overflow-hidden pointer-events-none">
                 <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-brand-primary/20 rounded-full blur-[100px]" />
                 <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-brand-secondary/20 rounded-full blur-[100px]" />
             </div>
 
-            <div className="z-10 bg-bg-surface p-8 rounded-card shadow-2xl max-w-md w-full border border-border text-center space-y-8">
+            <div className="z-10 bg-bg-surface p-8 rounded-card shadow-2xl max-w-md w-full border border-border text-center space-y-8 mx-4">
                 <div className="space-y-2">
                     <h1 className="text-4xl font-black bg-clip-text text-transparent bg-gradient-to-r from-brand-primary via-brand-tertiary to-brand-secondary">
-                        Deep Flow
+                        TrackMe
                     </h1>
                     <p className="text-text-secondary">
                         {t('auth.subtitle', 'Synchronize your focus across devices.')}
@@ -68,7 +68,7 @@ const LoginView: React.FC = () => {
                     </Button>
                 </div>
 
-                <p className="text-xs text-text-secondary max-w-xs mx-auto">
+                <p className="text-xs text-text-secondary max-w-xs mx-auto opacity-70">
                     {t('auth.disclaimer', 'By continuing, you acknowledge that Guest data is stored locally on this device only.')}
                 </p>
             </div>

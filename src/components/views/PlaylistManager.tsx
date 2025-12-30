@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import * as React from 'react';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useOutletContext, useNavigate } from 'react-router-dom';
 import { usePlaylistContext } from '../../context/PlaylistContext';
@@ -6,14 +7,15 @@ import { useTaskContext } from '../../context/TaskContext';
 import { useCategoryContext } from '../../context/CategoryContext';
 import { DashboardContextType } from '../Dashboard';
 import { Plus, Edit3 } from 'lucide-react';
-import TaskSelectorModal from '../playlists/TaskSelectorModal';
-import PlaylistEditorModal from '../playlists/PlaylistEditorModal';
+import TaskSelectorModal from '../playlist/TaskSelectorModal';
+import PlaylistEditorModal from '../playlist/PlaylistEditorModal';
 import ConfirmationModal from '../shared/ConfirmationModal';
 import UndoToast from '../shared/UndoToast';
 import { Playlist } from '../../types';
 import { motion, AnimatePresence } from 'framer-motion';
 import Toast from '../ui/Toast';
 import PageHeader from '../ui/PageHeader';
+import Button from '../ui/Button';
 
 // New Components & Primitives
 import { PlaylistCard } from '../playlist/PlaylistCard';
@@ -77,13 +79,7 @@ const PlaylistManager = () => {
         const template = templates.find(t => t.id === templateId);
         if (!template) return;
 
-        createPlaylist(template.title); // Fire and forget or await? Usually better to await if we want sequential toast
-        // Actually, createPlaylist is async now, so we should await if we want to ensure task creation happens after?
-        // But here we don't use 'newPlaylist' ID for adding default tasks yet (logic is simplified).
-        // Wait, line 85 uses addTask which is async now.
-
-        // Let's make it awaited for cleaner flow.
-        await createPlaylist(template.title);
+        const newPlaylist = await createPlaylist(template.title);
 
         // Note: Task creation logic for templates is simplified for now
         if (template.defaultTasks && template.defaultTasks.length > 0) {
@@ -121,7 +117,8 @@ const PlaylistManager = () => {
             deletePlaylist(playlistToDelete.id);
             setUndoPlaylist(playlistToDelete);
             setPlaylistToDelete(null);
-            showToast(t('common.deleted', 'Deleted'), 'info');
+            setPlaylistToDelete(null);
+            // showToast is removed to avoid double popup (UndoToast is sufficient)
         }
     };
 
@@ -167,24 +164,25 @@ const PlaylistManager = () => {
                                     {template.title}
                                 </span>
                                 <div className="w-px h-6 bg-border mx-1"></div>
-                                <button
+                                <Button
+                                    variant="icon"
                                     onClick={(e) => { e.stopPropagation(); setEditingTemplateId(template.id); }}
-                                    className="p-1.5 text-text-secondary hover:text-text-primary hover:bg-bg-main rounded-lg transition-all"
+                                    className="p-1.5 h-auto text-text-secondary hover:text-text-primary hover:bg-bg-main"
                                     title={t('playlists.templates.configure', 'Configure Template')}
-                                >
-                                    <Edit3 size={14} />
-                                </button>
+                                    icon={Edit3}
+                                />
                             </div>
                         ))}
 
                         {/* Add Custom Template Stub */}
-                        <button
+                        <Button
+                            variant="ghost"
                             onClick={handleCreateNewTemplate}
-                            className="flex items-center gap-2 px-4 py-2 border-2 border-dashed border-border rounded-xl text-text-secondary hover:text-text-primary hover:border-slate-300 transition-all text-sm font-bold"
+                            className="border-2 border-dashed border-border hover:border-brand-primary/50 text-text-secondary hover:text-text-primary"
+                            icon={Plus}
                         >
-                            <Plus size={18} />
-                            <span>{t('playlists.templates.new_preset', 'New Preset')}</span>
-                        </button>
+                            {t('playlists.templates.new_preset', 'New Preset')}
+                        </Button>
                     </div>
                 </div>
             </div>
@@ -244,7 +242,7 @@ const PlaylistManager = () => {
                 onCreate={handleCreatePlaylist}
                 tasks={tasks}
                 categories={categories}
-                onTaskCreate={(title) => addTask(title, 'default', false)}
+                onTaskCreate={(title: string) => addTask(title, 'default', false)}
             />
 
             {/* Playlist Editor Modal (Existing) - To be refactored later if simpler */}
@@ -269,7 +267,7 @@ const PlaylistManager = () => {
                         existingTaskIds={targetPlaylist.taskIds}
                         tasks={tasks}
                         categories={categories}
-                        onTaskCreate={(title, catId) => {
+                        onTaskCreate={(title: string, catId: string | number) => {
                             // @ts-ignore
                             return addTask(title, catId, false);
                         }}

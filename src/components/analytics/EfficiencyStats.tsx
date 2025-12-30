@@ -9,7 +9,7 @@ interface EfficiencyStatsProps {
     avgDuration: number;
 }
 
-const EfficiencyStats: React.FC<EfficiencyStatsProps> = ({ completionRate, avgDuration }) => {
+const EfficiencyStats = ({ completionRate, avgDuration }: EfficiencyStatsProps) => {
     const { t } = useTranslation();
 
     const StatCard = ({ icon: Icon, label, value, color }: any) => (
@@ -19,7 +19,7 @@ const EfficiencyStats: React.FC<EfficiencyStatsProps> = ({ completionRate, avgDu
                 <Icon size={80} />
             </div>
 
-            <div className={`p-3 rounded-xl ${color} bg-opacity-10 dark:bg-opacity-20 z-10`}>
+            <div className={`p-3 rounded-xl ${color}/10 dark:${color}/20 z-10`}>
                 <Icon size={20} className={color.replace('bg-', 'text-')} />
             </div>
             <div className="z-10">

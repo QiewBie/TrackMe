@@ -1,4 +1,5 @@
-import React, { memo } from 'react';
+import * as React from 'react';
+import { memo } from 'react';
 import { clsx } from 'clsx';
 import { formatTime } from '../../utils/formatters';
 import { Task } from '../../types';
@@ -9,8 +10,8 @@ interface TimerDisplayProps {
     className?: string;
 }
 
-const TimerDisplay: React.FC<TimerDisplayProps> = memo(({ task, className }) => {
-    const { activeSession, timeLeft } = useFocusContext();
+const TaskTimerWidget = memo<TimerDisplayProps>(({ task, className }) => {
+    const { activeSession, timeLeft, isPaused } = useFocusContext();
 
     // Check if this task is currently running in the global session
     const isActive = activeSession?.taskId === task.id;
@@ -19,11 +20,12 @@ const TimerDisplay: React.FC<TimerDisplayProps> = memo(({ task, className }) => 
     // Note: SessionContext updates timeLeft every second, triggering re-render here.
     let addedTime = 0;
     if (isActive && activeSession) {
-        // We need the original duration to calculate elapsed.
-        // activeSession.config.duration is in minutes.
-        const totalSessionSeconds = (activeSession.config?.duration || 25) * 60;
-        // If timeLeft is greater than total (weird edge case), elapsed is 0
-        addedTime = Math.max(0, totalSessionSeconds - timeLeft);
+        // CORRECTION: We must calculate delta relative to the START of this specific segment (resume point),
+        // not the total session duration configuration.
+        // activeSession.remainingTime holds the snapshot of time left when this segment started.
+
+        const startPoint = activeSession.remainingTime ?? ((activeSession.config?.duration || 25) * 60);
+        addedTime = Math.max(0, startPoint - timeLeft);
     }
 
     // V2: Source of Truth is cachedTotalTime (Logs) + Active Session
@@ -36,4 +38,4 @@ const TimerDisplay: React.FC<TimerDisplayProps> = memo(({ task, className }) => 
     );
 });
 
-export default TimerDisplay;
+export default TaskTimerWidget;

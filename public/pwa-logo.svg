@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" fill="#121212" />
+  
+  <g transform="translate(106, 106) scale(12.5)">
+    <!-- Original Path Data from Logo.tsx scaled up or just placed in center -->
+    <!-- Assuming original viewBox 0 0 24 24. 
+         Scale: 300 / 24 ~= 12.5 
+         Center offset: (512 - 300)/2 = 106
+    -->
+    
+    <!-- Outer Ring Segment 1 -->
+    <path d="M12 21C16.9706 21 21 16.9706 21 12C21 7.02944 16.9706 3 12 3" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round" fill="none" />
+    
+    <!-- Outer Ring Segment 2 (Broken part) -->
+    <path d="M3 12C3 14.4853 4.00736 16.7353 5.63604 18.364" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round" stroke-opacity="0.5" fill="none" />
+    <path d="M5.63604 5.63604C4.00736 7.26472 3 9.51472 3 12" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round" stroke-opacity="0.5" fill="none" />
+
+    <!-- Center Play Button -->
+    <path d="M16 12L9 8V16L16 12Z" fill="#ffffff" stroke="#ffffff" stroke-width="1.5" stroke-linejoin="round" />
+  </g>
+</svg>

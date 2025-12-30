@@ -1,3 +1,4 @@
+import * as React from 'react';
 import { cloneElement } from 'react';
 import { Menu } from 'lucide-react';
 import { Outlet, useLocation, useOutlet } from 'react-router-dom';
@@ -91,7 +92,7 @@ const Dashboard = () => {
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
                         transition={{ duration: 0.3 }}
-                        className="fixed inset-0 bg-black/60 z-[90] lg:hidden"
+                        className="fixed inset-0 bg-overlay z-[90] lg:hidden"
                         onClick={() => setMobileMenuOpen(false)}
                     />
                 )}
@@ -138,11 +139,7 @@ const Dashboard = () => {
                     ref={setScrollContainer}
                     className={`relative flex-1 overflow-y-auto scroll-smooth p-0 lg:mb-0 ${location.pathname.startsWith('/focus') ? '' : 'mb-16'}`}
                 >
-                    <AnimatePresence mode="wait">
-                        {outlet && cloneElement(outlet, {
-                            key: location.pathname.startsWith('/focus') ? 'focus-session' : location.pathname
-                        })}
-                    </AnimatePresence>
+                    {outlet}
                 </div>
             </main>
 

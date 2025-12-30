@@ -1,6 +1,8 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import * as React from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useTaskContext } from '../../context/TaskContext';
 import { Task } from '../../types';
+import { createPortal } from 'react-dom';
 import { CheckCircle } from 'lucide-react';
 import Button from '../ui/Button';
 import Modal from '../ui/Modal';
@@ -24,6 +26,7 @@ import { FocusSidebar } from '../focus/FocusSidebar';
 import { FocusStage } from '../focus/FocusStage';
 import { FocusSettingsModal } from '../focus/FocusSettingsModal';
 import { useFocusHotkeys } from '../../hooks/useFocusHotkeys';
+import { CompletionOverlay } from '../focus/CompletionOverlay';
 
 const FocusView = () => {
     const { t } = useTranslation();
@@ -205,30 +208,76 @@ const FocusView = () => {
                 onBack={() => navigate('/')}
             />
 
+            {/* All Tasks Completed State */}
+            <CompletionOverlay
+                isOpen={queue.length > 0 && queue.every(t => t.completed)}
+                title={t('focus.all_tasks_completed')}
+                message={t('focus.playlist_finished_msg')}
+                type="playlist"
+                primaryAction={{
+                    label: t('focus.back_dashboard'),
+                    onClick: () => navigate('/'),
+                    variant: 'primary'
+                }}
+            />
+
+            {/* Empty State - No Active Task or Playlist */}
+            {(!activeTask && !activePlaylist) && (
+                <div className="flex-1 w-full flex flex-col items-center justify-center relative min-h-0 text-center px-6">
+                    <motion.div
+                        initial={{ opacity: 0, scale: 0.95 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        className="max-w-md w-full space-y-8"
+                    >
+                        <div className="space-y-4">
+                            <Heading variant="h1" className="text-4xl md:text-5xl font-black tracking-tight text-text-primary">
+                                {t('focus.ready_title')}
+                            </Heading>
+                            <Text className="text-xl text-text-secondary">
+                                {t('focus.select_task_msg')}
+                            </Text>
+                        </div>
+
+                        <div className="flex justify-center">
+                            <Button
+                                size="lg"
+                                variant="primary"
+                                onClick={() => setContextPanelOpen(true)}
+                                className="h-14 px-8 text-lg rounded-xl shadow-lg shadow-brand/20"
+                            >
+                                {t('focus.show_sidebar')}
+                            </Button>
+                        </div>
+                    </motion.div>
+                </div>
+            )}
+
             {/* Main Stage */}
-            <AnimatePresence mode="wait">
-                <motion.div
-                    key={activeTask?.id || 'empty'}
-                    initial={{ opacity: 0, scale: 0.98 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.98 }}
-                    transition={{ duration: 0.3, ease: 'easeOut' }}
-                    className="flex-1 w-full flex flex-col items-center justify-center relative min-h-0"
-                >
-                    <FocusStage
-                        activeTask={activeTask}
-                        isTimerRunning={isTimerRunning}
-                        timeLeft={timeLeft}
-                        settings={settings}
-                        controlsVisible={controlsVisible}
-                        ambientColor={ambientColor}
-                        contextPanelOpen={contextPanelOpen}
-                        tasksCount={tasks.length}
-                        category={activeCategory}
-                        playlist={activePlaylist || undefined}
-                    />
-                </motion.div>
-            </AnimatePresence>
+            {activeTask && (
+                <AnimatePresence mode="wait">
+                    <motion.div
+                        key={activeTask?.id || 'empty'}
+                        initial={{ opacity: 0, scale: 0.98 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.98 }}
+                        transition={{ duration: 0.3, ease: 'easeOut' }}
+                        className="flex-1 w-full flex flex-col items-center justify-center relative min-h-0"
+                    >
+                        <FocusStage
+                            activeTask={activeTask}
+                            isTimerRunning={isTimerRunning}
+                            timeLeft={timeLeft}
+                            settings={settings}
+                            controlsVisible={controlsVisible}
+                            ambientColor={ambientColor}
+                            contextPanelOpen={contextPanelOpen}
+                            tasksCount={tasks.length}
+                            category={activeCategory}
+                            playlist={activePlaylist || undefined}
+                        />
+                    </motion.div>
+                </AnimatePresence>
+            )}
 
             {/* Floating Player */}
             <div
@@ -263,7 +312,7 @@ const FocusView = () => {
                 onToggleSubtask={handleToggleSubtask}
                 onAddSubtask={handleAddSubtask}
                 onReorder={updateQueue}
-                onQueueSelect={(t) => navigate(`/focus/${t.id}`)}
+                onQueueSelect={(t: Task) => navigate(`/focus/${t.id}`)}
             />
 
             {/* Modals & Overlays */}
@@ -291,16 +340,23 @@ const FocusView = () => {
                 onUpdateSettings={setSettings}
             />
 
-            {showNewSetPrompt && (
-                <div className="fixed inset-0 z-[100] bg-black/95 backdrop-blur-sm flex flex-col items-center justify-center p-6 animate-in fade-in zoom-in duration-300">
-                    <Heading variant="h2" className="text-white mb-2 text-4xl">{t('focus.session_complete_title')}</Heading>
-                    <Text className="text-white/60 mb-10 text-lg">{t('focus.session_complete_msg')}</Text>
-                    <div className="flex flex-col sm:flex-row gap-4 w-full max-w-sm">
-                        <Button onClick={startNewSet} variant="primary" size="lg" className="w-full shadow-2xl shadow-brand/40 ring-1 ring-white/20">{t('focus.start_next_set')}</Button>
-                        <Button onClick={() => setShowNewSetPrompt(false)} variant="secondary" size="lg" className="w-full bg-white/5 border-white/10 hover:bg-white/10">{t('focus.take_break_btn')}</Button>
-                    </div>
-                </div>
-            )}
+            {/* Session Complete State */}
+            <CompletionOverlay
+                isOpen={showNewSetPrompt && !(queue.length > 0 && queue.every(t => t.completed))}
+                title={t('focus.session_complete_title')}
+                message={t('focus.session_complete_msg')}
+                type="session"
+                primaryAction={{
+                    label: t('focus.start_next_set'),
+                    onClick: startNewSet,
+                    variant: 'primary'
+                }}
+                secondaryAction={{
+                    label: t('focus.take_break_btn'),
+                    onClick: () => setShowNewSetPrompt(false),
+                    variant: 'ghost'
+                }}
+            />
         </Page>
     );
 };

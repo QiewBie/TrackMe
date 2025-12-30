@@ -1,4 +1,5 @@
-import React, { useMemo } from 'react';
+import * as React from 'react';
+import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Play, Edit3, Trash2, ListPlus } from 'lucide-react';
 import { motion } from 'framer-motion';
@@ -47,10 +48,10 @@ export const PlaylistCard: React.FC<PlaylistCardProps> = ({
                 <div className="absolute inset-0 bg-black/10 group-hover:bg-black/0 transition-colors" />
 
                 {/* Play Overlay */}
-                <div className="absolute inset-0 flex items-center justify-center opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity duration-300 bg-black/10 md:bg-black/20 backdrop-blur-[0px] md:backdrop-blur-[2px]">
+                <div className="absolute inset-0 flex items-center justify-center transition-opacity duration-300 bg-black/40 backdrop-blur-[2px]">
                     <button
                         onClick={(e) => { e.stopPropagation(); onStart(); }}
-                        className="w-14 h-14 bg-white rounded-full flex items-center justify-center shadow-lg hover:scale-110 active:scale-95 active:bg-bg-subtle transition-all text-slate-900"
+                        className="w-14 h-14 bg-bg-surface rounded-full flex items-center justify-center shadow-lg hover:scale-110 active:scale-95 active:bg-bg-subtle transition-all text-text-primary"
                         aria-label={t('playlists.start_session')}
                     >
                         <Play size={24} className="ml-1" fill="currentColor" />

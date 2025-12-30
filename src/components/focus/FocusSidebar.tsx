@@ -1,4 +1,5 @@
-import React, { memo } from 'react';
+import * as React from 'react';
+import { memo } from 'react';
 import { X, CheckSquare, Plus, CheckCircle, GripVertical } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Heading, Text } from '../ui/Typography';
@@ -68,7 +69,7 @@ const DraggableQueueItem = memo(({ task, categoryColor, categoryName, onSelect, 
                     )}
                 </div>
 
-                <div className="opacity-0 group-hover:opacity-100 p-2 -mr-2 cursor-grab active:cursor-grabbing text-text-secondary/50 hover:text-text-primary transition-all z-10" onPointerDown={(e) => controls.start(e)}>
+                <div className="p-2 -mr-2 cursor-grab active:cursor-grabbing text-text-secondary/50 hover:text-text-primary transition-all z-10" onPointerDown={(e) => controls.start(e)}>
                     <GripVertical size={18} />
                 </div>
             </div>
@@ -90,7 +91,7 @@ interface FocusSidebarProps {
     onQueueSelect: (task: Task) => void;
 }
 
-export const FocusSidebar: React.FC<FocusSidebarProps> = memo(({
+export const FocusSidebar = memo<FocusSidebarProps>(({
     isOpen,
     onClose,
     activeTask,
@@ -109,7 +110,7 @@ export const FocusSidebar: React.FC<FocusSidebarProps> = memo(({
             {/* Backdrop for mobile */}
             {isOpen && (
                 <div
-                    className="fixed inset-0 bg-black/40 backdrop-blur-sm z-overlay lg:hidden"
+                    className="fixed inset-0 bg-overlay z-overlay lg:hidden"
                     onClick={onClose}
                 />
             )}

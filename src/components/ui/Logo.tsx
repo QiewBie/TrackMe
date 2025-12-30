@@ -1,4 +1,4 @@
-import React from 'react';
+import * as React from 'react';
 import { clsx } from 'clsx';
 
 interface LogoProps {
@@ -9,7 +9,7 @@ interface LogoProps {
 const Logo: React.FC<LogoProps> = ({ className, showText = true }) => {
     return (
         <div className="flex items-center">
-            <div className={clsx("w-8 h-8 mr-3 text-blue-600 flex items-center justify-center", className)}>
+            <div className={clsx("w-8 h-8 mr-3 text-brand-primary flex items-center justify-center", className)}>
                 {/* Focus Lens Logo - Professional */}
                 <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full drop-shadow-sm">
                     {/* Outer Ring Segment 1 */}
@@ -23,8 +23,8 @@ const Logo: React.FC<LogoProps> = ({ className, showText = true }) => {
                 </svg>
             </div>
             {showText && (
-                <span className="text-xl font-black tracking-tight text-slate-900 dark:text-white notranslate" translate="no">
-                    Track<span className="text-blue-500">Me</span>
+                <span className="text-xl font-black tracking-tight text-text-primary notranslate" translate="no">
+                    Track<span className="text-brand-primary">Me</span>
                 </span>
             )}
         </div>

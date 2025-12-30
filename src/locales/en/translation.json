@@ -23,7 +23,11 @@
         "hours": "Hours",
         "minutes": "Minutes",
         "now": "Now",
-        "export_error": "Failed to export data."
+        "export_error": "Failed to export data.",
+        "undo": "Undo",
+        "task_deleted": "Task deleted",
+        "back_to_dashboard": "Back to Dashboard",
+        "save": "Save"
     },
     "navigation": {
         "dashboard": "Dashboard",
@@ -83,7 +87,9 @@
             "complete": "Complete Task",
             "skip": "Skip to End",
             "last_task": "Last Task"
-        }
+        },
+        "all_tasks_completed": "All Tasks Completed!",
+        "playlist_finished_msg": "You have finished all tasks in this playlist. Great job!"
     },
     "task_details": {
         "status_completed": "Completed",
@@ -243,7 +249,8 @@
         },
         "created": "Playlist created!",
         "empty_warning": "Playlist is empty! Add tasks first.",
-        "no_tasks_added": "No tasks added yet"
+        "no_tasks_added": "No tasks added yet",
+        "cancel": "Cancel"
     },
     "profile": {
         "title": "Profile",

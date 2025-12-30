@@ -1,4 +1,4 @@
-import React from 'react';
+import * as React from 'react';
 import Button from '../ui/Button';
 import Modal from '../ui/Modal';
 import { useTranslation } from 'react-i18next';
@@ -13,7 +13,7 @@ interface ConfirmationModalProps {
     confirmVariant?: 'danger' | 'primary' | 'secondary';
 }
 
-const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
+const ConfirmationModal = ({
     isOpen,
     onClose,
     onConfirm,
@@ -21,18 +21,11 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
     message,
     confirmLabel,
     confirmVariant = 'danger'
-}) => {
+}: ConfirmationModalProps) => {
     const { t } = useTranslation();
-    // Removed early return to let Modal handle animation via AnimatePresence
-    // if (!isOpen) return null;
 
-    const getVariantClass = () => {
-        switch (confirmVariant) {
-            case 'primary': return 'bg-brand-primary hover:bg-brand-secondary shadow-brand/20';
-            case 'secondary': return 'bg-bg-subtle hover:bg-bg-emphasized text-text-primary shadow-sm border border-border';
-            default: return 'bg-status-error hover:opacity-90 shadow-status-error/20';
-        }
-    };
+    // Default label logic
+    const finalConfirmLabel = confirmLabel || (confirmVariant === 'danger' ? t('common.delete', 'Delete') : t('common.confirm', 'Confirm'));
 
     return (
         <Modal
@@ -45,13 +38,13 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
                 <h3 className="text-xl font-bold text-text-primary mb-2">{title}</h3>
                 <p className="text-text-secondary mb-6">{message}</p>
                 <div className="flex justify-end gap-3">
-                    <Button variant="secondary" onClick={onClose}>Скасувати</Button>
-                    <button
+                    <Button variant="secondary" onClick={onClose}>{t('common.cancel', 'Cancel')}</Button>
+                    <Button
                         onClick={() => { onConfirm(); onClose(); }}
-                        className={`px-4 py-2 text-white rounded-xl font-bold transition-colors shadow-sm ${getVariantClass()}`}
+                        variant={confirmVariant}
                     >
-                        {confirmLabel}
-                    </button>
+                        {finalConfirmLabel}
+                    </Button>
                 </div>
             </div>
         </Modal>

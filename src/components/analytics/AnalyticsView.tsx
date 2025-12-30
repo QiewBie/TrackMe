@@ -1,4 +1,5 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import * as React from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import {
     PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer
 } from 'recharts';
@@ -108,12 +109,14 @@ const AnalyticsView: React.FC<AnalyticsViewProps> = ({ tasks, categories }) => {
     };
 
     const getHexColor = (twClass: string) => {
+        // Recharts requires Hex values for fills.
+        // These MUST match the values in index.css / tailwind.config.js
         const colors: Record<string, string> = {
             'blue-500': '#3b82f6', 'red-500': '#ef4444', 'green-500': '#22c55e',
             'amber-500': '#f59e0b', 'purple-500': '#a855f7', 'pink-500': '#ec4899',
             'cyan-500': '#06b6d4', 'indigo-500': '#6366f1', 'slate-500': '#64748b',
             'emerald-500': '#10b981', 'slate-400': '#94a3b8',
-            'text-tertiary': '#94a3b8', // Semantic mapping
+            'text-tertiary': '#94a3b8',
             'bg-surface': '#1e293b'
         };
         return colors[twClass] || '#cbd5e1';
@@ -149,7 +152,7 @@ const AnalyticsView: React.FC<AnalyticsViewProps> = ({ tasks, categories }) => {
                         </span>
                         <DurationDisplay
                             overrideSeconds={totalSelectedTime}
-                            formatter={(val) => formatDuration(val, durationLabels)}
+                            formatter={(val: number) => formatDuration(val, durationLabels)}
                             className="text-2xl font-black text-text-primary tracking-tight leading-none"
                         />
                     </div>
@@ -180,7 +183,7 @@ const AnalyticsView: React.FC<AnalyticsViewProps> = ({ tasks, categories }) => {
                     </CardHeader>
                     <CardContent className="flex flex-col h-full pt-0">
                         {projectData.length > 0 ? (
-                            <div className="flex-1 min-h-0 relative outline-none" role="img" aria-label={t('analytics.time_distribution', 'Project Time Distribution')} style={{ outline: 'none' }} tabIndex={-1}>
+                            <div className="flex-1 min-h-0 relative outline-none" role="img" aria-label={t('analytics.time_distribution', 'Project Time Distribution')} tabIndex={-1}>
                                 {/* Center Text: Top Project - Placed BEFORE chart to be in background */}
                                 <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                                     <div className="text-center">

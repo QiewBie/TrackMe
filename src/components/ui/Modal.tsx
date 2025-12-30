@@ -62,7 +62,7 @@ const Modal: React.FC<ModalProps> = ({
                         transition={{ duration: 0.2 }}
                         ref={backdropRef}
                         onClick={handleBackdropClick}
-                        className="fixed inset-0 bg-black/60 z-[200]"
+                        className="fixed inset-0 bg-overlay z-[200]"
                         aria-hidden="true"
                     />
 

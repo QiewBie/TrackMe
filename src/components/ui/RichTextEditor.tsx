@@ -1,3 +1,4 @@
+import * as React from 'react';
 import { useEffect } from 'react';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
@@ -28,8 +29,8 @@ const MenuButton = ({
         type="button"
         onClick={onClick}
         disabled={disabled}
-        className={`p-2 rounded hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors
-            ${active ? 'text-blue-600 bg-blue-50 dark:bg-blue-900/30' : 'text-slate-500 dark:text-slate-400'}
+        className={`p-2 rounded hover:bg-bg-subtle transition-colors
+            ${active ? 'text-brand-primary bg-brand-subtle' : 'text-text-secondary'}
             ${disabled ? 'opacity-50 cursor-not-allowed' : ''}
         `}
     >
@@ -56,12 +57,12 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
         ],
         content: content,
         editable: editable,
-        onUpdate: ({ editor }) => {
+        onUpdate: ({ editor }: { editor: any }) => {
             onChange(editor.getHTML());
         },
         editorProps: {
             attributes: {
-                class: 'prose dark:prose-invert max-w-none focus:outline-none min-h-[300px] p-4 text-slate-700 dark:text-slate-300'
+                class: 'prose dark:prose-invert max-w-none focus:outline-none min-h-[300px] p-4 text-text-primary'
             }
         }
     });
@@ -86,10 +87,10 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
     }
 
     return (
-        <div className={`border dark:border-slate-700 rounded-xl overflow-hidden bg-white dark:bg-slate-800 shadow-sm relative flex flex-col ${className}`}>
+        <div className={`border border-border rounded-xl overflow-hidden bg-bg-surface shadow-sm relative flex flex-col ${className}`}>
 
             {editable && (
-                <div className="flex flex-wrap gap-1 p-2 border-b dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 shrink-0">
+                <div className="flex flex-wrap gap-1 p-2 border-b border-border bg-bg-subtle shrink-0">
                     <MenuButton
                         onClick={() => editor.chain().focus().toggleBold().run()}
                         active={editor.isActive('bold')}
@@ -102,7 +103,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
                     >
                         <Italic size={18} />
                     </MenuButton>
-                    <div className="w-px h-6 bg-slate-300 dark:bg-slate-600 mx-1 self-center" />
+                    <div className="w-px h-6 bg-border mx-1 self-center" />
                     <MenuButton
                         onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}
                         active={editor.isActive('heading', { level: 1 })}
@@ -115,7 +116,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
                     >
                         <Heading2 size={18} />
                     </MenuButton>
-                    <div className="w-px h-6 bg-slate-300 dark:bg-slate-600 mx-1 self-center" />
+                    <div className="w-px h-6 bg-border mx-1 self-center" />
                     <MenuButton
                         onClick={() => editor.chain().focus().toggleBulletList().run()}
                         active={editor.isActive('bulletList')}
@@ -128,14 +129,14 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
                     >
                         <ListOrdered size={18} />
                     </MenuButton>
-                    <div className="w-px h-6 bg-slate-300 dark:bg-slate-600 mx-1 self-center" />
+                    <div className="w-px h-6 bg-border mx-1 self-center" />
                     <MenuButton
                         onClick={() => editor.chain().focus().toggleBlockquote().run()}
                         active={editor.isActive('blockquote')}
                     >
                         <Quote size={18} />
                     </MenuButton>
-                    <div className="w-px h-6 bg-slate-300 dark:bg-slate-600 mx-1 self-center" />
+                    <div className="w-px h-6 bg-border mx-1 self-center" />
                     <MenuButton
                         onClick={() => editor.chain().focus().unsetAllMarks().clearNodes().run()}
                         disabled={!editor.isFocused}

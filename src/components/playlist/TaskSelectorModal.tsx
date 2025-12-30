@@ -1,4 +1,5 @@
-import React, { useState, useMemo } from 'react';
+import * as React from 'react';
+import { useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import Modal from '../ui/Modal';
 import Button from '../ui/Button';
@@ -14,7 +15,7 @@ interface TaskSelectorModalProps {
     existingTaskIds: string[];
     tasks: Task[];
     categories: Category[];
-    onTaskCreate: (title: string, catId: number) => Promise<string | void> | string | void; // Adapter for addTask
+    onTaskCreate: (title: string, catId: string | number) => Promise<string | void> | string | void; // Adapter for addTask
 }
 
 const TaskSelectorModal: React.FC<TaskSelectorModalProps> = ({ isOpen, onClose, onAdd, existingTaskIds, tasks, categories, onTaskCreate }) => {

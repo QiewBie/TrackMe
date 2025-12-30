@@ -1,8 +1,9 @@
-import React from 'react';
+import * as React from 'react';
 import { User, Camera, Save, LogOut, Trash2, Moon, Sun, Languages } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import Button from '../ui/Button';
 import Input from '../ui/Input';
+import Toggle from '../ui/Toggle';
 import ConfirmationModal from '../shared/ConfirmationModal';
 import DataManager from '../profile/DataManager';
 import { User as UserType } from '../../types';
@@ -97,20 +98,19 @@ const ProfileView: React.FC<ProfileViewProps> = ({ user, setUser, updateAvatar, 
                             {t('profile.preferences')}
                         </h3>
                         <div className="space-y-3">
-                            <button
-                                onClick={() => setDarkMode(!darkMode)}
-                                className="w-full flex items-center justify-between p-3 rounded-xl bg-bg-main border border-border hover:border-brand-primary transition-all group"
-                            >
-                                <div className="flex items-center gap-3">
-                                    <div className={clsx("p-2 rounded-lg transition-colors", darkMode ? "bg-bg-inverse text-text-inverse" : "bg-bg-subtle text-text-secondary")}>
-                                        {darkMode ? <Moon size={18} /> : <Sun size={18} />}
+                            <Toggle
+                                checked={darkMode}
+                                onChange={setDarkMode}
+                                className="w-full p-3 rounded-xl bg-bg-main border border-border hover:border-brand-primary transition-all group"
+                                label={
+                                    <div className="flex items-center gap-3">
+                                        <div className={clsx("p-2 rounded-lg transition-colors", darkMode ? "bg-bg-inverse text-text-inverse" : "bg-bg-subtle text-text-secondary")}>
+                                            {darkMode ? <Moon size={18} /> : <Sun size={18} />}
+                                        </div>
+                                        <span className="font-semibold text-text-primary">{darkMode ? t('navigation.dark_theme') : t('navigation.light_theme')}</span>
                                     </div>
-                                    <span className="font-semibold text-text-primary">{darkMode ? t('navigation.dark_theme') : t('navigation.light_theme')}</span>
-                                </div>
-                                <div className={clsx("w-10 h-6 rounded-full relative transition-colors", darkMode ? "bg-brand-primary" : "bg-ui-disabled")}>
-                                    <div className={clsx("absolute top-1 w-4 h-4 rounded-full bg-white transition-transform duration-300", darkMode ? "left-5" : "left-1")} />
-                                </div>
-                            </button>
+                                }
+                            />
 
                             <button
                                 onClick={toggleLanguage}

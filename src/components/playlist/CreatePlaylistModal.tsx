@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Plus, Search, CheckCircle2, Circle } from 'lucide-react';
 import Modal from '../ui/Modal';
 import Button from '../ui/Button';
+import Input from '../ui/Input';
 import { Task, Category } from '../../types';
 
 interface CreatePlaylistModalProps {
@@ -51,7 +52,7 @@ export const CreatePlaylistModal: React.FC<CreatePlaylistModalProps> = ({
         const val = newTaskName.trim() || search.trim();
         if (val) {
             const newId = await onTaskCreate(val);
-            setSelectedIds(prev => new Set(prev).add(newId));
+            setSelectedIds((prev: Set<string>) => new Set(prev).add(newId));
             setNewTaskName('');
             setSearch('');
         }
@@ -68,13 +69,14 @@ export const CreatePlaylistModal: React.FC<CreatePlaylistModalProps> = ({
             <div className="flex flex-col h-full overflow-hidden p-6 space-y-6">
                 {/* 1. Name Input */}
                 <div className="shrink-0">
-                    <label className="block text-xs font-bold text-text-secondary uppercase mb-2">{t('playlists.templates.name_label', 'Playlist Name')}</label>
-                    <input
+                    <Input
                         id="playlist-title-input"
+                        label={t('playlists.templates.name_label', 'Playlist Name')}
                         value={title}
                         onChange={e => setTitle(e.target.value)}
                         placeholder={t('playlists.name_placeholder', 'My Focus Session')}
-                        className="w-full bg-bg-main border border-border rounded-xl px-4 py-3 font-bold text-text-primary focus:ring-2 focus:ring-brand-primary outline-none text-lg"
+                        className="font-bold text-lg"
+                        autoFocus
                     />
                 </div>
 
@@ -87,33 +89,35 @@ export const CreatePlaylistModal: React.FC<CreatePlaylistModalProps> = ({
                             {t('playlists.select_tasks', 'Select Tasks')} ({selectedIds.size})
                         </label>
                         {/* Quick Create Input */}
-                        <form onSubmit={handleQuickCreate} className="flex gap-2 w-full md:w-1/2">
-                            <input
+                        <form onSubmit={handleQuickCreate} className="flex gap-2 w-full md:w-1/2 items-center">
+                            <Input
                                 value={newTaskName}
                                 onChange={e => setNewTaskName(e.target.value)}
                                 placeholder={t('playlists.create_task_placeholder')}
-                                className="flex-1 bg-bg-surface border border-border rounded-lg px-3 py-1.5 text-sm outline-none focus:border-blue-500"
+                                className="py-1.5 h-9"
+                                containerClassName="flex-1"
                             />
-                            <button
-                                type="button"
-                                onClick={handleQuickCreate}
+                            <Button
+                                type="submit"
+                                onClick={(e) => handleQuickCreate(e)}
                                 disabled={!newTaskName.trim()}
-                                className="p-1.5 bg-brand-primary text-white rounded-lg disabled:opacity-50"
+                                variant="primary"
+                                className="w-9 h-9 p-0 rounded-lg shrink-0"
                             >
                                 <Plus size={16} />
-                            </button>
+                            </Button>
                         </form>
                     </div>
 
                     {/* Search */}
                     <div className="relative mb-3 shrink-0">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary" size={16} />
-                        <input
+                        <Input
                             placeholder={t('playlists.search_placeholder', 'Search existing tasks...')}
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}
-                            className="w-full pl-9 pr-4 py-2 bg-bg-surface border border-border rounded-xl text-sm outline-none focus:ring-2 focus:ring-brand-primary/20"
+                            className="pl-9"
                         />
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary pointer-events-none" size={16} />
                     </div>
 
                     {/* List */}
@@ -138,11 +142,11 @@ export const CreatePlaylistModal: React.FC<CreatePlaylistModalProps> = ({
                                             {isSelected ? <CheckCircle2 size={20} /> : <Circle size={20} />}
                                         </div>
                                         <div className="flex-1 min-w-0">
-                                            <p className="font-medium truncate dark:text-slate-200 text-sm">{task.title}</p>
+                                            <p className="font-medium truncate text-text-primary text-sm">{task.title}</p>
                                             {task.categoryId && (
                                                 <span className="flex items-center gap-1.5 mt-0.5">
                                                     <span className={`w-1.5 h-1.5 rounded-full ${categories.find(c => c.id == task.categoryId)?.color || 'bg-ui-disabled'}`}></span>
-                                                    <span className="text-[10px] text-text-tertiary uppercase font-bold tracking-wider">{categories.find(c => c.id == task.categoryId)?.name}</span>
+                                                    <span className="text-xs text-text-tertiary uppercase font-bold tracking-wider">{categories.find(c => c.id == task.categoryId)?.name}</span>
                                                 </span>
                                             )}
                                         </div>

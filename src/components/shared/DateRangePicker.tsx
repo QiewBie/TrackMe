@@ -11,6 +11,7 @@ import { useTranslation } from 'react-i18next';
 import { Calendar as CalendarIcon, ChevronLeft, ChevronRight } from 'lucide-react';
 import { DateRange } from '../../types';
 import Modal from '../ui/Modal';
+import Button from '../ui/Button';
 
 interface DateRangePickerProps {
     selectedRange: DateRange;
@@ -178,11 +179,11 @@ const DateRangePicker: React.FC<DateRangePickerProps> = ({ selectedRange, onChan
                 </div>
 
                 <div className="flex justify-between items-center mb-4">
-                    <button onClick={handlePrevMonth} className="p-1 hover:bg-bg-subtle rounded-lg text-text-secondary"><ChevronLeft size={20} /></button>
+                    <Button variant="ghost" onClick={handlePrevMonth} className="p-1 h-8 w-8 text-text-secondary hover:bg-bg-subtle" icon={ChevronLeft} />
                     <span className="font-bold text-text-primary capitalize">
                         {format(viewDate, 'LLLL yyyy', { locale: currentLocale })}
                     </span>
-                    <button onClick={handleNextMonth} className="p-1 hover:bg-bg-subtle rounded-lg text-text-secondary"><ChevronRight size={20} /></button>
+                    <Button variant="ghost" onClick={handleNextMonth} className="p-1 h-8 w-8 text-text-secondary hover:bg-bg-subtle" icon={ChevronRight} />
                 </div>
 
                 <div className="grid grid-cols-7 mb-2">
@@ -223,12 +224,13 @@ const DateRangePicker: React.FC<DateRangePickerProps> = ({ selectedRange, onChan
 
             {tempStart && (
                 <div className="mt-auto pt-3 border-t border-border flex justify-center pb-4 sm:pb-0">
-                    <button
+                    <Button
+                        variant="ghost"
                         onClick={() => setTempStart(null)}
-                        className="text-xs font-bold text-text-secondary hover:text-text-primary uppercase tracking-wider"
+                        className="text-xs font-bold text-text-secondary hover:text-text-primary uppercase tracking-wider h-8 px-3"
                     >
                         {t('analytics.calendar.cancel')}
-                    </button>
+                    </Button>
                 </div>
             )}
         </div>

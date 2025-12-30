@@ -1,8 +1,12 @@
-import React, { useState, useEffect, useRef } from 'react';
+import * as React from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { clsx } from 'clsx';
 import { X, ChevronRight, Check, FileText, Trash2, Save, CheckSquare, ListPlus, Calendar, Flag, Clock } from 'lucide-react';
 import Button from '../ui/Button';
+import Input from '../ui/Input';
+import Textarea from '../ui/Textarea';
+import Badge from '../ui/Badge';
 import DateTimePicker from '../shared/DateTimePicker';
 import { Task, Category } from '../../types';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -95,7 +99,7 @@ const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({ task, isOpen, onClo
                         exit={{ opacity: 0 }}
                         transition={{ duration: 0.2 }}
                         onClick={onClose}
-                        className="fixed inset-0 bg-black/60 z-[90]"
+                        className="fixed inset-0 bg-overlay z-[90]"
                     />
 
                     {/* Slide-over Panel */}
@@ -111,25 +115,21 @@ const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({ task, isOpen, onClo
                         <div className="flex items-start justify-between p-6 border-b border-border shrink-0 bg-bg-surface/95 z-10">
                             <div className="flex-1 mr-4">
                                 <div className="flex items-center gap-2 mb-2">
-                                    <span className={clsx(
-                                        "px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider border",
-                                        currentTask.completed
-                                            ? "bg-status-success/10 text-status-success border-status-success/20"
-                                            : "bg-brand-primary/10 text-brand-primary border-brand-primary/20"
-                                    )}>
+                                    <Badge variant={currentTask.completed ? 'success' : 'primary'}>
                                         {currentTask.completed ? t('task_details.status_completed') : t('task_details.status_in_progress')}
-                                    </span>
+                                    </Badge>
                                     {currentTask.isRunning && (
-                                        <span className="flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider border bg-amber-500/10 text-amber-600 border-amber-500/20 animate-pulse">
+                                        <Badge variant="warning" className="animate-pulse flex items-center gap-1">
                                             <Clock size={10} /> {t('task_details.status_active')}
-                                        </span>
+                                        </Badge>
                                     )}
                                 </div>
-                                <input
+                                <Input
                                     value={currentTask.title}
                                     onChange={e => setEditedTask(prev => prev ? { ...prev, title: e.target.value } : null)}
-                                    className="text-2xl font-bold bg-transparent outline-none text-text-primary w-full placeholder:text-text-secondary/50"
+                                    className="text-2xl font-bold p-0"
                                     placeholder={t('task_details.title_placeholder')}
+                                    variant="ghost"
                                 />
                             </div>
                             <Button
@@ -147,20 +147,21 @@ const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({ task, isOpen, onClo
                                 <div className="flex-1 p-6 space-y-8 border-r border-border">
                                     {/* Description */}
                                     <div>
-                                        <label className="text-xs font-bold text-slate-400 uppercase mb-3 flex items-center gap-2">
+                                        <label className="text-xs font-bold text-text-secondary uppercase mb-3 flex items-center gap-2">
                                             <FileText size={14} /> {t('task_details.description_label')}
                                         </label>
-                                        <textarea
+                                        <Textarea
                                             value={currentTask.description || ''}
                                             onChange={e => setEditedTask(prev => prev ? { ...prev, description: e.target.value } : null)}
-                                            className="w-full bg-bg-main border-0 rounded-xl p-4 text-sm outline-none min-h-[160px] resize-none text-text-primary focus:ring-2 focus:ring-brand-primary/20 transition-all placeholder:text-text-secondary/50 leading-relaxed"
+                                            className="bg-bg-main min-h-[160px] leading-relaxed"
                                             placeholder={t('task_details.description_placeholder')}
+                                            variant="default"
                                         />
                                     </div>
 
                                     {/* Subtasks */}
                                     <div>
-                                        <label className="text-xs font-bold text-slate-400 uppercase mb-3 flex items-center gap-2">
+                                        <label className="text-xs font-bold text-text-secondary uppercase mb-3 flex items-center gap-2">
                                             <CheckSquare size={14} /> {t('task_details.subtasks_label')}
                                         </label>
 
@@ -184,7 +185,7 @@ const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({ task, isOpen, onClo
                                                         >
                                                             {subtask.completed && <Check size={12} strokeWidth={3} />}
                                                         </button>
-                                                        <input
+                                                        <Input
                                                             value={subtask.title}
                                                             onChange={(e) => {
                                                                 const updatedSubtasks = currentTask.subtasks.map(s =>
@@ -193,31 +194,33 @@ const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({ task, isOpen, onClo
                                                                 setEditedTask(prev => prev ? { ...prev, subtasks: updatedSubtasks } : null);
                                                             }}
                                                             className={clsx(
-                                                                "flex-1 bg-transparent text-sm outline-none py-1 border-b border-transparent rounded transition-all",
+                                                                "py-1 border-b border-transparent rounded-none transition-all px-0",
                                                                 subtask.completed ? 'text-ui-disabled line-through decoration-border' : 'text-text-primary'
                                                             )}
+                                                            variant="ghost"
                                                         />
-                                                        <button
+                                                        <Button
+                                                            variant="icon"
                                                             onClick={() => {
                                                                 const updatedSubtasks = currentTask.subtasks.filter(s => s.id !== subtask.id);
                                                                 setEditedTask(prev => prev ? { ...prev, subtasks: updatedSubtasks } : null);
                                                             }}
-                                                            className="text-text-secondary hover:text-status-error opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-all p-1.5 hover:bg-status-error/10 rounded"
-                                                        >
-                                                            <X size={14} />
-                                                        </button>
+                                                            className="text-text-secondary hover:text-status-error transition-all p-1.5 hover:bg-status-error/10"
+                                                            icon={X}
+                                                        />
                                                     </div>
                                                 ))}
                                                 <div className="flex items-center gap-3 p-3 bg-bg-main/50">
                                                     <div className="w-5 h-5 flex items-center justify-center text-text-secondary">
                                                         <ListPlus size={16} />
                                                     </div>
-                                                    <input
+                                                    <Input
                                                         placeholder={t('task_details.add_subtask_placeholder')}
-                                                        className="flex-1 bg-transparent text-sm outline-none placeholder:text-text-secondary"
+                                                        className="px-0"
+                                                        variant="ghost"
                                                         onKeyDown={(e) => {
                                                             if (e.key === 'Enter') {
-                                                                const val = e.currentTarget.value.trim();
+                                                                const val = (e.currentTarget as HTMLInputElement).value.trim();
                                                                 if (val) {
                                                                     const newSubtask = {
                                                                         id: crypto.randomUUID(),
@@ -228,7 +231,7 @@ const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({ task, isOpen, onClo
                                                                         ...prev,
                                                                         subtasks: [...(prev.subtasks || []), newSubtask]
                                                                     } : null);
-                                                                    e.currentTarget.value = '';
+                                                                    (e.currentTarget as HTMLInputElement).value = '';
                                                                 }
                                                             }
                                                         }}
@@ -243,7 +246,7 @@ const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({ task, isOpen, onClo
                                 <div className="w-full lg:w-72 bg-bg-main/50 p-6 space-y-6 shrink-0">
                                     {/* Project Selector */}
                                     <div>
-                                        <label className="text-xs font-bold text-slate-400 uppercase mb-2 block">{t('task_details.project_label')}</label>
+                                        <label className="text-xs font-bold text-text-secondary uppercase mb-2 block">{t('task_details.project_label')}</label>
                                         <div className="relative" ref={categoryRef}>
                                             <button
                                                 onClick={() => setIsCategoryOpen(!isCategoryOpen)}
@@ -286,7 +289,7 @@ const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({ task, isOpen, onClo
 
                                     {/* Priority Selector */}
                                     <div>
-                                        <label className="text-xs font-bold text-slate-400 uppercase mb-2 block flex items-center gap-2">
+                                        <label className="text-xs font-bold text-text-secondary uppercase mb-2 block flex items-center gap-2">
                                             <Flag size={12} /> {t('task_details.priority_label')}
                                         </label>
                                         <div className="relative" ref={priorityRef}>
@@ -314,12 +317,14 @@ const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({ task, isOpen, onClo
                                                         exit={{ opacity: 0, y: 5 }}
                                                         className="absolute top-full left-0 mt-2 w-full bg-bg-surface rounded-xl shadow-xl border border-border p-1 z-20 overflow-hidden"
                                                     >
-                                                        <button
+                                                        <Button
+                                                            variant="ghost"
                                                             onClick={() => { setEditedTask(prev => prev ? { ...prev, priority: undefined } : null); setIsPriorityOpen(false); }}
-                                                            className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-text-secondary hover:bg-bg-main transition-colors"
+                                                            className="w-full justify-start rounded-lg text-sm text-text-secondary hover:bg-bg-main"
+                                                            icon={X}
                                                         >
-                                                            <X size={14} /> {t('task_details.clear_priority')}
-                                                        </button>
+                                                            {t('task_details.clear_priority')}
+                                                        </Button>
                                                         {priorityOptions.map(p => (
                                                             <button
                                                                 key={p.value}

@@ -49,6 +49,7 @@ export default {
         },
         brand: {
           DEFAULT: 'var(--brand-primary)',
+          primary: 'var(--brand-primary)', // Alias for backward compatibility
           hover: 'var(--brand-hover)',
           active: 'var(--brand-active)',
           subtle: 'var(--brand-subtle)',

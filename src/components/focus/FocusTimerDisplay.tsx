@@ -1,4 +1,5 @@
-import React, { memo } from 'react';
+import * as React from 'react';
+import { memo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { formatTime } from '../../utils/formatters';
 import { Text } from '../ui/Typography';
@@ -8,7 +9,7 @@ interface TimerDisplayProps {
     isTimerRunning: boolean;
 }
 
-export const TimerDisplay: React.FC<TimerDisplayProps> = memo(({ timeLeft, isTimerRunning }) => {
+export const FocusTimerDisplay: React.FC<TimerDisplayProps> = memo(({ timeLeft, isTimerRunning }) => {
     const { t } = useTranslation();
 
     return (
@@ -24,7 +25,7 @@ export const TimerDisplay: React.FC<TimerDisplayProps> = memo(({ timeLeft, isTim
             <div className={`
                 relative z-10 font-[800] leading-none tracking-tighter tabular-nums text-center
                 bg-clip-text text-transparent bg-gradient-to-b from-text-primary to-text-secondary
-                text-[18vw] lg:text-[10vw]
+                text-[18vw] lg:text-[10vw] pr-[2vw] lg:pr-0
                 filter drop-shadow-2xl
                 transition-transform duration-700 ease-spring will-change-transform
                 ${isTimerRunning ? 'scale-105' : 'scale-100'}
@@ -38,7 +39,7 @@ export const TimerDisplay: React.FC<TimerDisplayProps> = memo(({ timeLeft, isTim
                     mt-4 sm:mt-8 px-6 py-2 rounded-full text-sm sm:text-base font-bold uppercase tracking-widest border transition-all duration-500
                     ${isTimerRunning
                         ? 'border-brand/20 text-brand-primary bg-brand-primary/5 shadow-glow'
-                        : 'border-transparent text-text-secondary bg-white/5'
+                        : 'border-transparent text-text-secondary bg-text-primary/5'
                     }
                 `}
                 style={isTimerRunning ? { '--shadow-color': 'var(--brand-primary)' } as React.CSSProperties : {}}

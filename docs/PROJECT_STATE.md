@@ -43,11 +43,14 @@
 
 ---
 
+### Cloud & Sync
+*   ✅ **Cloud Sync**: Firebase integration for optional multi-device synchronization (Auth + Firestore).
+*   ✅ **Profile Management**: Google Auth, Avatar sync, and settings persistence.
+
 ## 3. Future Roadmap (Post-V2)
-*   **Cloud Sync**: Implementing `FirestoreAdapter` for optional multi-device synchronization.
 *   **Timeline View**: Visualizing the day's logs on a 24h timeline.
 *   **Advanced Gamification**: Achievements and deeper streak mechanics.
 
 ---
 
-*Last Updated: Dec 2025*
+*Last Updated: Jan 2026*

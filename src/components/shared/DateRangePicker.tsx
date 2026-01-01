@@ -171,7 +171,7 @@ const DateRangePicker: React.FC<DateRangePickerProps> = ({ selectedRange, onChan
                         <button
                             key={key}
                             onClick={() => setPreset(key)}
-                            className="px-2 py-1.5 text-xs font-medium bg-bg-subtle hover:bg-brand-primary/10 text-text-secondary hover:text-brand-primary rounded-lg transition-colors"
+                            className="px-2 py-1.5 text-xs font-medium bg-bg-surface border border-border hover:border-brand-primary hover:text-brand-primary text-text-secondary rounded-lg transition-all"
                         >
                             {t(`analytics.calendar.${key}`)}
                         </button>
@@ -208,7 +208,7 @@ const DateRangePicker: React.FC<DateRangePickerProps> = ({ selectedRange, onChan
                                     "h-9 w-9 rounded-lg flex items-center justify-center text-sm transition-all relative select-none",
                                     !isCurrentMonth && "text-text-tertiary opacity-50",
                                     (isStart || isEnd)
-                                        ? "bg-brand-primary text-white shadow-lg shadow-brand-primary/30 font-bold z-10"
+                                        ? "bg-brand-primary text-[hsl(var(--text-on-brand))] shadow-lg shadow-brand-primary/30 font-bold z-10"
                                         : inRange
                                             ? "bg-brand-primary/10 text-brand-primary"
                                             : "hover:bg-bg-subtle text-text-primary",

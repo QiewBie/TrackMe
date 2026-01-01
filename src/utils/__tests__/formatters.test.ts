@@ -20,21 +20,21 @@ describe('formatters', () => {
 
     describe('formatDuration', () => {
         it('formats hours correctly', () => {
-            expect(formatDuration(3600)).toBe('1год 0хв');
-            expect(formatDuration(7200)).toBe('2год 0хв');
-            expect(formatDuration(3660)).toBe('1год 1хв');
+            expect(formatDuration(3600)).toBe('1h 0m');
+            expect(formatDuration(7200)).toBe('2h 0m');
+            expect(formatDuration(3660)).toBe('1h 1m');
         });
 
         it('formats minutes correctly', () => {
-            expect(formatDuration(60)).toBe('1хв');
-            expect(formatDuration(120)).toBe('2хв');
-            expect(formatDuration(3599)).toBe('59хв');
+            expect(formatDuration(60)).toBe('1m');
+            expect(formatDuration(120)).toBe('2m');
+            expect(formatDuration(3599)).toBe('59m');
         });
 
         it('formats seconds correctly', () => {
-            expect(formatDuration(59)).toBe('59сек');
-            expect(formatDuration(10)).toBe('10сек');
-            expect(formatDuration(0)).toBe('0сек');
+            expect(formatDuration(59)).toBe('59s');
+            expect(formatDuration(10)).toBe('10s');
+            expect(formatDuration(0)).toBe('0s');
         });
     });
 
@@ -48,10 +48,16 @@ describe('formatters', () => {
             expect(formatted).toMatch(/15.01.2023/);
         });
 
-        it('supports custom format', () => {
+        it('supports custom format (default en)', () => {
             const date = new Date(2023, 0, 15, 12, 0, 0);
             const iso = date.toISOString();
-            expect(formatDate(iso, 'dd MMM')).toMatch(/15 січ/); // Assuming 'uk' locale is active
+            expect(formatDate(iso, 'dd MMM')).toMatch(/15 Jan/);
+        });
+
+        it('supports explicit locale (uk)', () => {
+            const date = new Date(2023, 0, 15, 12, 0, 0);
+            const iso = date.toISOString();
+            expect(formatDate(iso, 'dd MMM', 'uk')).toMatch(/15 січ/);
         });
 
         it('handles invalid input gracefully', () => {

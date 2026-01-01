@@ -10,7 +10,7 @@ export interface TaskContextType {
     tasks: Task[];
     setTasks: (tasks: Task[] | ((prev: Task[]) => Task[])) => void;
     addTask: (title: string, catId: string | number, autoStart?: boolean) => Promise<string>;
-    toggleTimer: (id: string) => Promise<void> | void; // Allow sync if no storage wait needed, but ideally Promise
+    toggleTimer: (id: string) => Promise<void> | void; // Delegated to GlobalTimer in UI
     startTask: (id: string) => Promise<void> | void;
     stopTask: (id: string) => Promise<void> | void;
     deleteTask: (id: string) => Promise<void> | void;

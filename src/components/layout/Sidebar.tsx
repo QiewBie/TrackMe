@@ -1,7 +1,7 @@
 import * as React from 'react';
 import {
     LayoutDashboard, User as UserIcon, Settings,
-    Folder, ListMusic, PlayCircle, Sun, Moon, Languages, Zap
+    Folder, ListMusic, PlayCircle, Sun, Moon, Languages, Zap, FolderKanban
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { clsx } from 'clsx';
@@ -10,7 +10,9 @@ import { useTranslation } from 'react-i18next';
 import Button from '../ui/Button';
 import { Category, User as UserType, FilterType } from '../../types';
 import { useUI } from '../../context/UIContext';
+import { useTheme } from '../../context/ThemeContext'; // Import theme
 import Logo from '../ui/Logo';
+import { getCategoryClass } from '../../utils/theme';
 
 interface SidebarProps {
     categories: Category[];
@@ -31,6 +33,8 @@ const Sidebar: React.FC<SidebarProps> = ({
         openCategoryManager,
         isZenMode
     } = useUI();
+    const { currentTheme } = useTheme();
+    const isMonochrome = currentTheme.id === 'monochrome';
 
     // Helper to close mobile menu on click
     const handleNavClick = () => setMobileMenuOpen(false);
@@ -42,7 +46,7 @@ const Sidebar: React.FC<SidebarProps> = ({
 
     return (
         <aside className={clsx(
-            "flex-shrink-0 flex flex-col bg-bg-surface border-r border-border z-[110] transition-all duration-500 ease-[cubic-bezier(0.25,1,0.5,1)] will-change-[width,transform]",
+            "flex-shrink-0 flex flex-col bg-bg-surface border-r border-border z-fixed transition-all duration-500 ease-[cubic-bezier(0.25,1,0.5,1)] will-change-[width,transform]",
             "fixed top-0 bottom-0 left-0 lg:static",
             // Mobile logic
             isMobileMenuOpen ? "translate-x-0 shadow-2xl w-72" : "-translate-x-full w-72",
@@ -67,7 +71,9 @@ const Sidebar: React.FC<SidebarProps> = ({
                         className={({ isActive }: { isActive: boolean }) => clsx(
                             "w-full items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-bold transition-all mb-1 hidden lg:flex outline-none focus-visible:ring-2 focus-visible:ring-brand-primary/50",
                             isActive
-                                ? "bg-brand-primary text-white shadow-lg shadow-brand-primary/20 translate-x-1"
+                                ? (isMonochrome
+                                    ? "bg-bg-main border-2 border-brand-primary text-brand-primary shadow-brand-glow translate-x-1"
+                                    : "bg-brand-primary text-white shadow-lg shadow-brand-primary/20 translate-x-1")
                                 : "text-text-secondary hover:bg-bg-main hover:text-text-primary active:scale-95 active:bg-bg-subtle"
                         )}
                     >
@@ -81,7 +87,9 @@ const Sidebar: React.FC<SidebarProps> = ({
                         className={({ isActive }: { isActive: boolean }) => clsx(
                             "w-full items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-bold transition-all mb-1 hidden lg:flex outline-none focus-visible:ring-2 focus-visible:ring-brand-primary/50",
                             isActive
-                                ? "bg-brand-primary text-white shadow-lg shadow-brand-primary/20 translate-x-1"
+                                ? (isMonochrome
+                                    ? "bg-bg-main border-2 border-brand-primary text-brand-primary shadow-brand-glow translate-x-1"
+                                    : "bg-brand-primary text-white shadow-lg shadow-brand-primary/20 translate-x-1")
                                 : "text-text-secondary hover:bg-bg-main hover:text-text-primary active:scale-95 active:bg-bg-subtle"
                         )}
                     >
@@ -109,7 +117,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                             "w-full flex items-center justify-start gap-3 px-5 py-3.5 lg:px-4 lg:py-2.5 rounded-xl transition-all mb-1",
                             "text-base lg:text-sm font-bold active:scale-[0.98]", // Unified scale
                             filter === 'all'
-                                ? "bg-brand-subtle text-brand-primary shadow-sm translate-x-1"
+                                ? "bg-brand-primary/10 text-brand-primary shadow-sm translate-x-1"
                                 : "text-text-secondary hover:bg-bg-main hover:text-text-primary"
                         )}
                         onClick={() => { setFilter('all'); setMobileMenuOpen(false) }}
@@ -125,13 +133,13 @@ const Sidebar: React.FC<SidebarProps> = ({
                                 "w-full flex items-center gap-3 px-5 py-3.5 lg:px-4 lg:py-2.5 rounded-xl transition-all mt-1 group",
                                 "text-base lg:text-sm font-bold active:scale-[0.98]",
                                 String(filter) === String(c.id)
-                                    ? "bg-brand-subtle text-brand-primary shadow-sm translate-x-1"
+                                    ? "bg-brand-primary/10 text-brand-primary shadow-sm translate-x-1"
                                     : "text-text-secondary hover:bg-bg-main hover:text-text-primary"
                             )}
                         >
                             <span className={clsx(
                                 "w-3 h-3 lg:w-2.5 lg:h-2.5 rounded-full shadow-sm transition-transform group-hover:scale-110",
-                                c.color
+                                getCategoryClass(c.color, 'bg')
                             )}></span>
                             {c.name}
                         </button>
@@ -146,7 +154,9 @@ const Sidebar: React.FC<SidebarProps> = ({
                     className={({ isActive }: { isActive: boolean }) =>
                         clsx("w-full items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-bold transition-all mb-1 hidden lg:flex",
                             isActive
-                                ? "bg-brand text-white shadow-lg shadow-brand/20 translate-x-1"
+                                ? (isMonochrome
+                                    ? "bg-bg-main border-2 border-brand-primary text-brand-primary shadow-brand-glow translate-x-1"
+                                    : "bg-brand/10 text-brand-primary shadow-sm translate-x-1")
                                 : "text-text-secondary hover:bg-bg-main hover:text-text-primary"
                         )
                     }
@@ -161,7 +171,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                     className={({ isActive }: { isActive: boolean }) =>
                         clsx("w-full items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-bold transition-all mb-1 hidden lg:flex group relative overflow-hidden",
                             isActive
-                                ? "text-white shadow-lg shadow-purple-500/30 ring-1 ring-purple-400"
+                                ? "text-white shadow-lg shadow-brand-glow ring-1 ring-brand-accent"
                                 : "text-text-secondary hover:bg-bg-main"
                         )
                     }
@@ -181,7 +191,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                             {isActive && (
                                 <motion.div
                                     layoutId="sidebar-active"
-                                    className="absolute inset-0 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 z-10"
+                                    className="absolute inset-0 bg-brand-gradient z-10"
                                     initial={false}
                                     transition={{ type: "spring", stiffness: 300, damping: 30 }}
                                 />
@@ -199,7 +209,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                     className={({ isActive }: { isActive: boolean }) => clsx(
                         "w-full items-center gap-3 p-3 rounded-xl border-2 transition-all group relative overflow-hidden hidden lg:flex",
                         isActive
-                            ? "bg-brand-subtle border-brand-subtle"
+                            ? "bg-brand-primary/10 border-brand-primary/20"
                             : "bg-bg-main hover:bg-bg-surface border-border"
                     )}
                 >
@@ -235,8 +245,5 @@ const Sidebar: React.FC<SidebarProps> = ({
         </aside >
     );
 };
-
-// Mock components to fix missing imports if needed, but we imported them
-import { FolderKanban } from 'lucide-react';
 
 export default Sidebar;

@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { useActiveTimer } from '../context/ActiveTimerContext';
+import { useFocusState } from '../context/FocusSessionContext';
 
 /**
  * Updates the site favicon dynamically based on timer state.
@@ -7,8 +7,8 @@ import { useActiveTimer } from '../context/ActiveTimerContext';
  * - Running: Red Pause Icon (active)
  */
 export const useDynamicFavicon = () => {
-    const { activeTimers } = useActiveTimer();
-    const isRunning = Object.keys(activeTimers).length > 0;
+    const { activeSession, isPaused } = useFocusState();
+    const isRunning = !!activeSession && !isPaused;
 
     useEffect(() => {
         const link: HTMLLinkElement | null = document.querySelector("link[rel*='icon']");

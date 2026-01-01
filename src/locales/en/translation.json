@@ -20,6 +20,7 @@
         "error_msg": "An unexpected error occurred. Please try reloading the page.",
         "reload": "Reload Page",
         "settings": "Settings",
+        "theme_palette": "Color Theme",
         "hours": "Hours",
         "minutes": "Minutes",
         "now": "Now",
@@ -27,18 +28,56 @@
         "undo": "Undo",
         "task_deleted": "Task deleted",
         "back_to_dashboard": "Back to Dashboard",
-        "save": "Save"
+        "save": "Save",
+        "troubleshoot": "Troubleshoot",
+        "troubleshoot_desc": "If your settings are not syncing or reverting (e.g. \"Zombie Theme\"), try clearing the local database cache.",
+        "reset_cache": "Reset Sync Cache",
+        "inspect_data": "Inspect & Nuke Server Data",
+        "reset_cache_confirm": "This will clear the local cache and reload the page. Your time logs are safe. Continue?",
+        "reset_cache_error": "Failed to clear cache (it might be in use). Try closing other tabs.",
+        "debug_data": "Raw Data: ",
+        "nuke_confirm": "NUKE: Delete this document entirely? This should force a revert to Default (Standard Blue).",
+        "nuke_deleted": "Document deleted. Reloading...",
+        "debug_label": "Debug Internal State",
+        "backup_success": "Backup downloaded successfully"
     },
     "navigation": {
+        "title": "Navigation",
         "dashboard": "Dashboard",
         "analytics": "Analytics",
-        "projects": "PROJECTS",
+        "projects": "Projects",
+        "all_tasks": "All Tasks",
         "profile": "Profile",
         "open_menu": "Open menu",
         "settings": "Settings",
         "dark_theme": "Dark Theme",
         "light_theme": "Light Theme",
         "quick_focus": "Deep Flow"
+    },
+    "themes": {
+        "title": "Color Theme",
+        "default": "Blue",
+        "serenity": "Purple",
+        "amber": "Amber",
+        "rose": "Rose",
+        "birch": "Sage",
+        "monochrome": "Monochrome",
+        "slate": "Slate",
+        "red": "Red",
+        "orange": "Orange",
+        "yellow": "Yellow",
+        "lime": "Lime",
+        "green": "Green",
+        "emerald": "Emerald",
+        "teal": "Teal",
+        "cyan": "Cyan",
+        "sky": "Sky",
+        "blue": "Blue",
+        "indigo": "Indigo",
+        "violet": "Violet",
+        "purple": "Purple",
+        "fuchsia": "Fuchsia",
+        "pink": "Pink"
     },
     "focus": {
         "title": "Focus Mode",
@@ -74,6 +113,9 @@
         "status_paused": "Paused",
         "completed_warning_msg": "This task is already completed!",
         "select_task_msg": "Select a task from the sidebar or playlist to begin your flow.",
+        "no_playlist_title": "No Playlist Selected",
+        "no_playlist_msg": "To start focusing, select a playlist and press play.",
+        "go_to_playlists": "Go to Playlists",
         "last_task_title": "Last Task",
         "last_task_msg": "This is the last uncompleted task in your queue!",
         "all_done_msg": "Great job! You've finished everything in your queue.",
@@ -178,6 +220,8 @@
         "top": "Top",
         "less": "Less",
         "more": "More",
+        "legend_focus": "Focus Time",
+        "legend_completed": "Completed Tasks",
         "calendar": {
             "today": "Today",
             "yesterday": "Yesterday",
@@ -265,6 +309,8 @@
         "language_uk": "Ukrainian",
         "logout": "Logout",
         "delete_account": "Delete Account",
+        "delete_description": "This action cannot be undone. All your data will be permanently lost.",
+        "delete_button": "Delete Account",
         "delete_confirm_msg": "This action cannot be undone. All your data will be permanently lost.",
         "data_management": "Data Management",
         "data_warning": "Your data is stored locally. We recommend exporting a backup to avoid data loss.",
@@ -275,7 +321,8 @@
         "import_confirm_title": "Import Data?",
         "import_confirm_msg": "This will completely overwrite your current data with the file content. This cannot be undone.",
         "import_confirm_btn": "Overwrite & Import",
-        "save_button": "Save & Exit"
+        "save_button": "Save & Exit",
+        "account_management": "Account Management"
     },
     "welcome": {
         "subtitle": "Boost your productivity with a focused workflow.",
@@ -286,6 +333,9 @@
         "input_name": "Enter your name",
         "start_work": "Start Working",
         "back": "Back"
+    },
+    "settings": {
+        "theme_palette": "Color Theme"
     },
     "sidebar": {
         "role_user": "User"

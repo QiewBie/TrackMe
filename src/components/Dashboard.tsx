@@ -11,21 +11,23 @@ import { useDynamicFavicon } from '../hooks/useDynamicFavicon';
 import { useCategoryContext } from '../context/CategoryContext';
 import { useDataSync } from '../hooks/useDataSync';
 import { useDashboardController } from '../hooks/useDashboardController';
+import { useLayout } from '../context/LayoutContext';
 
 // Components
-import TaskDetailsModal from './tasks/TaskDetailsModal';
+import TaskDetailsModal from '../features/tasks/components/TaskDetailsModal';
 import ConfirmationModal from './shared/ConfirmationModal';
 import UndoToast from './shared/UndoToast';
 import Sidebar from './layout/Sidebar';
 import BottomNav from './layout/BottomNav';
 import CategoryManager from './categories/CategoryManager';
+import LoadingSpinner from './ui/LoadingSpinner';
 
 // Types
 import { User, FilterType, Task } from '../types';
 import { ProjectNote } from '../types';
 
 export interface DashboardContextType {
-    user: User;
+    user: User | null;
     setUser: (user: User) => void;
     updateAvatar: (file: File) => void;
     logout: () => void;
@@ -49,6 +51,8 @@ const Dashboard = () => {
         isMobileMenuOpen, setMobileMenuOpen,
         isCategoryManagerOpen, closeCategoryManager
     } = useUI();
+
+    const { mobileHeader } = useLayout();
 
     const { categories, setCategories } = useCategoryContext();
     const location = useLocation();
@@ -75,7 +79,13 @@ const Dashboard = () => {
 
     const outlet = useOutlet(contextValue);
 
-    if (!user) return null;
+    if (!user) {
+        return (
+            <div className="flex h-[100dvh] w-full bg-bg-main items-center justify-center">
+                <LoadingSpinner />
+            </div>
+        );
+    }
 
     return (
         <div className="flex h-[100dvh] w-full bg-bg-main text-text-primary font-sans overflow-hidden">
@@ -102,36 +112,14 @@ const Dashboard = () => {
                 {/* Mobile Header - Hide in Focus Mode */}
                 {!location.pathname.startsWith('/focus') && (
                     <header className="lg:hidden h-16 bg-bg-surface border-b border-border flex items-center justify-between px-4 shrink-0 sticky top-0 z-40 transition-colors">
-                        <div className="flex items-center gap-3 overflow-hidden">
-                            {(() => {
-                                let title = "TrackMe";
-                                let color = "";
-
-                                if (location.pathname === '/analytics') {
-                                    title = t('analytics.title');
-                                } else if (location.pathname === '/profile') {
-                                    title = t('profile.title');
-                                } else if (location.pathname === '/settings') {
-                                    title = t('settings.title') || "Settings";
-                                } else if (filter === 'all') {
-                                    title = t('tasks.overview');
-                                } else {
-                                    const cat = categories.find(c => String(c.id) === String(filter));
-                                    title = cat ? cat.name : t('tasks.project_view');
-                                    color = cat?.color || "";
-                                }
-
-                                return (
-                                    <>
-                                        {color && <div className={`w-3 h-3 rounded-full shrink-0 ${color}`} />}
-                                        <span className="font-bold text-lg truncate">{title}</span>
-                                    </>
-                                );
-                            })()}
+                        <div className="flex items-center gap-3 overflow-hidden flex-1 text-xl font-extrabold tracking-tight text-text-primary">
+                            {mobileHeader.title}
                         </div>
-                        <button onClick={() => setMobileMenuOpen(true)} className="p-2 active:scale-90 transition-transform text-text-primary" aria-label={t('navigation.open_menu', 'Open menu')}>
-                            <Menu />
-                        </button>
+                        <div className="flex items-center gap-2">
+                            <button onClick={() => setMobileMenuOpen(true)} className="p-2 active:scale-90 transition-transform text-text-primary" aria-label={t('navigation.open_menu', 'Open menu')}>
+                                <Menu />
+                            </button>
+                        </div>
                     </header>
                 )}
 
@@ -172,7 +160,7 @@ const Dashboard = () => {
                 onClose={() => setSelectedTask(null)}
                 categories={categories}
                 onSave={updateTaskDetails}
-                onDelete={(id) => {
+                onDelete={(id: string) => {
                     const t = tasks.find(t => t.id === id);
                     if (selectedTask && selectedTask.id === id && t) handleDelete(t);
                     setSelectedTask(null);

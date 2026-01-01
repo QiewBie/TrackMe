@@ -4,8 +4,8 @@ import { Category } from '../types';
 import { useStorage } from '../context/StorageContext';
 
 const DEFAULT_CATEGORIES: Category[] = [
-    { id: '1', name: 'Робота', color: 'bg-indigo-500' },
-    { id: '2', name: 'Навчання', color: 'bg-emerald-500' }
+    { id: '1', name: 'Робота', color: 'indigo' },
+    { id: '2', name: 'Навчання', color: 'emerald' }
 ];
 
 export const useCategories = () => {

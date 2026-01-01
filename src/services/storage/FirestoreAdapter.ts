@@ -1,7 +1,7 @@
-import { doc, getDoc, setDoc, deleteDoc, collection, getDocs } from "firebase/firestore";
+import { doc, getDoc, setDoc, deleteDoc, collection, getDocs, onSnapshot } from "firebase/firestore";
 import { db } from "../../lib/firebase";
 import { IStorageAdapter } from "./storage";
-import { Task, Category, Playlist } from "../../types";
+import { Task, Category, Playlist, UserSettings } from "../../types";
 
 export class FirestoreAdapter {
     private userId: string;
@@ -143,6 +143,52 @@ export class FirestoreAdapter {
             await deleteDoc(docRef);
         } catch (error) {
             console.error(`Error deleting playlist "${id}" from Firestore:`, error);
+        }
+    }
+    async subscribeToUserPreferences(callback: (prefs: UserSettings | null) => void): Promise<() => void> {
+        if (!this.userId) return () => { };
+
+        try {
+            const docRef = doc(db, "users", this.userId, "data", "preferences");
+            // Real-time listener
+            const unsubscribe = onSnapshot(docRef, (docSnap) => {
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    callback(data.value as UserSettings);
+                } else {
+                    callback(null);
+                }
+            }, (error) => {
+                console.error("Error in preference subscription:", error);
+            });
+            return unsubscribe;
+        } catch (error) {
+            console.error("Error setting up preference subscription:", error);
+            return () => { };
+        }
+    }
+
+    async updateUserPreferences(prefs: Partial<UserSettings>): Promise<void> {
+        if (!this.userId) return;
+        try {
+            const docRef = doc(db, "users", this.userId, "data", "preferences");
+            const sanitized = this.sanitizeData(prefs);
+
+            // Flatten to dot notation to ensure deep merge doesn't overwrite the 'value' object
+            const updateData: any = { updatedAt: new Date().toISOString() };
+
+            // We iterate over the keys of the partial update
+            for (const key of Object.keys(sanitized)) {
+                updateData[`value.${key}`] = sanitized[key];
+            }
+
+            console.log(`[Firestore][${this.userId}] Updating preferences (DotNotation):`, updateData);
+            // setDoc with merge: true AND deep-dot notation keys
+            await setDoc(docRef, updateData, { merge: true });
+            console.log(`[Firestore][${this.userId}] Update committed.`);
+        } catch (error) {
+            console.error("Error updating user preferences:", error);
+            throw error;
         }
     }
 }

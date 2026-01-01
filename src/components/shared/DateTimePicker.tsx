@@ -176,7 +176,7 @@ const DateTimePicker: React.FC<DateTimePickerProps> = ({ label, value, onChange,
 
                     <div className="flex gap-2 h-32">
                         <div className="flex-1 flex flex-col">
-                            <span className="text-[10px] font-bold text-text-secondary uppercase mb-1 text-center">{t('common.hours')}</span>
+                            <span className="text-xs font-bold text-text-secondary uppercase mb-1 text-center">{t('common.hours')}</span>
                             <div className="flex-1 overflow-y-auto custom-scrollbar bg-bg-main/50 rounded-lg p-1">
                                 {hours.map(h => (
                                     <button
@@ -193,7 +193,7 @@ const DateTimePicker: React.FC<DateTimePickerProps> = ({ label, value, onChange,
                             </div>
                         </div>
                         <div className="flex-1 flex flex-col">
-                            <span className="text-[10px] font-bold text-text-secondary uppercase mb-1 text-center">{t('common.minutes')}</span>
+                            <span className="text-xs font-bold text-text-secondary uppercase mb-1 text-center">{t('common.minutes')}</span>
                             <div className="flex-1 overflow-y-auto custom-scrollbar bg-bg-main/50 rounded-lg p-1">
                                 {minutes.map(m => (
                                     <button

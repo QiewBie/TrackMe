@@ -5,7 +5,7 @@ import { useCategoryContext } from '../context/CategoryContext';
 import { usePlaylistContext } from '../context/PlaylistContext';
 import { useFocusContext } from '../context/FocusSessionContext';
 import { Task } from '../types';
-import { COLOR_HEX_MAP } from '../constants/colors';
+import { getThemeColor } from '../utils/theme';
 
 export const useFocusViewController = () => {
     const { id } = useParams();
@@ -96,15 +96,28 @@ export const useFocusViewController = () => {
         return undefined;
     }, [resolvedContext, activePlaylistId, playlists, activeTask]);
 
-    // --- Session Hydration ---
+    // --- Session Hydration & Sync ---
     useEffect(() => {
         if (resolvedContext.type === 'playlist') {
             const p = resolvedContext.data as typeof playlists[0];
+
+            // Scenario 1: First Load / Switch Playlist
             if (activePlaylistId !== p.id) {
                 setPlaylistContext(p.id, p.taskIds);
             }
+            // Scenario 2: Same Playlist, but Source Logic Updated (e.g. Tasks added in Manager)
+            else if (activePlaylistId === p.id) {
+                // Check for divergence (naive stringify is fast enough for IDs)
+                const sourceSig = JSON.stringify(p.taskIds);
+                const localSig = JSON.stringify(sessionQueue);
+
+                if (sourceSig !== localSig) {
+                    console.log('[FocusVC] Syncing Session Queue with Source Playlist', p.taskIds);
+                    setPlaylistContext(p.id, p.taskIds);
+                }
+            }
         }
-    }, [resolvedContext, activePlaylistId, setPlaylistContext]);
+    }, [resolvedContext, activePlaylistId, sessionQueue, setPlaylistContext]);
 
     // --- Synchronization: Route <-> Session Context ---
     useEffect(() => {
@@ -123,8 +136,33 @@ export const useFocusViewController = () => {
     );
 
     const ambientColor = useMemo(() => {
-        if (!activeCategory?.color) return COLOR_HEX_MAP.slate;
-        return COLOR_HEX_MAP[activeCategory.color] || COLOR_HEX_MAP.slate;
+        if (!activeCategory?.color) return getThemeColor('--palette-slate'); // Default to slate
+
+        // activeCategory.color might be 'indigo' (semantic ID) or 'bg-indigo-500' (legacy)
+        let colorKey = activeCategory.color.replace('bg-', '').split('-')[0]; // Extract 'indigo'
+
+        // Map common color names to CSS variables
+        // We can just rely on getThemeColor if we map names to variables:
+        const varMap: Record<string, string> = {
+            indigo: '--palette-indigo',
+            blue: '--palette-blue',
+            emerald: '--palette-emerald',
+            green: '--palette-green',
+            red: '--palette-red',
+            rose: '--palette-red',
+            amber: '--palette-amber',
+            orange: '--palette-amber', // Map orange to amber for now or add specific var
+            purple: '--palette-purple',
+            violet: '--palette-purple',
+            pink: '--palette-pink',
+            cyan: '--palette-cyan',
+            slate: '--palette-slate',
+            gray: '--palette-slate',
+        };
+
+        const varName = varMap[colorKey] || '--palette-slate';
+        return getThemeColor(varName);
+
     }, [activeCategory]);
 
     const queue = useMemo(() => {

@@ -10,18 +10,14 @@ import {
 import { auth, googleProvider } from "../../lib/firebase";
 import { User } from "../../types/models";
 
-// Map Firebase User to App User
-export const mapFirebaseUser = (fbUser: FirebaseUser): User => ({
+// Map Firebase User to App User (Identity Only)
+export const mapFirebaseUser = (fbUser: FirebaseUser): Omit<User, 'preferences'> => ({
     id: fbUser.uid,
     name: fbUser.displayName || 'Anonymous',
     username: fbUser.email?.split('@')[0] || 'user',
     role: 'user',
     avatar: fbUser.photoURL || undefined,
-    createdAt: new Date().toISOString(),
-    preferences: {
-        theme: 'dark', // Default preference
-        language: 'uk'
-    }
+    createdAt: new Date().toISOString()
 });
 
 export const authService = {

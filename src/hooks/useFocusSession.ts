@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import { Task } from '../types';
 import { useFocusContext } from '../context/FocusSessionContext';
+import { useGlobalTimer } from './useGlobalTimer';
 
 export type SessionState = 'idle' | 'work' | 'shortBreak' | 'longBreak';
 
@@ -21,17 +22,17 @@ interface UseFocusSessionProps {
 }
 
 export const useFocusSession = ({ activeTask, settings, handlers }: UseFocusSessionProps) => {
-    // We now rely on SessionContext for the source of truth
+    // We now rely on SessionContext AND GlobalTimer for orchestration
     const {
         timeLeft,
         isPaused,
         activeSession,
-        startSession,
-        pauseSession,
-        resumeSession,
+        pauseSession, // We still use specific Pause
         stopSession,
         updateSessionConfig
     } = useFocusContext();
+
+    const { startTimer } = useGlobalTimer(); // New Orchestrator
 
     const { playCompleteSound } = handlers;
 
@@ -70,15 +71,20 @@ export const useFocusSession = ({ activeTask, settings, handlers }: UseFocusSess
     const startNewSet = useCallback(() => {
         if (!activeTask) return;
 
-        // Start a fresh session via Context
-        startSession(activeTask.id, {
+        // Start a fresh session via Global Orchestrator (Enforces SimpleTimer stop)
+        // Note: FocusSessionContext.startSession handles the config object merging
+        // But useGlobalTimer.startTimer currently doesn't accept config arg.
+        // We might need to update session config separately or update useGlobalTimer?
+        // Let's update config first, then start.
+        updateSessionConfig({
             workDuration: settings.workDuration,
             shortBreak: settings.shortBreak,
             longBreak: settings.longBreak
         });
 
+        startTimer(activeTask.id, 'focus');
         setShowNewSetPrompt(false);
-    }, [activeTask, settings, startSession]);
+    }, [activeTask, settings, startTimer, updateSessionConfig]);
 
     const toggleTimer = useCallback(() => {
         if (!activeTask) return;
@@ -89,12 +95,14 @@ export const useFocusSession = ({ activeTask, settings, handlers }: UseFocusSess
         } else {
             // Toggle
             if (isPaused) {
-                resumeSession();
+                // RESUME via Global (kills SimpleTimer if running)
+                startTimer(activeTask.id, 'focus');
             } else {
+                // PAUSE (Safe to just pause)
                 pauseSession();
             }
         }
-    }, [activeTask, activeSession, isPaused, startNewSet, resumeSession, pauseSession]);
+    }, [activeTask, activeSession, isPaused, startNewSet, startTimer, pauseSession]);
 
     const resetSession = useCallback(() => {
         stopSession();

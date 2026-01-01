@@ -30,7 +30,7 @@ A premium, offline-first productivity workspace designed for deep work. Built wi
 *   **Safe Storage**: Sub-collection storage pattern to prevent monolithic data corruption.
 
 ### 🎨 Design System & Theming
-> Full Specification: [**See STYLE_GUIDE.md**](src/docs/STYLE_GUIDE.md)
+> Full Specification: [**See STYLE_GUIDE.md**](docs/STYLE_GUIDE.md)
 
 *   **Layer System**:
     *   Canvas (`bg-bg-main`): `#f8fafc` (Light) / `#020617` (Dark).
@@ -62,19 +62,22 @@ A premium, offline-first productivity workspace designed for deep work. Built wi
 ### Directory Structure
 ```
 src/
-├── components/     # UI Building Blocks
-│   ├── analytics/  # Charts & Stats Widgets
-│   ├── focus/      # Session View & Timer Logic
-│   ├── layout/     # Sidebar, Nav, Modals
-│   ├── playlist/   # Playlist Manager & Editors
-│   └── ui/         # Atomic Primitives (Button, Toggle, Input, Modal)
+├── components/     # Shared UI Building Blocks
+│   ├── layout/     # Sidebar, BottomNav
+│   ├── shared/     # Common Widgets (Modals, DatePickers)
+│   └── ui/         # Atomic Primitives (Button, Input, Typography)
+├── features/       # Feature Modules (Vertical Slices)
+│   ├── analytics/  # Analytics View & Charts
+│   ├── auth/       # Login, Profile, Datamanager
+│   ├── focus/      # Focus Session Engine & View
+│   ├── playlists/  # Playlist Management & Editors
+│   └── tasks/      # Task Management System
 ├── context/        # Global State (Auth, FocusSession, Task, UI)
 ├── hooks/          # Logic (useFocusSession, useTimeLedger)
 ├── locales/        # i18n JSON files
 ├── services/       # Core Business Logic
-│   └── storage/    # TimeLedger & Persistence
-├── types/          # TypeScript Interfaces (Task, TimeLog)
-└── utils/          # Helpers (Formatters, Themes, Backup)
+├── types/          # TypeScript Interfaces
+└── utils/          # Helpers
 ```
 
 ---
@@ -97,7 +100,8 @@ npm install
 ---
 
 ## 🔒 Privacy & Security
-*   **Zero-Knowledge**: No data is sent to external servers. Everything resides in the user's LocalStorage.
+*   **Local-First**: By default, data resides in the user's LocalStorage.
+*   **Cloud Sync (Optional)**: Users can sign in to sync preferences and data across devices via Firebase.
 *   **Export**: Users own their data via the JSON Export feature.
 
 ---

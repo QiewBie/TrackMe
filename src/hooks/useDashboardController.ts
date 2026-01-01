@@ -63,7 +63,7 @@ export const useDashboardController = () => {
 
     // Context Value Construction
     const contextValue = useMemo(() => ({
-        user: user!,
+        user: user,
         setUser: updateProfile,
         updateAvatar,
         logout,

@@ -1,21 +1,22 @@
 import { Suspense, lazy, useEffect } from 'react';
 import { Routes, Route, useOutletContext, useLocation } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
-import { ActiveTimerProvider } from './context/ActiveTimerContext';
+// ActiveTimerProvider removed (Bridge Pattern)
 import { UIProvider } from './context/UIContext';
+import { LayoutProvider } from './context/LayoutContext';
 import { TaskProvider, useTaskContext } from './context/TaskContext';
 import { CategoryProvider, useCategoryContext } from './context/CategoryContext';
 import { PlaylistProvider } from './context/PlaylistContext';
 import { SoundProvider } from './context/SoundContext';
 import { FocusSessionProvider, useFocusContext } from './context/FocusSessionContext';
 import Dashboard, { DashboardContextType } from './components/Dashboard';
-import TaskListView from './components/views/TaskListView';
-
+const TaskListView = lazy(() => import('./features/tasks/TaskListView'));
 // Lazy load heavy views
-const AnalyticsView = lazy(() => import('./components/analytics/AnalyticsView'));
-const ProfileView = lazy(() => import('./components/views/ProfileView'));
-const PlaylistManager = lazy(() => import('./components/views/PlaylistManager'));
-const FocusView = lazy(() => import('./components/views/FocusView'));
+const AnalyticsView = lazy(() => import('./features/analytics/AnalyticsView'));
+const ProfileView = lazy(() => import('./features/auth/ProfileView'));
+const PlaylistManager = lazy(() => import('./features/playlists/PlaylistManager'));
+const FocusView = lazy(() => import('./features/focus/FocusView'));
+import { ThemeProvider } from './context/ThemeContext';
 
 import { useTranslation } from 'react-i18next';
 
@@ -24,10 +25,12 @@ const Loading = () => {
   const { t } = useTranslation();
   return (
     <div className="flex items-center justify-center h-64 w-full" aria-label={t('common.loading')}>
-      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand-primary"></div>
     </div>
   );
 };
+
+import { useGlobalTimer } from './hooks/useGlobalTimer';
 
 // Wrappers to consume context from Dashboard Outlet
 const TaskListWrapper = () => {
@@ -35,7 +38,8 @@ const TaskListWrapper = () => {
     tasks, addTask, toggleComplete
   } = useTaskContext();
   const { categories } = useCategoryContext();
-  const { startSession, activeSession, isPaused, pauseSession, resumeSession } = useFocusContext();
+  // DECOUPLED: Dashboard now uses Global Timer (Simple Priority)
+  const { startTimer, stopTimer, isRunning } = useGlobalTimer();
 
   const {
     filter, scrollContainer,
@@ -45,11 +49,10 @@ const TaskListWrapper = () => {
   } = useOutletContext<DashboardContextType>();
 
   const handleToggleTimer = (id: string) => {
-    if (activeSession?.taskId === id) {
-      if (isPaused) resumeSession();
-      else pauseSession();
+    if (isRunning(id)) {
+      stopTimer(id);
     } else {
-      startSession(id);
+      startTimer(id, 'dashboard');
     }
   };
 
@@ -74,6 +77,8 @@ const AnalyticsWrapper = () => {
 
 const ProfileWrapper = () => {
   const { user, setUser, updateAvatar, logout, deleteProfile } = useOutletContext<DashboardContextType>();
+  if (!user) return <Loading />;
+
   return <ProfileView
     user={user}
     setUser={setUser}
@@ -84,7 +89,7 @@ const ProfileWrapper = () => {
 };
 
 import { AuthProvider, useAuth } from './context/AuthContext';
-import LoginView from './components/views/LoginView';
+import LoginView from './features/auth/LoginView';
 import { StorageProvider } from './context/StorageContext';
 
 // ... other imports
@@ -103,6 +108,9 @@ const PageTransitionWrapper = ({ children, noPadding = false }: { children: Reac
 
 const AppContent = () => {
   const { user, isLoading } = useAuth();
+  const { i18n } = useTranslation();
+
+
 
   if (isLoading) {
     return <Loading />;
@@ -123,10 +131,20 @@ const AppContent = () => {
     <Routes>
       <Route path="/" element={
         <UIProvider>
-          <Dashboard />
+          <LayoutProvider>
+            <ThemeProvider>
+              <Dashboard />
+            </ThemeProvider>
+          </LayoutProvider>
         </UIProvider>
       }>
-        <Route index element={<PageTransitionWrapper><TaskListWrapper /></PageTransitionWrapper>} />
+        <Route index element={
+          <Suspense fallback={<Loading />}>
+            <PageTransitionWrapper noPadding>
+              <TaskListWrapper />
+            </PageTransitionWrapper>
+          </Suspense>
+        } />
         <Route path="analytics" element={
           <Suspense fallback={<Loading />}>
             <PageTransitionWrapper noPadding>
@@ -136,7 +154,7 @@ const AppContent = () => {
         } />
         <Route path="profile" element={
           <Suspense fallback={<Loading />}>
-            <PageTransitionWrapper>
+            <PageTransitionWrapper noPadding>
               <ProfileWrapper />
             </PageTransitionWrapper>
           </Suspense>
@@ -167,6 +185,11 @@ const AppContent = () => {
 
 // ...
 
+import { ActiveTimerProvider } from './context/ActiveTimerContext';
+// ... (imports)
+
+// ...
+
 export default function App() {
   const { i18n } = useTranslation();
 
@@ -178,8 +201,8 @@ export default function App() {
   return (
     <AuthProvider>
       <StorageProvider>
-        <ActiveTimerProvider>
-          <FocusSessionProvider>
+        <FocusSessionProvider>
+          <ActiveTimerProvider>
             <TaskProvider>
               <CategoryProvider>
                 <PlaylistProvider>
@@ -189,8 +212,8 @@ export default function App() {
                 </PlaylistProvider>
               </CategoryProvider>
             </TaskProvider>
-          </FocusSessionProvider>
-        </ActiveTimerProvider>
+          </ActiveTimerProvider>
+        </FocusSessionProvider>
       </StorageProvider>
     </AuthProvider>
   );

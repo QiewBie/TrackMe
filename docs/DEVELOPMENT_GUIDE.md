@@ -27,7 +27,7 @@ Do not drill props down 10 levels. Use the appropriate Hook:
 | :--- | :--- | :--- |
 | **Tasks** | `useTaskContext()` | Create, Edit, Delete tasks. |
 | **Categories** | `useCategoryContext()` | Manage projects/categories. |
-| **Time/Focus** | `useSession()` | Start/Stop Focus Timer logic. |
+| **Time/Focus** | `useGlobalTimer()` | Orchestrate Focus & Stopwatch logic. |
 | **Theme/UI** | `useUI()` | Toggle Sidebar, Zen Mode, Dark Mode. |
 | **User** | `useAuth()` | Get current user profile. |
 
@@ -70,7 +70,7 @@ Modify the relevant Context (e.g., `src/context/TaskContext.tsx`) to handle the 
 **CRITICAL**: Do not write raw HTML/CSS for common elements.
 1.  **Check `src/components/ui`**: Use `<Button>`, `<Input>`, `<Modal>`, `<Logo>`.
 2.  **Styling**: Use **Semantic Tokens** (`bg-brand-DEFAULT`, `bg-bg-surface`). Do not use raw colors (`bg-blue-600`).
-3.  **Dynamic Colors**: For categories or tags, use `TAG_COLORS` from `src/utils/theme.ts`.
+3.  **Dynamic Colors**: For categories or tags, use `CATEGORY_COLORS` from `src/features/theme/colors.ts` or CSS variables.
 4.  **Icons**: Use `lucide-react`. Standard size is 18px.
 
 ### Step 4: Translations

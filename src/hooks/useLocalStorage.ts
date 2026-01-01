@@ -19,7 +19,7 @@ export function useLocalStorage<T>(key: string, initialValue: T) {
         const loadData = async () => {
             try {
                 const item = await adapter.getItem<T>(key);
-                if (key.includes('notes')) console.log(`[Storage] LOAD key="${key}":`, item);
+                // if (key.includes('notes')) console.log(`[Storage] LOAD key="${key}":`, item);
                 if (isMounted) {
                     if (item !== null) {
                         setStoredValue(item);

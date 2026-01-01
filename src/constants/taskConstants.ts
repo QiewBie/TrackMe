@@ -1,5 +1,18 @@
+export const getPriorityStyles = (priority?: string) => {
+    switch (priority) {
+        case 'high':
+            return 'text-status-error bg-status-error/10 border-status-error/20';
+        case 'medium':
+            return 'text-status-warning bg-status-warning/10 border-status-warning/20';
+        case 'low':
+            return 'text-status-success bg-status-success/10 border-status-success/20';
+        default:
+            return 'text-text-secondary bg-bg-subtle border-border'; // Default/None
+    }
+};
+
 export const PRIORITY_CONFIG = [
-    { value: 'low', color: 'text-emerald-500 bg-emerald-500/10 border-emerald-500/20' },
-    { value: 'medium', color: 'text-amber-500 bg-amber-500/10 border-amber-500/20' },
-    { value: 'high', color: 'text-rose-500 bg-rose-500/10 border-rose-500/20' }
+    { value: 'low', label: 'Low' },
+    { value: 'medium', label: 'Medium' },
+    { value: 'high', label: 'High' }
 ] as const;

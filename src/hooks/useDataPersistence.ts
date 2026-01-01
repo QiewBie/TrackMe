@@ -12,7 +12,7 @@ export const useDataPersistence = () => {
         try {
             const backup = createBackup(user?.id);
             downloadBackup(backup);
-            // toast.success("Backup downloaded successfully");
+            alert(t('common.backup_success'));
         } catch (error) {
             console.error("Export failed:", error);
             alert(t('common.export_error'));
@@ -26,7 +26,7 @@ export const useDataPersistence = () => {
             try {
                 data = JSON.parse(text);
             } catch (e) {
-                throw new Error("Invalid JSON file");
+                throw new Error("Invalid JSON file");  // Technical error, keep English or translate if critical
             }
 
             if (!validateBackup(data)) {

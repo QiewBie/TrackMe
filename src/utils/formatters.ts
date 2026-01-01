@@ -12,22 +12,19 @@ export const formatTime = (seconds?: number): string => {
 
 /**
  * Formats seconds into human readable duration.
- * Used for analytics.
- * Examples: 59сек, 5хв, 1год 20хв or 59sec, 5min, 1h 20m
+ * Labels must be provided for localization, otherwise defaults to 'h', 'm', 's'.
  */
 export const formatDuration = (rawSeconds?: number, labels?: { h: string, m: string, s: string }): string => {
-    if (!rawSeconds) return labels ? `0${labels.s}` : '0сек';
+    if (!rawSeconds) return labels ? `0${labels.s}` : '0s';
 
-    // Ensure we work with integers
     const seconds = Math.round(rawSeconds);
-
     const hours = Math.floor(seconds / 3600);
     const minutes = Math.floor((seconds % 3600) / 60);
     const secs = seconds % 60;
 
-    const h = labels?.h || 'год';
-    const m = labels?.m || 'хв';
-    const s = labels?.s || 'сек';
+    const h = labels?.h || 'h';
+    const m = labels?.m || 'm';
+    const s = labels?.s || 's';
 
     if (hours > 0) {
         return `${hours}${h} ${minutes}${m}`;
@@ -44,10 +41,11 @@ export const formatDuration = (rawSeconds?: number, labels?: { h: string, m: str
  * Formats a date string or Date object using date-fns format.
  * Defaults to Ukrainian locale and dd.MM.yyyy format.
  */
-export const formatDate = (date: Date | string | number, formatStr: string = 'dd.MM.yyyy', localeStr: string = 'uk'): string => {
+export const formatDate = (date: Date | string | number, formatStr: string = 'dd.MM.yyyy', localeStr: string = 'en'): string => {
     try {
         const d = typeof date === 'string' ? parseISO(date) : date;
-        const locale = localeStr === 'en' ? enUS : uk;
+        const isUk = localeStr === 'uk' || localeStr === 'ua';
+        const locale = isUk ? uk : enUS;
         return format(d, formatStr, { locale });
     } catch (e) {
         return 'Invalid Date';

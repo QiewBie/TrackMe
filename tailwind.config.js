@@ -10,7 +10,7 @@ export default {
     'py-6',
     'pb-20',
   ],
-  darkMode: 'class', // Увімкнення темної теми через клас
+  darkMode: 'class',
   theme: {
     extend: {
       fontFamily: {
@@ -25,65 +25,118 @@ export default {
         '400': '400ms',
         '500': '500ms',
       },
-      animationDelay: { // Custom key if using a plugin, or just reuse standard delays
+      animationDelay: {
         '100': '100ms',
         '200': '200ms',
         '300': '300ms',
       },
       colors: {
+        // Standard Palette Overrides
+        blue: {
+          500: 'hsl(var(--palette-blue) / <alpha-value>)',
+          600: 'hsl(var(--palette-blue) / <alpha-value>)',
+        },
+        red: {
+          500: 'hsl(var(--palette-red) / <alpha-value>)',
+          600: 'hsl(var(--palette-red) / <alpha-value>)',
+        },
+        green: {
+          500: 'hsl(var(--palette-green) / <alpha-value>)',
+          600: 'hsl(var(--palette-green) / <alpha-value>)',
+        },
+        amber: {
+          500: 'hsl(var(--palette-amber) / <alpha-value>)',
+          600: 'hsl(var(--palette-amber) / <alpha-value>)',
+        },
+        indigo: {
+          500: 'hsl(var(--palette-indigo) / <alpha-value>)',
+          600: 'hsl(var(--palette-indigo) / <alpha-value>)',
+        },
+        purple: {
+          500: 'hsl(var(--palette-purple) / <alpha-value>)',
+          600: 'hsl(var(--palette-purple) / <alpha-value>)',
+        },
+        pink: {
+          500: 'hsl(var(--palette-pink) / <alpha-value>)',
+          600: 'hsl(var(--palette-pink) / <alpha-value>)',
+        },
+        cyan: {
+          500: 'hsl(var(--palette-cyan) / <alpha-value>)',
+          600: 'hsl(var(--palette-cyan) / <alpha-value>)',
+        },
+        emerald: {
+          500: 'hsl(var(--palette-emerald) / <alpha-value>)',
+          600: 'hsl(var(--palette-emerald) / <alpha-value>)',
+        },
+
         bg: {
-          main: 'var(--bg-main)',
-          surface: 'var(--bg-surface)',
-          subtle: 'var(--bg-subtle)', // Added
-          inverse: 'var(--bg-inverse)', // Added
+          main: 'hsl(var(--bg-main) / <alpha-value>)',
+          surface: 'hsl(var(--bg-surface) / <alpha-value>)',
+          subtle: 'hsl(var(--bg-subtle) / <alpha-value>)',
+          inverse: 'hsl(var(--bg-inverse) / <alpha-value>)',
         },
         text: {
-          primary: 'var(--text-primary)',
-          secondary: 'var(--text-secondary)',
-          inverse: 'var(--text-inverse)', // Added
-          tertiary: 'var(--ui-disabled)', // Map tertiary to disabled color for now or add specific token
+          primary: 'hsl(var(--text-primary) / <alpha-value>)',
+          secondary: 'hsl(var(--text-secondary) / <alpha-value>)',
+          inverse: 'hsl(var(--text-inverse) / <alpha-value>)',
+          tertiary: 'hsl(var(--ui-disabled) / <alpha-value>)',
         },
         border: {
-          DEFAULT: 'var(--border-color)',
-          subtle: 'var(--border-subtle)',
+          DEFAULT: 'hsl(var(--border-color) / <alpha-value>)',
+          subtle: 'hsl(var(--border-subtle) / <alpha-value>)',
         },
         brand: {
-          DEFAULT: 'var(--brand-primary)',
-          primary: 'var(--brand-primary)', // Alias for backward compatibility
-          hover: 'var(--brand-hover)',
-          active: 'var(--brand-active)',
-          subtle: 'var(--brand-subtle)',
-          accent: 'var(--brand-accent)',
-          'accent-hover': 'var(--brand-accent-hover)',
+          DEFAULT: 'hsl(var(--brand-primary) / <alpha-value>)',
+          primary: 'hsl(var(--brand-primary) / <alpha-value>)',
+          hover: 'hsl(var(--brand-hover) / <alpha-value>)',
+          active: 'hsl(var(--brand-active) / <alpha-value>)',
+          subtle: 'hsl(var(--brand-subtle) / <alpha-value>)',
+          accent: 'hsl(var(--brand-accent) / <alpha-value>)',
+          'accent-hover': 'hsl(var(--brand-accent-hover) / <alpha-value>)',
         },
         status: {
-          success: 'var(--status-success)',
-          error: 'var(--status-error)',
-          warning: 'var(--status-warning)',
-          info: 'var(--status-info)', // Added
+          success: 'hsl(var(--status-success) / <alpha-value>)',
+          error: 'hsl(var(--status-error) / <alpha-value>)',
+          warning: 'hsl(var(--status-warning) / <alpha-value>)',
+          info: 'hsl(var(--status-info) / <alpha-value>)',
         },
         ui: {
-          disabled: 'var(--ui-disabled)',
-        }
+          disabled: 'hsl(var(--ui-disabled) / <alpha-value>)',
+        },
+        tag: {
+          blue: 'hsl(var(--tag-blue) / <alpha-value>)',
+          red: 'hsl(var(--tag-red) / <alpha-value>)',
+          green: 'hsl(var(--tag-green) / <alpha-value>)',
+          amber: 'hsl(var(--tag-amber) / <alpha-value>)',
+          purple: 'hsl(var(--tag-purple) / <alpha-value>)',
+          pink: 'hsl(var(--tag-pink) / <alpha-value>)',
+          cyan: 'hsl(var(--tag-cyan) / <alpha-value>)',
+          indigo: 'hsl(var(--tag-indigo) / <alpha-value>)',
+          slate: 'hsl(var(--tag-slate) / <alpha-value>)',
+          emerald: 'hsl(var(--tag-emerald) / <alpha-value>)',
+        },
       },
-      'card': '1.5rem', // 24px - for large containers
-      'input': '0.75rem', // 12px - for inputs and list items
-
+      backgroundImage: {
+        'brand-gradient': 'linear-gradient(to right, hsl(var(--gradient-start)), hsl(var(--gradient-mid)), hsl(var(--gradient-end)))',
+      },
+      spacing: {
+        'sidebar-focus': '400px',
+        'card': '1.5rem',
+        'input': '0.75rem',
+      },
+      width: {
+        'sidebar-focus': '400px',
+      },
       zIndex: {
         'overlay': '60',
         'modal': '70',
         'popover': '80',
         'toast': '90',
       },
-      width: {
-        'sidebar-focus': '400px',
-      },
-      spacing: {
-        'sidebar-focus': '400px',
-      },
       boxShadow: {
-        'glow': '0 0 20px -5px var(--shadow-color)',
-        'glow-lg': '0 0 30px -10px var(--shadow-color)',
+        'glow': '0 0 20px -5px hsl(var(--shadow-color) / 0.5)',
+        'glow-lg': '0 0 30px -10px hsl(var(--shadow-color) / 0.6)',
+        'brand-glow': '0 0 20px -5px hsl(var(--brand-primary) / 0.5)',
       },
       transitionTimingFunction: {
         'spring': 'cubic-bezier(0.16, 1, 0.3, 1)',
@@ -107,7 +160,19 @@ export default {
         'slide-in': 'slideIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards',
         'pop-in': 'popIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards',
         'check-bounce': 'checkBounce 0.2s ease-in-out',
-      }
+      },
+      fontSize: {
+        // Mobile-Optimized Scale (Apple HIG Aligned)
+        'xs': ['0.8125rem', { lineHeight: '1.5' }],    // 13px (Footnote)
+        'sm': ['0.9375rem', { lineHeight: '1.5' }],    // 15px (Subhead)
+        'base': ['1.0625rem', { lineHeight: '1.6' }],  // 17px (Body)
+        'lg': ['1.25rem', { lineHeight: '1.4' }],      // 20px (Title 3)
+        'xl': ['1.375rem', { lineHeight: '1.4' }],     // 22px (Title 2)
+        '2xl': ['1.625rem', { lineHeight: '1.3' }],    // 26px
+        '3xl': ['2rem', { lineHeight: '1.2' }],        // 32px (Large Title approx)
+        '4xl': ['2.5rem', { lineHeight: '1.1' }],      // 40px
+        '5xl': ['3rem', { lineHeight: '1' }],          // 48px
+      },
     },
   },
   plugins: [],

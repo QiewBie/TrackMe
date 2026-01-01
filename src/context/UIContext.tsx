@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { localStorageAdapter } from '../services/storage/LocalStorageAdapter';
 
+
 interface UIContextType {
     // Theme
     darkMode: boolean;
@@ -26,7 +27,7 @@ const UIContext = createContext<UIContextType | undefined>(undefined);
 
 export const UIProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     // Theme State
-    const [darkMode, setDarkMode] = useState(() => localStorageAdapter.getItem<string>('theme') === 'dark');
+    const [darkMode, setDarkModeState] = useState(() => localStorageAdapter.getItem<string>('theme') === 'dark');
 
     // Mobile Menu State
     const [isMobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -37,13 +38,17 @@ export const UIProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     // Zen Mode State
     const [isZenMode, setZenMode] = useState(false);
 
-    // Theme Effect
+    // Theme Effect (Applying to DOM)
     useEffect(() => {
         document.documentElement.classList.toggle('dark', darkMode);
         localStorageAdapter.setItem('theme', darkMode ? 'dark' : 'light');
     }, [darkMode]);
 
-    const toggleTheme = () => setDarkMode(prev => !prev);
+    const setDarkMode = (value: boolean) => {
+        setDarkModeState(value);
+    };
+
+    const toggleTheme = () => setDarkMode(!darkMode);
     const toggleMobileMenu = () => setMobileMenuOpen(prev => !prev);
 
     const openCategoryManager = () => setIsCategoryManagerOpen(true);

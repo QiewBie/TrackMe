@@ -10,7 +10,7 @@ class TimeLedgerService {
         if (typeof window !== 'undefined') {
             window.addEventListener('storage', (e) => {
                 if (e.key === STORAGE_KEY) {
-                    console.log('[TimeLedger] Storage Sync detected, reloading cache.');
+                    // console.log('[TimeLedger] Storage Sync detected, reloading cache.');
                     this.load(true); // Force reload
                 }
             });

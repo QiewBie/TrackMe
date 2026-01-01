@@ -11,7 +11,7 @@ import ConfirmationModal from '../shared/ConfirmationModal';
 import { Category } from '../../types';
 import { useClickOutside } from '../../hooks/useClickOutside';
 
-import { CATEGORY_COLORS as COLORS } from '../../constants/colors';
+import { CATEGORY_COLORS as COLORS, getCategoryClass, CategoryColorId } from '../../utils/theme';
 
 interface CategoryManagerProps {
     isOpen: boolean;
@@ -23,7 +23,7 @@ interface CategoryManagerProps {
 const CategoryManager: React.FC<CategoryManagerProps> = ({ isOpen, onClose, categories, setCategories }) => {
     const { t } = useTranslation();
     const [newName, setNewName] = useState('');
-    const [newColor, setNewColor] = useState(COLORS[9]);
+    const [newColor, setNewColor] = useState<CategoryColorId>(COLORS[0].id);
     const [isColorPickerOpen, setIsColorPickerOpen] = useState<boolean | string | number>(false);
     const [pickerPos, setPickerPos] = useState({ top: 0, left: 0 });
     const pickerRef = useRef<HTMLDivElement>(null);
@@ -62,7 +62,7 @@ const CategoryManager: React.FC<CategoryManagerProps> = ({ isOpen, onClose, cate
         if (newName.trim()) {
             setCategories((prev: Category[]) => [...prev, { id: Date.now().toString(), name: newName, color: newColor, isDefault: false }]);
             setNewName('');
-            setNewColor(COLORS[9]);
+            setNewColor(COLORS[0].id);
             setIsColorPickerOpen(false);
         }
     };
@@ -109,7 +109,7 @@ const CategoryManager: React.FC<CategoryManagerProps> = ({ isOpen, onClose, cate
                                     <div className="relative shrink-0">
                                         <button
                                             onClick={(e) => openPicker(e, cat.id)}
-                                            className={`w-9 h-9 rounded-xl ${editColor} flex items-center justify-center transition-transform active:scale-95 ring-2 ring-offset-2 ring-offset-bg-surface ring-border-subtle`}
+                                            className={`w-9 h-9 rounded-xl ${getCategoryClass(editColor, 'bg')} flex items-center justify-center transition-transform active:scale-95 ring-2 ring-offset-2 ring-offset-bg-surface ring-border-subtle`}
                                         >
                                             <div className="w-2.5 h-2.5 bg-white/50 rounded-full" />
                                         </button>
@@ -130,6 +130,7 @@ const CategoryManager: React.FC<CategoryManagerProps> = ({ isOpen, onClose, cate
                                         />
                                         <Button
                                             variant="primary"
+                                            size="icon"
                                             onClick={() => saveEdit(cat.id)}
                                             className="w-9 h-9 p-0 shadow-sm shadow-brand/30"
                                         >
@@ -139,9 +140,9 @@ const CategoryManager: React.FC<CategoryManagerProps> = ({ isOpen, onClose, cate
                                 </div>
                             ) : (
                                 <>
-                                    <div className={`w-3 h-3 rounded-full ${cat.color} ml-1`} />
+                                    <div className={`w-3 h-3 rounded-full ${getCategoryClass(cat.color, 'bg')} ml-1`} />
                                     <span className="font-medium text-text-primary">{cat.name}</span>
-                                    {cat.isDefault && <span className="text-[10px] font-bold uppercase tracking-wider bg-brand-subtle text-brand-primary px-2 py-0.5 rounded-full">{t('categories.is_default')}</span>}
+                                    {cat.isDefault && <span className="text-xs font-bold uppercase tracking-wider bg-brand-subtle text-brand-primary px-2 py-0.5 rounded-full">{t('categories.is_default')}</span>}
 
                                     <div className="ml-auto flex gap-1">
                                         <Button
@@ -174,7 +175,7 @@ const CategoryManager: React.FC<CategoryManagerProps> = ({ isOpen, onClose, cate
                     <div className="relative">
                         <button
                             onClick={(e) => openPicker(e, 'new')}
-                            className={`w-10 h-10 rounded-xl ${newColor} flex items-center justify-center transition-transform active:scale-95 ring-2 ring-offset-2 ring-offset-bg-surface ring-transparent hover:ring-border-subtle`}
+                            className={`w-10 h-10 rounded-xl ${getCategoryClass(newColor, 'bg')} flex items-center justify-center transition-transform active:scale-95 ring-2 ring-offset-2 ring-offset-bg-surface ring-transparent hover:ring-border-subtle`}
                         >
                             <div className="w-3 h-3 bg-white/50 rounded-full" />
                         </button>
@@ -210,13 +211,13 @@ const CategoryManager: React.FC<CategoryManagerProps> = ({ isOpen, onClose, cate
                 >
                     {COLORS.map(c => (
                         <button
-                            key={c}
+                            key={c.id}
                             onClick={() => {
-                                if (isColorPickerOpen === 'new') setNewColor(c);
-                                else setEditColor(c);
+                                if (isColorPickerOpen === 'new') setNewColor(c.id);
+                                else setEditColor(c.id);
                                 setIsColorPickerOpen(false);
                             }}
-                            className={`w-8 h-8 rounded-lg ${c} hover:scale-110 transition-transform ${(isColorPickerOpen === 'new' ? newColor : editColor) === c ? 'ring-2 ring-offset-2 ring-brand-primary' : ''}`}
+                            className={`w-8 h-8 rounded-lg ${c.bg} hover:scale-110 transition-transform ${(isColorPickerOpen === 'new' ? newColor : editColor) === c.id ? 'ring-2 ring-offset-2 ring-brand-primary' : ''}`}
                         />
                     ))}
                 </div>,

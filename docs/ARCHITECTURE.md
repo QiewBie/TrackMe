@@ -17,7 +17,7 @@ In V1, "Time Spent" was a simple number on a Task object that incremented every 
 In V2, we track time using a **Ledger Model**.
 1.  **Atomic Logs**: Every time a user pauses, switches tasks, or stops, a `TimeLog` is written.
 2.  **Source of Truth**: The `TimeLogRepository` stores these logs.
-3.  **Derived State**: The UI displays `cachedTotalTime`, which is aggregates from the logs.
+3.  **Derived State**: The UI displays `cachedTotalTime`, which is **aggregated on-demand** from the ledger history.
 
 #### Data Entity: `TimeLog`
 ```typescript
@@ -36,8 +36,8 @@ interface TimeLog {
 3.  **Flush Trigger**: User clicks "Pause" or switches tasks.
 4.  **Log Creation**:
     *   `duration = Now - startTimestamp`
-    *   `TimeLogRepository.saveLog({ duration, ... })`
-5.  **UI Update**: `TimeLogRepository` notifies `TaskContext` to update the `cachedTotalTime` for the specific task.
+    *   `TimeLedgerService.saveLog({ duration, ... })`
+5.  **UI Update**: `TimeLedgerService` notifies `TaskContext` to update the `cachedTotalTime` for the specific task.
 
 ---
 
@@ -52,13 +52,32 @@ The application avoids a monolithic store in favor of specialized **Context Doma
     *   Manages "Work vs Break" state.
     *   **Crucial:** Handles the *flushing* of logs to stable storage.
 
-### 3.2 `TimeLogRepository` (The Vault)
+### 3.2 `TimeLedgerService` (The Vault)
 *   **Role**: Specialized service for Log persistence.
-*   **Mechanism**: Uses a Read-Modify-Write pattern with `localStorage` to ensure atomic saves, even across multiple tabs (via `storage` event syncing).
+*   **Mechanism**: **Memory-First Cache** with `localStorage` sync.
+    *   Uses `window.addEventListener('storage')` to stay consistent across tabs.
+    *   Atomic "Read-Modify-Write" pattern for data safety.
 
-### 3.3 `TaskContext` (The Interface)
+### 3.3 `LayoutContext` (The Frame)
+*   **Role**: Manages the Responsive Shell (Header/Sidebar).
+*   **Feature**: **Title Hoisting**. Pages render their own headers which are "teleported" to the global mobile navbar.
+
+### 3.4 `TaskContext` (The Interface)
 *   **Role**: CRUD for Tasks.
-*   **Sync**: Listens to changes in the Repository to keep task display times up-to-date.
+*   **Sync**: Listens to changes in the Ledger to keep task display times up-to-date.
+
+### 3.5 `SoundContext` (The Audio Engine)
+*   **Role**: Manages SFX and Ambience mixing.
+*   **Mechanism**:
+    *   **SFX Pool**: Preloaded map of Audio objects for low-latency feedback.
+    *   **Ambience**: Single active channel with loop support.
+    *   **Cloning**: Uses `cloneNode()` to allow overlapping logic (e.g., rapid click sounds).
+
+### 3.4 `useGlobalTimer` (The Orchestrator)
+*   **Role**: Manages the Dual-Timer System (Simple Stopwatch vs. Deep Focus).
+*   **Mechanism**: Prevents race conditions by pausing one mode when the other starts.
+    *   **Simple Timer**: Runs in `ActiveTimerContext` (Background-friendly).
+    *   **Focus Session**: Runs in `FocusSessionContext` (Fullscreen, Pomodoro logic).
 
 ---
 
@@ -77,28 +96,72 @@ The system interacts with valid "Adapters" (`LocalStorageAdapter`), enabling us 
 
 ## 5. UI Architecture
 
-### 5.1 Z-Index Strategy ("The Layer Cake")
-To handle complex interactions (Fullscreen Focus Mode, Mobile Sidebars), we enforce a strict Z-Index hierarchy:
-*   **z-[200]**: `FocusView` (Fullscreen Overlay)
-*   **z-[100]**: Mobile Sidebar
-*   **z-[50]**: Modals
-*   **z-[40]**: Sticky Headers
-*   **z-0**: Content
+### 5.1 Z-Index Strategy ("The Semantic Scale")
+To handle complex interactions, we enforce a strict, token-based Z-Index hierarchy in `tailwind.config.js`:
+*   **z-toast (90)**: Critical Notifications.
+*   **z-popover (80)**: Dropdowns, DatePickers.
+*   **z-modal (70)**: Modals, Dialogs.
+*   **z-overlay (60)**: Dark backdrops.
+*   **z-fixed (40)**: Sticky Headers, Sidebars.
+*   **z-10**: Content.
 
-### 5.2 Component Design
-*   **Atoms**: `Button`, `Input` (Dumb, styled components).
-*   **Widgets**: `TimerDisplay`, `SessionControls` (Logic-aware).
-*   **Views**: `Dashboard`, `FocusView` (Page Controllers).
-
-### 5.3 Internationalization (i18n)
-*   **Library**: `react-i18next`.
-*   **Strategy**: Static JSON resources loaded at build time.
-*   **Keys**: Nested structure (e.g., `focus.controls.start`) for maintainability.
+### Directory Structure
+```
+src/
+├── assets/         # Static assets
+├── components/     # Shared UI Building Blocks
+├── config/         # App Config (ThemeRegistry)
+├── constants/      # Global Constants
+├── context/        # Global State
+├── features/       # Feature Modules (Vertical Slices)
+│   ├── analytics/
+│   ├── auth/
+│   ├── focus/
+│   ├── playlists/
+│   ├── settings/
+│   ├── tasks/
+│   └── theme/
+├── hooks/          # Logic
+├── lib/            # Library Configs
+├── locales/        # i18n
+├── services/       # Core Business Logic
+│   ├── auth/
+│   ├── migration/
+│   └── storage/
+├── types/          # TypeScript Interfaces
+└── utils/          # Helpers
+```
 *   **Date Formatting**: Dynamic import of `date-fns` locales based on current language.
 
 ---
 
-## 6. Data Persistence & Portability
+## 6. Synchronization & Auth Model ("Cloud-Optional")
+
+The application operates in two distinct modes, handling data transitions seamlessly.
+
+### 6.1 Guest Mode (Local-First)
+*   **Default State**: Users start as "Guests".
+*   **Storage**: All data (Logs, Preferences, Tasks) resides in `localStorage`.
+*   **Privacy**: Zero network requests for data storage.
+
+### 6.2 Authenticated Mode (Cloud Sync)
+*   **Trigger**: User signs in via Google (Firebase Auth).
+*   **Data Migration**:
+    *   *Current Strategy*: **Server Wins** ("Scorched Earth").
+    *   *Logic*: Upon login, if a cloud profile exists, it overwrites local preferences to ensure consistency across devices.
+    *   *Future*: Intentional "Merge" strategy (Phase 2.5).
+
+### 6.3 Real-Time Sync
+1.  **Tab-to-Tab**:
+    *   **Mechanism**: `window.addEventListener('storage')`.
+    *   **Effect**: Changing a theme or stopping a timer in one tab updates all others instantly.
+2.  **Device-to-Device**:
+    *   **Mechanism**: `PreferencesService` (Firestore Snapshot Listeners).
+    *   **Effect**: Changing "Dark Mode" on Mobile updates Desktop instantly.
+
+---
+
+## 7. Data Persistence & Portability
 
 ### 6.1 Backup Schema
 The system supports full workspace export via a unified JSON schema:

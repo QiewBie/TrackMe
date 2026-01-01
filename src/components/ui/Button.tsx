@@ -22,7 +22,7 @@ const Button: React.FC<ButtonProps> = memo(({ children, onClick, variant = 'prim
     };
 
     const variants: Record<string, string> = {
-        primary: "bg-brand hover:bg-brand-hover active:bg-brand-active text-white shadow-lg shadow-brand/30 hover:shadow-brand/50",
+        primary: "bg-brand hover:bg-brand-hover active:bg-brand-active text-[hsl(var(--text-on-brand))] shadow-lg shadow-brand/30 hover:shadow-brand/50",
         secondary: "bg-bg-surface border-2 border-border text-text-primary hover:bg-bg-main active:bg-bg-main hover:border-brand/50 active:border-brand/50 hover:text-brand",
         danger: "bg-status-error/10 text-status-error hover:bg-status-error/20 active:bg-status-error/20 hover:shadow-status-error/10 border border-transparent",
         ghost: "bg-transparent text-text-secondary hover:bg-bg-subtle active:bg-bg-subtle hover:text-text-primary",

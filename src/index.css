@@ -13,100 +13,91 @@ body,
 
 @layer base {
   :root {
-    --bg-main: #f8fafc;
-    /* slate-50 */
-    --bg-surface: #ffffff;
-    /* white */
+    /* 
+      Theme System: HSL Channels 
+      Format: H S% L% (No 'hsl()', allows alpha injection)
+      
+      NOTE: The values below are the "Default Blue" fallback (Rescue Theme).
+      The active theme is injected by ThemeContext.tsx from ThemeRegistry.ts.
+      To add new themes or modify colors, edit src/config/ThemeRegistry.ts.
+    */
 
-    --text-primary: #020617;
-    /* slate-950 */
-    --text-secondary: #475569;
-    /* slate-600 */
+    /* RESCUE THEME (Minimal Fallback) */
+    --bg-main: 210 40% 98%;
+    --bg-surface: 0 0% 100%;
 
-    --border-color: #cbd5e1;
-    /* slate-300 */
-    --border-subtle: #e2e8f0;
-    /* slate-200 */
+    /* Palette (Category Colors) */
+    --palette-blue: 217 91% 60%;
+    /* #3b82f6 */
+    --palette-red: 0 84% 60%;
+    /* #ef4444 */
+    --palette-green: 142 71% 45%;
+    /* #22c55e */
+    --palette-amber: 38 92% 50%;
+    /* #f59e0b */
+    --palette-purple: 271 91% 65%;
+    /* #a855f7 */
+    --palette-pink: 330 81% 60%;
+    /* #ec4899 */
+    --palette-cyan: 189 94% 43%;
+    /* #06b6d4 */
+    --palette-indigo: 239 84% 67%;
+    /* #6366f1 */
+    --palette-slate: 215 16% 47%;
+    /* #64748b */
+    --palette-emerald: 158 84% 39%;
+    /* #10b981 */
+    --palette-slate-light: 215 20% 65%;
+    /* #94a3b8 */
 
-    /* Brand Colors (Blue-600 baseline) */
-    --brand-primary: #2563eb;
-    --brand-hover: #1d4ed8;
-    --brand-active: #1e40af;
-    --brand-subtle: #eff6ff;
-
-    --brand-accent: #6366f1;
-    /* Indigo-500 */
-    --brand-accent-hover: #4f46e5;
-    /* Indigo-600 */
+    /* Subtlety, Text, Borders, Brand, Gradients removed (Managed by ThemeRegistry) */
+    --text-on-brand: 0 0% 100%;
 
     /* Status Colors */
-    --status-success: #10b981;
-    --status-error: #ef4444;
-    --status-warning: #f59e0b;
-    --status-info: #3b82f6;
-    /* blue-500 */
-
-    /* Subtlety & Inverse */
-    --bg-subtle: #f1f5f9;
-    /* slate-100 */
-    --bg-inverse: #020617;
-    /* slate-950 */
-    --text-inverse: #f8fafc;
-    /* slate-50 */
+    --status-success: 158 84% 39%;
+    /* #10b981 */
+    --status-error: 0 84% 60%;
+    /* #ef4444 */
+    --status-warning: 38 92% 50%;
+    /* #f59e0b */
+    --status-info: 217 91% 60%;
+    /* #3b82f6 (blue-500) */
 
     /* UI States */
-    --ui-disabled: #94a3b8;
+    --ui-disabled: 215 20% 65%;
+    /* #94a3b8 */
 
-    /* Shadows - Colored Glows */
-    --shadow-color: rgb(15 23 42);
+    /* Shadows */
+    --shadow-color: 222 47% 11%;
+    /* rgb(15 23 42) */
+
+    /* Gradients removed (Managed by ThemeRegistry) */
+
+    /* Tags (Specific semantic slots for categories/labels) */
+    --tag-blue: 217 91% 60%;
+    --tag-red: 0 84% 60%;
+    --tag-green: 142 71% 45%;
+    --tag-amber: 38 92% 50%;
+    --tag-purple: 271 91% 65%;
+    --tag-pink: 330 81% 60%;
+    --tag-cyan: 189 94% 43%;
+    --tag-indigo: 239 84% 67%;
+    --tag-slate: 215 16% 47%;
+    --tag-emerald: 158 84% 39%;
   }
 
   .dark {
-    --bg-main: #020617;
-    /* slate-950 */
-    --bg-surface: #0f172a;
-    /* slate-900 */
-
-    --text-primary: #f8fafc;
-    /* slate-50 */
-    --text-secondary: #94a3b8;
-    /* slate-400 */
-
-    --border-color: #1e293b;
-    /* slate-800 */
-    --border-subtle: #334155;
-    /* slate-700 */
-
-    /* Brand Colors (Dark Mode Logic) */
-    --brand-primary: #3b82f6;
-    /* blue-500 */
-    --brand-hover: #60a5fa;
-    /* blue-400 */
-    --brand-active: #2563eb;
-    /* blue-600 */
-    --brand-subtle: rgba(59, 130, 246, 0.15);
-    /* blue-500/15 */
-
-    --brand-accent: #818cf8;
-    /* Indigo-400 */
-    --brand-accent-hover: #6366f1;
-    /* Indigo-500 */
+    /* Dark Mode Defaults removed (Managed by ThemeRegistry) */
 
     /* UI States */
-    --ui-disabled: #475569;
-    /* slate-600 */
+    --ui-disabled: 215 16% 47%;
+    /* #475569 (slate-600) */
 
-    /* Subtlety & Inverse */
-    --bg-subtle: #1e293b;
-    /* slate-800 */
-    --bg-inverse: #f8fafc;
-    /* slate-50 */
-    --text-inverse: #020617;
-    /* slate-950 */
+    /* Shadows */
+    --shadow-color: 222 47% 11%;
+    /* rgb(15 23 42) */
 
-    /* Shadows - Colored Glows */
-    --shadow-color: rgb(15 23 42);
-    /* slate-900 rgb - fixed syntax */
+    /* Gradients removed */
   }
 }
 
@@ -154,6 +145,20 @@ select {
   @apply bg-border dark:bg-border-subtle rounded-full hover:bg-ui-disabled transition-colors;
 }
 
+/* 6. Accessibility & Focus Management */
+@layer base {
+
+  /* Remove default ugly outlines for mouse users, but KEEP for keyboard */
+  :focus:not(:focus-visible) {
+    outline: none;
+  }
+
+  /* Accessible Focus Ring */
+  :focus-visible {
+    @apply outline-none ring-2 ring-brand-primary ring-offset-2 ring-offset-bg-surface;
+  }
+}
+
 /* 6. ProseMirror Editor Styles */
 .ProseMirror {
   outline: none;
@@ -195,18 +200,66 @@ select {
   color: var(--text-secondary);
 }
 
-/* 7. Recharts Focus Outline Removal */
+/* 8. Recharts Focus Outline Removal */
 .recharts-wrapper,
 .recharts-surface,
-.recharts-wrapper *,
-.recharts-surface * {
+.recharts-wrapper *:focus,
+.recharts-surface *:focus {
   outline: none !important;
-  box-shadow: none !important;
 }
 
-div[role="img"]:focus,
-div[role="img"]:focus-visible {
-  outline: none !important;
-  box-shadow: none !important;
-  border: none !important;
+/* Specific overrides for interactive SVGs/Graphics that don't need rings */
+div[role="img"]:focus:not(:focus-visible) {
+  outline: none;
+  box-shadow: none;
+}
+
+/* 8. Global Range Slider Styles */
+@layer components {
+
+  /* Webkit (Chrome/Safari/Edge) */
+  .slider-thumb-webkit::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    height: 18px;
+    width: 18px;
+    border-radius: 50%;
+    background-color: hsl(var(--brand-primary));
+    border: 2px solid hsl(var(--bg-surface));
+    box-shadow: 0 0 0 1px hsl(var(--border-subtle)), 0 2px 4px rgba(0, 0, 0, 0.1);
+    margin-top: -6px;
+    /* (18px thumb - 6px track) / 2 = 6px. Negative to pull up. */
+    cursor: pointer;
+    transition: transform 0.1s;
+  }
+
+  .slider-thumb-webkit::-webkit-slider-thumb:hover {
+    transform: scale(1.1);
+    box-shadow: 0 0 0 2px hsl(var(--brand-primary)), 0 2px 4px rgba(0, 0, 0, 0.2);
+  }
+
+  /* Firefox */
+  .slider-thumb-moz::-moz-range-thumb {
+    height: 18px;
+    width: 18px;
+    border-radius: 50%;
+    background-color: hsl(var(--brand-primary));
+    border: 2px solid hsl(var(--bg-surface));
+    box-shadow: 0 0 0 1px hsl(var(--border-subtle)), 0 2px 4px rgba(0, 0, 0, 0.1);
+    cursor: pointer;
+    transition: transform 0.1s;
+  }
+
+  .slider-thumb-moz::-moz-range-thumb:hover {
+    transform: scale(1.1);
+    box-shadow: 0 0 0 2px hsl(var(--brand-primary)), 0 2px 4px rgba(0, 0, 0, 0.2);
+  }
+
+  .slider-track-moz::-moz-range-track {
+    width: 100%;
+    height: 6px;
+    border-radius: 9999px;
+    background-color: transparent;
+    cursor: pointer;
+  }
 }

@@ -1,100 +1,151 @@
-import React, { useState, useEffect, useRef, useCallback, useMemo, useContext, createContext, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
+import { TimeLedger } from '../services/storage/TimeLedger';
+import { localStorageAdapter } from '../services/storage/LocalStorageAdapter';
 
-// Define types inline
-export interface ActiveTimerContextType {
-    activeTimers: Record<string, number>;
-    startTimer: (taskId: string) => void;
-    stopTimer: (taskId: string) => void;
+// --- State Definition ---
+interface SimpleTimerState {
+    taskId: string;
+    startTime: number; // Timestamp in ms
 }
 
-export type ActiveTimerTickContextType = number;
-
-// Create two separate contexts
-export const ActiveTimerContext = createContext<ActiveTimerContextType | null>(null); // Stable: activeTimers, start/stop
-export const ActiveTimerTickContext = createContext<ActiveTimerTickContextType | null>(null); // Dynamic: currentTime (updates every sec)
-
-interface ActiveTimerProviderProps {
-    children: ReactNode;
+interface SimpleTimerContextType {
+    activeTimer: SimpleTimerState | null;
+    startSimpleTimer: (taskId: string) => void;
+    stopSimpleTimer: () => Promise<void>;
+    elapsedTime: number; // Reactive milliseconds for UI
 }
 
-export const ActiveTimerProvider: React.FC<ActiveTimerProviderProps> = ({ children }) => {
-    const [activeTimers, setActiveTimers] = useState<Record<string, number>>({}); // { [taskId]: startTime }
-    const [currentTime, setCurrentTime] = useState<number>(() => Date.now()); // Dynamic state
-    const intervalRef = useRef<NodeJS.Timeout | null>(null);
+const SimpleTimerContext = createContext<SimpleTimerContextType | null>(null);
 
-    // Update current time every second if there are active timers
+const STORAGE_KEY = 'simple_timer_state';
+
+export const ActiveTimerProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+    // 1. Persistent State
+    const [activeTimer, setActiveTimer] = useState<SimpleTimerState | null>(() => {
+        return localStorageAdapter.getItem<SimpleTimerState>(STORAGE_KEY);
+    });
+
+    // 2. Reactive Tick (for UI display)
+    const [elapsedTime, setElapsedTime] = useState(0);
+    const rafRef = useRef<number | null>(null);
+
+    // Persistence Effect
     useEffect(() => {
-        const hasActive = Object.keys(activeTimers).length > 0;
+        if (activeTimer) {
+            localStorageAdapter.setItem(STORAGE_KEY, activeTimer);
+        } else {
+            localStorageAdapter.removeItem(STORAGE_KEY);
+        }
+    }, [activeTimer]);
 
-        if (hasActive && !intervalRef.current) {
-            setCurrentTime(Date.now()); // Sync immediately
-            intervalRef.current = setInterval(() => {
-                setCurrentTime(Date.now());
-            }, 1000);
-        } else if (!hasActive && intervalRef.current) {
-            clearInterval(intervalRef.current);
-            intervalRef.current = null;
+    // Tick Loop (Only runs when active)
+    useEffect(() => {
+        if (!activeTimer) {
+            setElapsedTime(0);
+            return;
         }
 
-        return () => {
-            if (intervalRef.current) {
-                clearInterval(intervalRef.current);
-                intervalRef.current = null;
-            }
+        const tick = () => {
+            const now = Date.now();
+            setElapsedTime(now - activeTimer.startTime);
+            rafRef.current = requestAnimationFrame(tick);
         };
-    }, [activeTimers]); // Re-check when timers change
 
-    const startTimer = useCallback((taskId: string) => {
-        setActiveTimers(prev => ({ ...prev, [taskId]: Date.now() }));
-        setCurrentTime(Date.now()); // Sync immediately
-    }, []);
+        rafRef.current = requestAnimationFrame(tick);
 
-    const stopTimer = useCallback((taskId: string) => {
-        setActiveTimers(prev => {
-            const newTimers = { ...prev };
-            delete newTimers[taskId];
-            return newTimers;
-        });
-    }, []);
+        return () => {
+            if (rafRef.current) cancelAnimationFrame(rafRef.current);
+        };
+    }, [activeTimer]);
 
-    // Stable value - usage of this context WON'T cause re-renders on tick
-    const stableValue = useMemo(() => ({
-        activeTimers, startTimer, stopTimer
-    }), [activeTimers, startTimer, stopTimer]);
+    // --- Actions ---
+
+    const startSimpleTimer = useCallback((taskId: string) => {
+        // If another timer is running, stop it first (implicit switch)
+        if (activeTimer) {
+            // Synchronous switch logic usually requires stopping first.
+            // But for simple timer, we can just overwrite start time if we want 'reset',
+            // OR we should log the previous one.
+            // Let's enforce 'stop first' logic in the Global Orchestrator,
+            // but here we ensure we don't overwrite blindly without logging?
+            // "SimpleTimer" usually implies just one.
+            // Let's do a safe switch: Stop current, Start new.
+
+            // NOTE: We can't await `stopSimpleTimer` easily inside a sync `start`.
+            // So we'll assume the interaction layer handles stopping.
+            // But as a failsafe, if we overwrite, we LOSE the data of the previous one.
+            // IMPROVEMENT: Auto-log flush here?
+            const now = Date.now();
+            const duration = Math.max(0, Math.floor((now - activeTimer.startTime) / 1000));
+            if (duration > 0) {
+                TimeLedger.saveLog({
+                    id: crypto.randomUUID(),
+                    taskId: activeTimer.taskId,
+                    startTime: new Date(activeTimer.startTime).toISOString(),
+                    duration: duration,
+                    type: 'manual',
+                    note: 'Auto-switch'
+                });
+            }
+        }
+
+        const newState = {
+            taskId,
+            startTime: Date.now()
+        };
+        setActiveTimer(newState);
+    }, [activeTimer]);
+
+    const stopSimpleTimer = useCallback(async () => {
+        if (!activeTimer) return;
+
+        const now = Date.now();
+        const duration = Math.max(0, Math.floor((now - activeTimer.startTime) / 1000));
+
+        // 1. Save to Ledger
+        if (duration > 0) {
+            TimeLedger.saveLog({
+                id: crypto.randomUUID(),
+                taskId: activeTimer.taskId,
+                startTime: new Date(activeTimer.startTime).toISOString(),
+                duration: duration,
+                type: 'manual',
+                note: 'Simple Timer Stop'
+            });
+        }
+
+        // 2. Clear State
+        setActiveTimer(null);
+        setElapsedTime(0);
+    }, [activeTimer]);
+
 
     return (
-        <ActiveTimerContext.Provider value={stableValue}>
-            <ActiveTimerTickContext.Provider value={currentTime}>
-                {children}
-            </ActiveTimerTickContext.Provider>
-        </ActiveTimerContext.Provider>
+        <SimpleTimerContext.Provider value={{
+            activeTimer,
+            startSimpleTimer,
+            stopSimpleTimer,
+            elapsedTime
+        }}>
+            {children}
+        </SimpleTimerContext.Provider>
     );
 };
 
-// Hook for stable actions and state
-export const useActiveTimer = (): ActiveTimerContextType => {
-    const context = useContext(ActiveTimerContext);
-    if (!context) throw new Error('useActiveTimer must be used within a ActiveTimerProvider');
+// Hook alias - Keeping the import name simple or migrating?
+// Let's export as `useSimpleTimer` but keep file name `ActiveTimerContext` for now.
+export const useSimpleTimer = () => {
+    const context = useContext(SimpleTimerContext);
+    if (!context) throw new Error('useSimpleTimer must be used within ActiveTimerProvider');
     return context;
 };
 
-// Hook for dynamic time updates - ONLY using components will re-render
-export const useActiveTimerTick = (): number => {
-    const context = useContext(ActiveTimerTickContext);
-    if (context === null) throw new Error('useActiveTimerTick must be used within a ActiveTimerProvider');
-    return context;
+// Legacy exports to prevent crash until full rewire is done (Phase 11 Step 3)
+// We will remove these once we fix the imports in step 3.
+export const useActiveTimer = () => {
+    // console.warn('Usage of legacy useActiveTimer detected');
+    return { activeTimers: {}, startTimer: () => { }, stopTimer: () => { } };
 };
+export const useActiveTimerTick = () => 0;
+export const useActiveTaskDuration = (task: any) => task.cachedTotalTime || 0;
 
-// Helper hook to calculate specific task duration
-// We use Partial<Task> because maybe we don't have full task object
-export const useActiveTaskDuration = (task: { id: string, cachedTotalTime?: number }): number => {
-    const { activeTimers } = useActiveTimer();
-    const currentTime = useActiveTimerTick();
-
-    const baseTime = task.cachedTotalTime || 0;
-
-    if (!activeTimers[task.id]) return baseTime;
-
-    const sessionDuration = Math.floor((currentTime - activeTimers[task.id]) / 1000);
-    return baseTime + sessionDuration;
-};

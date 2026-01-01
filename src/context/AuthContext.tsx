@@ -1,16 +1,22 @@
 import * as React from 'react';
 import { createContext, useContext, useState, useEffect } from 'react';
-import { User } from '../types';
+import { User, UserSettings } from '../types';
 import { authService, mapFirebaseUser } from '../services/auth/firebaseAuth';
 import { auth } from '../lib/firebase';
 import { localStorageAdapter } from '../services/storage/LocalStorageAdapter';
+
+
+// Helper type for deep partial updates
+type DeepPartialUser = Partial<Omit<User, 'preferences'>> & {
+    preferences?: Partial<UserSettings>
+};
 
 interface AuthContextType {
     user: User | null;
     isLoading: boolean;
     loginWithGoogle: () => Promise<void>;
     logout: () => Promise<void>;
-    updateProfile: (data: Partial<User>) => Promise<void>;
+    updateProfile: (data: DeepPartialUser) => Promise<void>;
     deleteProfile: (userId: string) => Promise<void>;
     isGuest: boolean;
     continueAsGuest: () => void;
@@ -19,31 +25,66 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }: { children: React.ReactNode }) => {
-    const [user, setUser] = useState<User | null>(null);
-    const [isLoading, setIsLoading] = useState(true);
+    // 1. Optimistic Initialization
+    const [user, setUser] = useState<User | null>(() => {
+        const cached = localStorageAdapter.getItem<User>('user_cache');
+        return cached || null;
+    });
+
+    // We are loading ONLY if we don't have a cached user AND we haven't checked Guest mode yet
+    const [isLoading, setIsLoading] = useState(() => {
+        const cached = localStorageAdapter.getItem<User>('user_cache');
+        return !cached;
+    });
+
     const [isGuest, setIsGuest] = useState(false);
+
+    useEffect(() => {
+        // Sync cache whenever user changes
+        if (user) {
+            localStorageAdapter.setItem('user_cache', user);
+        } else {
+            localStorageAdapter.removeItem('user_cache');
+        }
+    }, [user]);
 
     useEffect(() => {
         // Check for guest mode preference
         const guestMode = localStorageAdapter.getItem<boolean>('guest_mode');
-        if (guestMode) setIsGuest(true);
+        if (guestMode) {
+            setIsGuest(true);
+            if (!user) setIsLoading(false); // Stop loading if guest
+        }
 
-        const unsubscribe = authService.subscribeToAuthChanges((firebaseUser) => {
+        const unsubscribeAuth = authService.subscribeToAuthChanges(async (firebaseUser) => {
             if (firebaseUser) {
-                // User is signed in
-                const appUser = mapFirebaseUser(firebaseUser);
-                setUser(appUser);
-                setIsGuest(false); // Clear guest mode if logged in
+                // 1. Get Identity (Immutable from Auth)
+                const identity = mapFirebaseUser(firebaseUser);
+                setIsGuest(false);
                 localStorageAdapter.removeItem('guest_mode');
+
+                // V3 DECOUPLING: AuthContext NO LONGER manages Preferences.
+                // We provide a static "READ ONLY" snapshot here just in case legacy code accesses it.
+                // The Real Truth™ lives in ThemeContext / PreferencesService.
+                setUser({
+                    ...identity,
+                    preferences: { theme: 'dark', language: 'uk' } // Dummy defaults to satisfy Type
+                });
+                setIsLoading(false);
+
             } else {
                 // User is signed out
                 setUser(null);
+                setIsLoading(false);
             }
-            setIsLoading(false);
         });
 
-        return () => unsubscribe();
+        return () => {
+            unsubscribeAuth();
+        };
     }, []);
+
+    // ... loginWithGoogle / logout definitions ...
 
     const loginWithGoogle = async () => {
         setIsLoading(true);
@@ -52,11 +93,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         } catch (error: any) {
             if (error?.code !== 'auth/popup-closed-by-user') {
                 console.error("Login failed:", error);
-            } else {
-                console.log("Login popup closed by user.");
             }
         } finally {
-            setIsLoading(false);
+            // Loading state is handled by auth subscriber
         }
     };
 
@@ -71,20 +110,34 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
     };
 
-    const updateProfile = async (data: Partial<User>) => {
+    const updateProfile = async (data: DeepPartialUser) => {
         if (!auth.currentUser) return;
 
         try {
-            // Update Firebase Auth Profile (Name, Avatar)
-            await authService.updateProfile(auth.currentUser, {
-                name: data.name,
-                avatar: data.avatar
+            // 1. Update Firebase Auth Profile (Name, Avatar)
+            if (data.name || data.avatar) {
+                await authService.updateProfile(auth.currentUser, {
+                    name: data.name,
+                    avatar: data.avatar
+                });
+            }
+
+            // V3 DECOUPLING: AuthContext ignores preference updates.
+            // Consumers (ThemeContext) must call PreferencesService directly.
+            if (data.preferences) {
+                console.warn("[AuthContext:Deprecated] updateProfile called with preferences. Ignored. Use useTheme().");
+            }
+
+            // Optimistic Update (Identity Only)
+            setUser(prev => {
+                if (!prev) return null;
+                return {
+                    ...prev,
+                    ...data,
+                    preferences: prev.preferences // Keep existing (dummy) prefs
+                };
             });
 
-            // Optimistically update local state
-            setUser(prev => prev ? ({ ...prev, ...data }) : null);
-
-            // TODO: In Phase 8, we will also update the User document in Firestore here
         } catch (error) {
             console.error("Failed to update profile", error);
             throw error;

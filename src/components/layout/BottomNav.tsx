@@ -3,14 +3,14 @@ import { NavLink } from 'react-router-dom';
 import { LayoutDashboard, PieChart, Play, Pause, ListMusic, User } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { clsx } from 'clsx';
-import { useActiveTimer } from '../../context/ActiveTimerContext';
+import { useFocusState } from '../../context/FocusSessionContext';
 import { useHaptic } from '../../hooks/useHaptic';
 import { useUI } from '../../context/UIContext';
 
 const BottomNav = () => {
     const { t } = useTranslation();
-    const { activeTimers } = useActiveTimer();
-    const isFocusing = Object.keys(activeTimers).length > 0;
+    const { activeSession } = useFocusState();
+    const isFocusing = !!activeSession;
     const haptics = useHaptic();
     const { setMobileMenuOpen } = useUI();
 

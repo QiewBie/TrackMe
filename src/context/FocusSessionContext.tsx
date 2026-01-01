@@ -1,6 +1,6 @@
 import * as React from 'react';
-import { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react';
-import { Session } from '../types/models';
+import { createContext, useContext, useEffect, useState, useCallback, useRef, useMemo } from 'react';
+import { Session } from '../features/focus/types'; // Updated import
 import { localStorageAdapter } from '../services/storage/LocalStorageAdapter';
 import { TimeLedger } from '../services/storage/TimeLedger';
 
@@ -11,41 +11,37 @@ export interface SessionConfig {
     longBreak: number;    // minutes
 }
 
-interface FocusSessionContextType {
-    // State
-    activeSession: Session | null;
-    suspendedSessions: Record<string, Session>; // Map<TaskId, Session>
-    timeLeft: number;
-    isPaused: boolean;
-    sessionStatus: 'idle' | 'focus' | 'break';
-
-    // History
-    sessionsHistory: Session[];
-
-    // Playlist Context (Keep for compatibility)
-    activePlaylistId: string | null;
-    sessionQueue: string[];
-
-    // Actions
+// 1. Dispatch Context (Stable Actions)
+export interface FocusDispatchContextType {
     startSession: (taskId: string, config?: Partial<SessionConfig>) => void;
-
-    // CRITICAL: The hot-swap method
     switchTask: (taskId: string) => void;
-
     pauseSession: () => void;
     resumeSession: () => void;
     stopSession: () => void;
     discardSession: () => void;
-
     setPlaylistContext: (playlistId: string, queue: string[]) => void;
     updateQueue: (queue: string[]) => void;
-
-    // Config
-    sessionConfig: SessionConfig;
     updateSessionConfig: (config: Partial<SessionConfig>) => void;
 }
 
-const FocusSessionContext = createContext<FocusSessionContextType | undefined>(undefined);
+// 2. State Context (Structural State - Updates on interactions)
+export interface FocusStateContextType {
+    activeSession: Session | null;
+    suspendedSessions: Record<string, Session>;
+    isPaused: boolean;
+    sessionStatus: 'idle' | 'focus' | 'break';
+    sessionsHistory: Session[];
+    activePlaylistId: string | null;
+    sessionQueue: string[];
+    sessionConfig: SessionConfig;
+}
+
+// 3. Tick Context (Volatile State - Updates 1Hz)
+export type FocusTickContextType = number; // timeLeft
+
+export const FocusDispatchContext = createContext<FocusDispatchContextType | undefined>(undefined);
+export const FocusStateContext = createContext<FocusStateContextType | undefined>(undefined);
+export const FocusTickContext = createContext<FocusTickContextType | undefined>(undefined);
 
 const ACTIVE_SESSION_KEY = 'time_tracker_active_session';
 const SUSPENDED_SESSIONS_KEY = 'time_tracker_suspended_sessions';
@@ -59,62 +55,68 @@ const DEFAULT_CONFIG: SessionConfig = {
 };
 
 export const FocusSessionProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-    // --- State ---
-    const [activeSession, setActiveSession] = useState<Session | null>(null);
-    const [suspendedSessions, setSuspendedSessions] = useState<Record<string, Session>>({});
+    // --- State & Hydration (Lazy Initializers) ---
 
-    const [timeLeft, setTimeLeft] = useState<number>(0);
-    const [isPaused, setIsPaused] = useState<boolean>(true);
+    // 1. Active Session
+    const [activeSession, setActiveSession] = useState<Session | null>(() => {
+        return localStorageAdapter.getItem<Session>(ACTIVE_SESSION_KEY);
+    });
 
-    const [sessionsHistory, setSessionsHistory] = useState<Session[]>([]);
-    const [activePlaylistId, setActivePlaylistId] = useState<string | null>(null);
-    const [sessionQueue, setSessionQueue] = useState<string[]>([]);
+    // 2. Suspended Sessions
+    const [suspendedSessions, setSuspendedSessions] = useState<Record<string, Session>>(() => {
+        return localStorageAdapter.getItem<Record<string, Session>>(SUSPENDED_SESSIONS_KEY) || {};
+    });
+
+    // 3. Time Left (Derived from Active)
+    const [timeLeft, setTimeLeft] = useState<number>(() => {
+        const stored = localStorageAdapter.getItem<Session>(ACTIVE_SESSION_KEY);
+        return stored?.remainingTime ?? 0;
+    });
+
+    // 4. Paused Status (Derived from Active)
+    const [isPaused, setIsPaused] = useState<boolean>(() => {
+        const stored = localStorageAdapter.getItem<Session>(ACTIVE_SESSION_KEY);
+        if (stored && stored.status === 'active') return false;
+        return true;
+    });
+
+    // 5. History
+    const [sessionsHistory, setSessionsHistory] = useState<Session[]>(() => {
+        return localStorageAdapter.getItem<Session[]>(SESSIONS_KEY) || [];
+    });
+
+    // 6. Playlist State
+    const [activePlaylistId, setActivePlaylistId] = useState<string | null>(() => {
+        try {
+            const str = localStorage.getItem(PLAYLIST_STATE_KEY);
+            if (str) return JSON.parse(str).playlistId;
+        } catch (e) { console.error(e); }
+        return null;
+    });
+
+    const [sessionQueue, setSessionQueue] = useState<string[]>(() => {
+        try {
+            const str = localStorage.getItem(PLAYLIST_STATE_KEY);
+            if (str) return JSON.parse(str).queue || [];
+        } catch (e) { console.error(e); }
+        return [];
+    });
 
     // Config State
-    const [sessionConfig, setSessionConfig] = useState<SessionConfig>(DEFAULT_CONFIG);
+    const [sessionConfig, setSessionConfig] = useState<SessionConfig>(() => {
+        const stored = localStorageAdapter.getItem<SessionConfig>('time_tracker_session_config');
+        return stored || DEFAULT_CONFIG;
+    });
+
+    // Persist Config
+    useEffect(() => {
+        localStorageAdapter.setItem('time_tracker_session_config', sessionConfig);
+    }, [sessionConfig]);
 
     // Interval Ref for the Heartbeat
     const timerRef = useRef<number | null>(null);
 
-    // 1. Storage & Hydration
-    useEffect(() => {
-        // Load Active Session
-        const storedActive = localStorageAdapter.getItem<Session>(ACTIVE_SESSION_KEY);
-        if (storedActive) {
-            setActiveSession(storedActive);
-            // Restore Time Left and Status
-            if (storedActive.remainingTime !== undefined) {
-                setTimeLeft(storedActive.remainingTime);
-            }
-            if (storedActive.status === 'active') {
-                setIsPaused(false);
-            } else {
-                setIsPaused(true);
-            }
-        }
-
-        // Load Suspended Sessions
-        const storedSuspended = localStorageAdapter.getItem<Record<string, Session>>(SUSPENDED_SESSIONS_KEY);
-        if (storedSuspended) {
-            setSuspendedSessions(storedSuspended);
-        }
-
-        // Load Playlist State
-        const storedPlaylistStr = localStorage.getItem(PLAYLIST_STATE_KEY);
-        if (storedPlaylistStr) {
-            try {
-                const { playlistId, queue } = JSON.parse(storedPlaylistStr);
-                if (playlistId) setActivePlaylistId(playlistId);
-                if (Array.isArray(queue)) setSessionQueue(queue);
-            } catch (e) {
-                console.error("Failed to parse stored playlist state", e);
-            }
-        }
-
-        // Load History
-        const history = localStorageAdapter.getItem<Session[]>(SESSIONS_KEY) || [];
-        setSessionsHistory(history);
-    }, []);
+    // (Removed Lifecycle Effect for Hydration - replaced by Lazy Init)
 
     // 2. Heartbeat (Timer Logic)
     useEffect(() => {
@@ -178,11 +180,6 @@ export const FocusSessionProvider: React.FC<{ children: React.ReactNode }> = ({ 
      * 2. Saves the current 'remainingTime' to suspendedSessions (for resume).
      */
     const suspendAndLog = useCallback((session: Session, currentTimeLeft: number) => {
-        // Calculate time spent in *this specific active segment*
-        // We rely on the fact that when we started/resumed, we set activeSession.remainingTime
-        // to the correct value (either full duration or resumed value).
-        // So Delta = StartRemaining - EndRemaining.
-
         const startRemaining = session.remainingTime ?? (session.config?.duration ? session.config.duration * 60 : 0);
         const delta = Math.max(0, startRemaining - currentTimeLeft);
 
@@ -191,9 +188,7 @@ export const FocusSessionProvider: React.FC<{ children: React.ReactNode }> = ({ 
             TimeLedger.saveLog({
                 id: crypto.randomUUID(),
                 taskId: session.taskId,
-                startTime: session.startTime, // Technically this is start of segment. Ideally should be Now - Delta? 
-                // But reusing session.startTime is "okay" if we just care about aggregation.
-                // Better: we don't care about precise timestamp of log, just the duration.
+                startTime: session.startTime,
                 duration: delta,
                 type: 'auto',
                 note: 'Session Paused/Switched'
@@ -205,9 +200,6 @@ export const FocusSessionProvider: React.FC<{ children: React.ReactNode }> = ({ 
             ...session,
             remainingTime: currentTimeLeft,
             status: 'paused',
-            // Update startTime to now so next resume treats it as a new segment? 
-            // Or keep original start? 
-            // Better: update 'remainingTime' is enough for our logic.
         };
 
         setSuspendedSessions(prev => {
@@ -225,28 +217,12 @@ export const FocusSessionProvider: React.FC<{ children: React.ReactNode }> = ({ 
             suspendAndLog(activeSession, timeLeft);
         }
 
-        // 2. Start Request
-        // If startSession is called explicitly (e.g. "Play" button on task list), 
-        // we check if we should RESUME or START FRESH.
-        // Convention: If undefined config, assume RESUME preference if exists.
-        // If config is provided (e.g. user changed settings), maybe fresh?
-        // Let's check suspended first.
-
         setSuspendedSessions(prev => {
             const existing = prev[taskId];
 
-            // If we found a suspended session and we are NOT forced to overwrite (logic decision)
-            // For now, let's say: generic startSession always resumes if possible unless logic says otherwise?
-            // Actually, usually "Play" on a task with progress means Resume.
-
             if (existing) {
                 // RESUME
-                // We must ensure its remainingTime is valid.
                 const resumeTime = existing.remainingTime ?? (sessionConfig.workDuration * 60);
-
-                // We need to set activeSession to this existing one.
-                // BUT we need to update its 'startTime' so the log calculation makes sense later 
-                // (though our logic uses remainingTime diff so start doesn't matter much for math, only metadata).
 
                 const resumedSession = {
                     ...existing,
@@ -284,7 +260,7 @@ export const FocusSessionProvider: React.FC<{ children: React.ReactNode }> = ({ 
                 setActiveSession(newSession);
                 setTimeLeft(durationSec);
                 setIsPaused(false);
-                return prev; // No change to suspended map (except we verified it didnt exist)
+                return prev; // No change to suspended map
             }
         });
     }, [activeSession, timeLeft, sessionConfig, suspendAndLog]);
@@ -298,20 +274,13 @@ export const FocusSessionProvider: React.FC<{ children: React.ReactNode }> = ({ 
         }
 
         // 2. Resume Target or Start New
-        // Logic similar to startSession but we don't start immediately?
-        // switchTask is usually used by FocusView to swap context. 
-        // FocusView mounts and likely calls resumeSession() or checks state.
-
-        // Let's see if we have it suspended
         const existingSession = suspendedSessions[taskId];
 
         if (existingSession) {
             // RESUME (Paused)
             setActiveSession(existingSession);
             setTimeLeft(existingSession.remainingTime || 0);
-            setIsPaused(true); // Switch usually starts paused? Or should it auto-play?
-            // User asked for "Resume session", so let's keep it paused until they click play?
-            // OR if they clicked "Play" on dashboard, it calls startSession not switchTask.
+            setIsPaused(true);
         } else {
             // NEW (Paused)
             const durationSec = sessionConfig.workDuration * 60;
@@ -334,99 +303,66 @@ export const FocusSessionProvider: React.FC<{ children: React.ReactNode }> = ({ 
 
     }, [activeSession, timeLeft, suspendedSessions, sessionConfig, suspendAndLog]);
 
-    // 4. React to Config Changes (Retroactively update fresh sessions)
-    useEffect(() => {
-        const workDurationSec = sessionConfig.workDuration * 60;
-
-        // A. Update Active Session if it's fresh and in focus mode
-        if (activeSession && activeSession.config?.mode === 'focus') {
-            const currentTotal = activeSession.config.duration * 60;
-
-            // Check against timeLeft state for active session
-            if (timeLeft === currentTotal) {
-                // It's fresh. Update to new config.
-                setActiveSession(prev => {
-                    if (!prev || !prev.config) return prev;
-                    return {
-                        ...prev,
-                        remainingTime: workDurationSec,
-                        config: {
-                            ...prev.config,
-                            mode: 'focus', // Explicitly set to satisfy type
-                            duration: sessionConfig.workDuration
-                        }
-                    };
-                });
-                setTimeLeft(workDurationSec);
-            }
-        }
-
-        // B. Update Suspended Sessions if they are fresh
-        // We need to check if we need to update state to avoid loops?
-        // JSON.stringify comparison might be heavy, but safe.
-        setSuspendedSessions(prev => {
-            let hasChanges = false;
-            const next = { ...prev };
-
-            Object.keys(next).forEach(taskId => {
-                const s = next[taskId];
-                if (s.config?.mode === 'focus') {
-                    const sTotal = s.config.duration * 60;
-                    if (s.remainingTime === sTotal) {
-                        // Fresh
-                        next[taskId] = {
-                            ...s,
-                            remainingTime: workDurationSec,
-                            config: {
-                                ...s.config,
-                                mode: 'focus', // Explicitly set
-                                duration: sessionConfig.workDuration
-                            }
-                        };
-                        hasChanges = true;
-                    }
-                }
-            });
-
-            if (hasChanges) {
-                persistSuspended(next);
-                return next;
-            }
-            return prev;
-        });
-
-    }, [sessionConfig.workDuration]); // Only trigger on duration change
-
     const updateSessionConfig = useCallback((newConfig: Partial<SessionConfig>) => {
         setSessionConfig(prev => ({ ...prev, ...newConfig }));
     }, []);
 
     const pauseSession = useCallback(() => {
+        if (!activeSession) return;
+
+        // 1. Log Delta (Commit current segment)
+        const startRemaining = activeSession.remainingTime ?? (activeSession.config?.duration ? activeSession.config.duration * 60 : 0);
+        const delta = Math.max(0, startRemaining - timeLeft);
+
+        if (delta > 0) {
+            TimeLedger.saveLog({
+                id: crypto.randomUUID(),
+                taskId: activeSession.taskId,
+                startTime: activeSession.startTime, // Should be segment start? activeSession.startTime is session start?
+                // activeSession.startTime is when the session object was created/resumed.
+                // Since we update activeSession on pause/resume, this should be correct segment start.
+                duration: delta,
+                type: 'auto',
+                note: 'Session Paused'
+            });
+        }
+
+        // 2. Update State (Reset measurement baseline)
+        setActiveSession(prev => prev ? ({
+            ...prev,
+            status: 'paused',
+            remainingTime: timeLeft, // Critical: Next delta starts from here
+            // Update startTime to now? No, startTime is creation. 
+            // Ideally we should update startTime on Resume.
+            // But for now, ensuring remainingTime is updated separates the segments.
+        }) : null);
+
         setIsPaused(true);
-    }, []);
+    }, [activeSession, timeLeft]);
 
     const resumeSession = useCallback(() => {
-        if (timeLeft > 0) setIsPaused(false);
+        if (timeLeft > 0) {
+            // Update session start time for the new segment
+            setActiveSession(prev => prev ? ({
+                ...prev,
+                status: 'active',
+                startTime: new Date().toISOString()
+            }) : null);
+            setIsPaused(false);
+        }
     }, [timeLeft]);
 
     const stopSession = useCallback(() => {
         if (!activeSession) return;
 
         const endTime = new Date().toISOString();
-
-        // Calculate Delta for valid stats
-        // Same logic as suspendAndLog
         const startRemaining = activeSession.remainingTime ?? (activeSession.config?.duration ? activeSession.config.duration * 60 : 0);
         const delta = Math.max(0, startRemaining - timeLeft);
 
         const completedSession: Session = {
             ...activeSession,
             endTime,
-            duration: delta, // Store only the delta of this segment? Or total? 
-            // The 'Session' object in history tracks a single continuous session (usually).
-            // If we are multi-segment, the history might be confusing.
-            // BUT 'sessionsHistory' is legacy. The real truth is TimeLedger.
-            // Let's store delta here too for consistency.
+            duration: delta,
             status: 'completed',
             remainingTime: 0
         };
@@ -493,36 +429,112 @@ export const FocusSessionProvider: React.FC<{ children: React.ReactNode }> = ({ 
         }
     }, [activePlaylistId]);
 
+    // React to Config Changes (Retroactively update fresh sessions)
+    useEffect(() => {
+        const workDurationSec = sessionConfig.workDuration * 60;
+
+        // A. Update Active Session if it's fresh and in focus mode
+        if (activeSession && activeSession.config?.mode === 'focus') {
+            const currentTotal = activeSession.config.duration * 60;
+            if (timeLeft === currentTotal) {
+                // Fresh
+                setActiveSession(prev => {
+                    if (!prev || !prev.config) return prev;
+                    return {
+                        ...prev,
+                        remainingTime: workDurationSec,
+                        config: {
+                            ...prev.config,
+                            mode: 'focus',
+                            duration: sessionConfig.workDuration
+                        }
+                    };
+                });
+                setTimeLeft(workDurationSec);
+            }
+        }
+
+        // B. Update Suspended Sessions
+        setSuspendedSessions(prev => {
+            let hasChanges = false;
+            const next = { ...prev };
+
+            Object.keys(next).forEach(taskId => {
+                const s = next[taskId];
+                if (s.config?.mode === 'focus') {
+                    const sTotal = s.config.duration * 60;
+                    if (s.remainingTime === sTotal) {
+                        next[taskId] = {
+                            ...s,
+                            remainingTime: workDurationSec,
+                            config: {
+                                ...s.config,
+                                mode: 'focus',
+                                duration: sessionConfig.workDuration
+                            }
+                        };
+                        hasChanges = true;
+                    }
+                }
+            });
+
+            if (hasChanges) {
+                persistSuspended(next);
+                return next;
+            }
+            return prev;
+        });
+
+    }, [sessionConfig.workDuration]);
+
+    // --- Memoize & Provide ---
+
+    const dispatchValue = useMemo(() => ({
+        startSession, switchTask, pauseSession, resumeSession, stopSession, discardSession,
+        setPlaylistContext, updateQueue, updateSessionConfig
+    }), [startSession, switchTask, pauseSession, resumeSession, stopSession, discardSession, setPlaylistContext, updateQueue, updateSessionConfig]);
+
+    const stateValue = useMemo(() => ({
+        activeSession, suspendedSessions, isPaused,
+        sessionStatus: activeSession ? 'focus' : 'idle' as 'idle' | 'focus' | 'break',
+        sessionsHistory, activePlaylistId, sessionQueue, sessionConfig
+    }), [activeSession, suspendedSessions, isPaused, sessionsHistory, activePlaylistId, sessionQueue, sessionConfig]);
+
     return (
-        <FocusSessionContext.Provider value={{
-            activeSession,
-            suspendedSessions,
-            timeLeft,
-            isPaused,
-            sessionStatus: activeSession ? 'focus' : 'idle',
-            sessionsHistory,
-            activePlaylistId,
-            sessionQueue,
-            startSession,
-            switchTask,
-            pauseSession,
-            resumeSession,
-            stopSession,
-            discardSession,
-            setPlaylistContext,
-            updateQueue,
-            sessionConfig,
-            updateSessionConfig
-        }}>
-            {children}
-        </FocusSessionContext.Provider>
+        <FocusDispatchContext.Provider value={dispatchValue}>
+            <FocusStateContext.Provider value={stateValue}>
+                <FocusTickContext.Provider value={timeLeft}>
+                    {children}
+                </FocusTickContext.Provider>
+            </FocusStateContext.Provider>
+        </FocusDispatchContext.Provider>
     );
 };
 
-export const useFocusContext = () => {
-    const context = useContext(FocusSessionContext);
-    if (!context) {
-        throw new Error('useFocusContext must be used within a FocusSessionProvider');
-    }
+// --- Hooks ---
+
+export const useFocusDispatch = () => {
+    const context = useContext(FocusDispatchContext);
+    if (!context) throw new Error('useFocusDispatch must be used within a FocusSessionProvider');
     return context;
+};
+
+export const useFocusState = () => {
+    const context = useContext(FocusStateContext);
+    if (!context) throw new Error('useFocusState must be used within a FocusSessionProvider');
+    return context;
+};
+
+export const useFocusTick = () => {
+    const context = useContext(FocusTickContext);
+    if (context === undefined) throw new Error('useFocusTick must be used within a FocusSessionProvider');
+    return context;
+};
+
+// Legacy Wrapper for backward compatibility (Plan V3.1)
+export const useFocusContext = () => {
+    const dispatch = useFocusDispatch();
+    const state = useFocusState();
+    const tick = useFocusTick();
+    return { ...state, ...dispatch, timeLeft: tick };
 };

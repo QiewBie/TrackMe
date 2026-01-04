@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import { TimeLedger } from '../services/storage/TimeLedger';
-import { localStorageAdapter } from '../services/storage/LocalStorageAdapter';
+import { useStorage } from './StorageContext';
 
 // --- State Definition ---
 interface SimpleTimerState {
@@ -21,22 +21,14 @@ const STORAGE_KEY = 'simple_timer_state';
 
 export const ActiveTimerProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     // 1. Persistent State
-    const [activeTimer, setActiveTimer] = useState<SimpleTimerState | null>(() => {
-        return localStorageAdapter.getItem<SimpleTimerState>(STORAGE_KEY);
-    });
+    const [activeTimer, setActiveTimer] = useState<SimpleTimerState | null>(null);
 
     // 2. Reactive Tick (for UI display)
     const [elapsedTime, setElapsedTime] = useState(0);
     const rafRef = useRef<number | null>(null);
 
-    // Persistence Effect
-    useEffect(() => {
-        if (activeTimer) {
-            localStorageAdapter.setItem(STORAGE_KEY, activeTimer);
-        } else {
-            localStorageAdapter.removeItem(STORAGE_KEY);
-        }
-    }, [activeTimer]);
+    // Persistence Effect (Removed for Hybrid Approach - see init below)
+    // We rely on actions to write, and init to load.
 
     // Tick Loop (Only runs when active)
     useEffect(() => {

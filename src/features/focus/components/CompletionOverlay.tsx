@@ -80,7 +80,7 @@ export const CompletionOverlay: React.FC<CompletionOverlayProps> = ({
     if (!isOpen) return null;
 
     return createPortal(
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-6 bg-bg-main">
+        <div className="fixed inset-0 z-toast flex items-center justify-center p-6 bg-bg-main">
             {/* Background Ambience - No Blur */}
             <div className="absolute inset-0 overflow-hidden pointer-events-none">
                 <div

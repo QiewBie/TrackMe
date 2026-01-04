@@ -1,6 +1,7 @@
 import { useState, useRef } from 'react';
 import { Download, Upload, AlertTriangle, Cloud, Info } from 'lucide-react';
 import Button from '../../../components/ui/Button';
+import { Heading } from '../../../components/ui/Typography';
 import ConfirmationModal from '../../../components/shared/ConfirmationModal';
 import { useDataPersistence } from '../../../hooks/useDataPersistence';
 import { useTranslation } from 'react-i18next';
@@ -42,9 +43,9 @@ const DataManager: React.FC = () => {
 
     return (
         <div className="space-y-6">
-            <h2 className="text-xl font-bold text-text-primary flex items-center gap-2">
+            <Heading variant="h2" className="flex items-center gap-2">
                 {t('profile.data_management')}
-            </h2>
+            </Heading>
 
             {/* Status Alert */}
             <div className={`p-4 rounded-2xl flex items-start gap-3 border ${showSyncNote

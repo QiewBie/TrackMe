@@ -1,7 +1,7 @@
 import * as React from 'react';
 import { memo } from 'react';
 import { clsx } from 'clsx';
-import { CheckCircle, Play, Pause, Edit3, Trash2, CheckSquare } from 'lucide-react';
+import { Check, Play, Pause, Edit3, Trash2, CheckSquare } from 'lucide-react';
 import Button from '../../../components/ui/Button';
 import { useGlobalTimer } from '../../../hooks/useGlobalTimer';
 import TaskTimerWidget from './TaskTimerWidget';
@@ -44,21 +44,20 @@ const TaskItem: React.FC<TaskItemProps> = memo(({ task, categories, onToggleComp
             {/* Left Section: Checkbox & Info */}
             < div className="flex items-center w-full sm:w-auto flex-1 min-w-0" >
                 <button
-                    onClick={() => onToggleComplete(task.id)}
-                    className="mr-3 sm:mr-4 group-check focus:outline-none shrink-0"
+                    type="button"
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        onToggleComplete(task.id);
+                    }}
+                    className={clsx(
+                        "w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all duration-300 shrink-0 mr-3 sm:mr-4",
+                        task.completed
+                            ? 'bg-brand-primary border-brand-primary text-white shadow-brand-glow'
+                            : 'border-border-subtle hover:border-brand-primary bg-bg-surface'
+                    )}
                     aria-label={task.completed ? t('tasks.actions.restore') : t('tasks.actions.complete')}
                 >
-                    <div className={clsx(
-                        "w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all duration-300",
-                        task.completed
-                            ? "border-status-success bg-status-success"
-                            : "border-border-subtle group-hover:border-brand-primary hover:bg-brand-primary/10"
-                    )}>
-                        <div className={clsx(
-                            "w-3 h-3 rounded-full bg-text-inverse transition-transform duration-300",
-                            task.completed ? "scale-100 opacity-100" : "scale-0 opacity-0 bg-brand-primary group-active:scale-75 group-active:opacity-50"
-                        )} />
-                    </div>
+                    {task.completed && <Check size={14} strokeWidth={3} />}
                 </button>
 
                 <div className="flex-1 min-w-0 cursor-pointer" onClick={() => onEdit(task)}>
@@ -108,8 +107,8 @@ const TaskItem: React.FC<TaskItemProps> = memo(({ task, categories, onToggleComp
                 <div className="flex items-center gap-1">
                     <Button
                         variant="icon"
-                        onClick={() => onDelete(task)}
-                        className="text-text-secondary hover:text-status-error hover:bg-status-error/10"
+                        onClick={(e) => { e.stopPropagation(); onDelete(task); }}
+                        className="p-2 text-text-secondary hover:text-status-error hover:bg-status-error/10 transition-colors opacity-0 group-hover:opacity-100"
                         title={t('common.delete')}
                         aria-label={t('task_details.delete_task')}
                         icon={Trash2}

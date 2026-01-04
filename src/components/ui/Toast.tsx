@@ -28,7 +28,7 @@ const Toast: React.FC<ToastProps> = ({ message, type = 'info', isVisible, onClos
                         initial={{ opacity: 0, y: 50, scale: 0.95 }}
                         animate={{ opacity: 1, y: 0, scale: 1 }}
                         exit={{ opacity: 0, y: 20, scale: 0.95 }}
-                        className="fixed bottom-4 left-4 right-4 md:left-auto md:right-6 md:transform-none md:w-auto md:min-w-[320px] max-w-md z-[9999] flex items-center gap-4 px-4 py-3 rounded-xl shadow-2xl bg-bg-surface text-text-primary border border-border ring-1 ring-black/5"
+                        className="fixed bottom-4 left-4 right-4 md:left-auto md:right-6 md:transform-none md:w-auto md:min-w-80 max-w-md z-toast flex items-center gap-4 px-4 py-3 rounded-xl shadow-2xl bg-bg-surface text-text-primary border border-border ring-1 ring-border-subtle"
                     >
                         <div className="shrink-0 p-2 bg-bg-main rounded-full">
                             {type === 'success' && <CheckCircle2 size={24} className="text-status-success" />}

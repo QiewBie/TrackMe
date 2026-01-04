@@ -102,11 +102,34 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const logout = async () => {
         setIsLoading(true);
         try {
-            await authService.logout();
+            // PHASE 1: Provider Termination (Best Effort)
+            // We only attempt this if it's a real user (not Guest)
+            if (!isGuest && user) {
+                try {
+                    await authService.logout();
+                } catch (providerError) {
+                    console.error("[Logout] Provider failed, proceeding to local cleanup:", providerError);
+                    // Swallowing error intentionally to ensure Phase 2 executes
+                }
+            }
+        } catch (criticalError) {
+            console.error("[Logout] Critical error:", criticalError);
+        } finally {
+            // PHASE 2: Session Teardown (Guaranteed Execution)
+            // This is the "Source of Truth" for the application state
+
+            // 1. Clear Domain State
+            localStorageAdapter.removeItem('guest_mode');
+            localStorageAdapter.removeItem('user_cache');
+
+            // 2. Reset Memory State
             setUser(null);
             setIsGuest(false);
-        } finally {
+
             setIsLoading(false);
+
+            // Safety Check: Ensure storage is actually clear
+            localStorageAdapter.removeItem('guest_mode');
         }
     };
 

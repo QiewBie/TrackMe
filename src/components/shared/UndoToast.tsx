@@ -42,7 +42,7 @@ const UndoToast = ({ onUndo, onClose, message }: UndoToastProps) => {
 
     return (
         <div className="fixed bottom-4 left-4 right-4 md:left-auto md:right-6 md:w-auto z-50 animate-slide-up">
-            <div className="bg-bg-surface text-text-primary rounded-xl shadow-2xl p-4 flex items-center gap-3 md:gap-4 w-full md:min-w-[320px] overflow-hidden relative border border-border ring-1 ring-white/10">
+            <div className="bg-bg-surface text-text-primary rounded-xl shadow-2xl p-4 flex items-center gap-3 md:gap-4 w-full md:min-w-80 overflow-hidden relative border border-border ring-1 ring-white/10">
                 {/* Progress Bar Background */}
                 <div
                     className="absolute bottom-0 left-0 h-1 bg-brand-primary transition-all duration-75 ease-linear"

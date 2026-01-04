@@ -1,6 +1,7 @@
 import { LogOut, Trash2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import Button from '../../../components/ui/Button';
+import { Heading } from '../../../components/ui/Typography';
 
 interface AccountManagementSectionProps {
     onDeleteProfile?: () => void;
@@ -12,16 +13,16 @@ export const AccountManagementSection: React.FC<AccountManagementSectionProps> =
 
     return (
         <div className="bg-bg-surface p-8 rounded-3xl shadow-sm border border-border">
-            <h2 className="text-xl font-bold text-text-primary mb-6 text-left flex items-center gap-2">
+            <Heading variant="h2" className="mb-6 text-left flex items-center gap-2">
                 {t('profile.account_management')}
-            </h2>
+            </Heading>
 
             <div className="space-y-6">
                 {/* Logout Block */}
                 {onLogout && (
                     <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4 rounded-xl bg-bg-main border border-border">
                         <div>
-                            <h4 className="font-medium text-text-primary mb-1">{t('profile.logout')}</h4>
+                            <Heading variant="h4" className="mb-1">{t('profile.logout')}</Heading>
                             <p className="text-sm text-text-secondary">{t('auth.subtitle')}</p>
                         </div>
                         <Button
@@ -37,15 +38,15 @@ export const AccountManagementSection: React.FC<AccountManagementSectionProps> =
                 )}
 
                 {/* Delete Account Block */}
-                <div className="bg-red-500/5 p-4 rounded-xl border border-red-500/10 space-y-4">
+                <div className="bg-status-error/5 p-4 rounded-xl border border-status-error/10 space-y-4">
                     <div>
-                        <h4 className="font-medium text-red-600 mb-1">{t('profile.delete_account')}</h4>
+                        <Heading variant="h4" className="mb-1 text-status-error">{t('profile.delete_account')}</Heading>
                         <p className="text-sm text-text-secondary">{t('profile.delete_description')}</p>
                     </div>
                     {onDeleteProfile && (
                         <Button
                             variant="secondary"
-                            className="w-full sm:w-auto border-red-500/30 text-red-500 hover:bg-red-500/10 hover:text-red-600"
+                            className="w-full sm:w-auto border-status-error/30 text-status-error hover:bg-status-error/10 hover:text-status-error"
                             onClick={onDeleteProfile}
                             icon={Trash2}
                         >

@@ -128,10 +128,11 @@ export default {
         'sidebar-focus': '400px',
       },
       zIndex: {
+        'fixed': '40',
         'overlay': '60',
-        'modal': '70',
-        'popover': '80',
-        'toast': '90',
+        'modal': '100',   // Boosted from 70
+        'popover': '110', // Boosted from 80
+        'toast': '120',   // Boosted from 90 (Safe range)
       },
       boxShadow: {
         'glow': '0 0 20px -5px hsl(var(--shadow-color) / 0.5)',

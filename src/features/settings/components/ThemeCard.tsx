@@ -3,6 +3,7 @@ import { Check } from 'lucide-react';
 import { ThemeConfig } from '../../../config/ThemeRegistry';
 import { clsx } from 'clsx';
 import { motion } from 'framer-motion';
+import Button from '../../../components/ui/Button';
 
 interface ThemeCardProps {
     theme: ThemeConfig;
@@ -29,13 +30,12 @@ export const ThemeCard: React.FC<ThemeCardProps> = ({ theme, isActive, onClick, 
     };
 
     return (
-        <button
+        <Button
+            variant="ghost"
             onClick={onClick}
             className={clsx(
-                "group relative w-full rounded-2xl border-2 transition-all duration-200 overflow-hidden text-left flex flex-col outline-none focus:ring-4 focus:ring-brand-primary/50",
-                isActive
-                    ? "border-brand-primary ring-2 ring-brand-primary/20 scale-[1.02] shadow-lg"
-                    : "border-border hover:border-brand-primary/50 hover:shadow-md"
+                "w-full h-auto p-0 flex flex-col items-center gap-3 group rounded-2xl transition-all duration-300 relative overflow-hidden ring-offset-2 ring-offset-bg-main",
+                isActive ? "ring-2 ring-brand-primary scale-105" : "hover:scale-105"
             )}
         >
             {/* Preview Area - Mini App Interface */}
@@ -104,14 +104,22 @@ export const ThemeCard: React.FC<ThemeCardProps> = ({ theme, isActive, onClick, 
             </div>
 
             {/* Label */}
-            <div className="p-3 bg-bg-surface border-t border-border flex items-center justify-between">
-                <span className={clsx(
-                    "text-sm font-bold",
-                    isActive ? "text-brand-primary" : "text-text-primary"
-                )}>
+            <div
+                className="p-3 border-t flex items-center justify-between"
+                style={{
+                    background: getHsl('--bg-surface'),
+                    borderColor: getHsl('--border-subtle')
+                }}
+            >
+                <span
+                    className={clsx("text-sm font-bold")}
+                    style={{
+                        color: isActive ? getHsl('--brand-primary') : getHsl('--text-primary')
+                    }}
+                >
                     {t(`themes.${theme.id}` as any)}
                 </span>
             </div>
-        </button>
+        </Button>
     );
 };

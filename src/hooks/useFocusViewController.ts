@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useTaskContext } from '../context/TaskContext';
 import { useCategoryContext } from '../context/CategoryContext';
@@ -73,7 +73,8 @@ export const useFocusViewController = () => {
                 // If the candidate task is IN the playlist but COMPLETED, discard it to show "All Done".
                 if (p.taskIds.includes(candidate.id) && candidate.completed) {
                     // Try to find ANY incomplete task in this playlist instead
-                    return tasks.find(t => p.taskIds.includes(t.id) && !t.completed) || undefined;
+                    const next = tasks.find(t => p.taskIds.includes(t.id) && !t.completed);
+                    return next || candidate;
                 }
             }
         }
@@ -98,6 +99,14 @@ export const useFocusViewController = () => {
 
     // --- Session Hydration & Sync ---
     useEffect(() => {
+        // ZOMBIE CHECK: If we have an ID but no playlist matches, it must have been deleted.
+        // We only check this if NOT loading by route ID (which might be invalid for other reasons).
+        if (activePlaylistId && !playlists.find(p => p.id === activePlaylistId)) {
+            console.log('[FocusVC] Active playlist deleted. Clearing session context.');
+            setPlaylistContext(null, []);
+            return;
+        }
+
         if (resolvedContext.type === 'playlist') {
             const p = resolvedContext.data as typeof playlists[0];
 
@@ -105,19 +114,23 @@ export const useFocusViewController = () => {
             if (activePlaylistId !== p.id) {
                 setPlaylistContext(p.id, p.taskIds);
             }
-            // Scenario 2: Same Playlist, but Source Logic Updated (e.g. Tasks added in Manager)
-            else if (activePlaylistId === p.id) {
-                // Check for divergence (naive stringify is fast enough for IDs)
-                const sourceSig = JSON.stringify(p.taskIds);
+        }
+
+        // UNIVERSAL SYNC: Always check if the active playlist (in context) has drifted from its source
+        // This handles cases where we are on /focus (resolvedContext='none') but the playlist changed in background.
+        if (activePlaylistId) {
+            const sourcePlaylist = playlists.find(p => p.id === activePlaylistId);
+            if (sourcePlaylist) {
+                const sourceSig = JSON.stringify(sourcePlaylist.taskIds);
                 const localSig = JSON.stringify(sessionQueue);
 
                 if (sourceSig !== localSig) {
-                    console.log('[FocusVC] Syncing Session Queue with Source Playlist', p.taskIds);
-                    setPlaylistContext(p.id, p.taskIds);
+                    console.log('[FocusVC] Universal Sync: Updating Session Queue', sourcePlaylist.taskIds);
+                    setPlaylistContext(activePlaylistId, sourcePlaylist.taskIds);
                 }
             }
         }
-    }, [resolvedContext, activePlaylistId, sessionQueue, setPlaylistContext]);
+    }, [resolvedContext, activePlaylistId, sessionQueue, setPlaylistContext, playlists]);
 
     // --- Synchronization: Route <-> Session Context ---
     useEffect(() => {
@@ -192,14 +205,19 @@ export const useFocusViewController = () => {
         if (window.innerWidth >= 1024) setContextPanelOpen(true);
     }, []);
 
-    return {
+    // Actions
+    const updateQueue = useCallback((newQueue: Task[]) => {
+        setPlaylistContext(activePlaylistId || 'temp', newQueue.map(t => t.id));
+    }, [activePlaylistId, setPlaylistContext]);
+
+    const controllerAPI = useMemo(() => ({
         // Data
         activeTask,
         activePlaylist,
         activeCategory,
         ambientColor,
         queue,
-        tasks, // Exposed for count
+        tasks,
         categories,
 
         // Navigation
@@ -220,6 +238,13 @@ export const useFocusViewController = () => {
         setSettings,
 
         // Actions
-        updateQueue: (newQueue: Task[]) => setPlaylistContext(activePlaylistId || 'temp', newQueue.map(t => t.id))
-    };
+        updateQueue
+    }), [
+        activeTask, activePlaylist, activeCategory, ambientColor, queue, tasks, categories,
+        navigate,
+        contextPanelOpen, isSettingsOpen, showCompletedWarning, showLastTaskWarning, controlsVisible, settings,
+        updateQueue
+    ]);
+
+    return controllerAPI;
 };

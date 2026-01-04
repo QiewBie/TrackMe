@@ -11,6 +11,7 @@ interface SessionControlsProps {
     onComplete: () => void;
     canSkip?: boolean;
     className?: string;
+    disabled?: boolean;
 }
 
 export const SessionControls: React.FC<SessionControlsProps> = memo(({
@@ -19,18 +20,21 @@ export const SessionControls: React.FC<SessionControlsProps> = memo(({
     onSkip,
     onComplete,
     canSkip = true,
-    className
+    className,
+    disabled = false
 }) => {
     const { t } = useTranslation();
     return (
         <div className={clsx(
-            "flex items-center justify-center gap-6 md:gap-10 p-6 rounded-3xl bg-bg-surface/90 backdrop-blur-xl shadow-2xl border border-border-subtle ring-1 ring-black/5 transition-all w-fit mx-auto",
-            className
+            "flex items-center justify-center gap-6 md:gap-10 p-6 rounded-3xl bg-bg-surface/90 backdrop-blur-xl shadow-2xl border border-border-subtle ring-1 ring-border-subtle transition-all w-fit mx-auto",
+            className,
+            disabled && "opacity-50 pointer-events-none grayscale"
         )}>
             <Button
                 variant="ghost"
                 size="lg"
                 onClick={onComplete}
+                disabled={disabled}
                 className="rounded-2xl text-text-secondary hover:text-status-success hover:bg-status-success/10 !p-0 !h-14 !w-14 md:!h-16 md:!w-16 flex items-center justify-center transition-transform active:scale-95"
                 title={t('focus.controls.complete')}
             >
@@ -41,6 +45,7 @@ export const SessionControls: React.FC<SessionControlsProps> = memo(({
                 variant="primary"
                 size="lg"
                 onClick={onToggle}
+                disabled={disabled}
                 className={clsx(
                     "shadow-xl shadow-brand/20 !p-0 !h-20 !w-20 md:!h-24 md:!w-24 rounded-3xl flex items-center justify-center transition-transform active:scale-95",
                     isTimerRunning ? "bg-brand hover:bg-brand-hover" : "bg-brand hover:bg-brand-hover"
@@ -57,10 +62,10 @@ export const SessionControls: React.FC<SessionControlsProps> = memo(({
                 variant="ghost"
                 size="lg"
                 onClick={canSkip ? onSkip : undefined}
-                disabled={!canSkip}
+                disabled={!canSkip || disabled}
                 className={clsx(
                     "rounded-2xl !p-0 !h-14 !w-14 md:!h-16 md:!w-16 flex items-center justify-center transition-transform active:scale-95",
-                    canSkip
+                    (canSkip && !disabled)
                         ? "text-text-secondary hover:text-text-primary hover:bg-text-secondary/5"
                         : "text-ui-disabled cursor-not-allowed"
                 )}

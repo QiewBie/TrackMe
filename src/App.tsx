@@ -2,7 +2,8 @@ import { Suspense, lazy, useEffect } from 'react';
 import { Routes, Route, useOutletContext, useLocation } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 // ActiveTimerProvider removed (Bridge Pattern)
-import { UIProvider } from './context/UIContext';
+import { UIProvider, useUI } from './context/UIContext';
+import { cn } from './utils/cn';
 import { LayoutProvider } from './context/LayoutContext';
 import { TaskProvider, useTaskContext } from './context/TaskContext';
 import { CategoryProvider, useCategoryContext } from './context/CategoryContext';
@@ -100,13 +101,26 @@ const PageTransitionWrapper = ({ children, noPadding = false }: { children: Reac
     animate={{ opacity: 1, y: 0 }}
     exit={{ opacity: 0, y: -10 }}
     transition={{ duration: 0.25, ease: "easeOut" }}
-    className={`w-full h-full ${noPadding ? 'p-0' : 'p-4 md:p-8 lg:p-12'}`}
+    className={cn(
+      "w-full min-h-full",
+      noPadding ? "p-0" : "p-4 md:p-8 lg:p-12"
+      // Bottom padding is now handled internally by pages via <NavSpacer />
+    )}
   >
     {children}
   </motion.div>
 );
 
+import { useCloudSync } from './hooks/useCloudSync';
+import { useThemeColor } from './hooks/useThemeColor';
+
 const AppContent = () => {
+  // Features Cloud Sync (TimeLedger)
+  useCloudSync();
+
+  const { isMobileMenuOpen, setMobileMenuOpen } = useUI();
+  useThemeColor();
+
   const { user, isLoading } = useAuth();
   const { i18n } = useTranslation();
 
@@ -129,15 +143,7 @@ const AppContent = () => {
   // Authenticated Routes
   return (
     <Routes>
-      <Route path="/" element={
-        <UIProvider>
-          <LayoutProvider>
-            <ThemeProvider>
-              <Dashboard />
-            </ThemeProvider>
-          </LayoutProvider>
-        </UIProvider>
-      }>
+      <Route path="/" element={<Dashboard />}>
         <Route index element={
           <Suspense fallback={<Loading />}>
             <PageTransitionWrapper noPadding>
@@ -207,7 +213,13 @@ export default function App() {
               <CategoryProvider>
                 <PlaylistProvider>
                   <SoundProvider>
-                    <AppContent />
+                    <UIProvider>
+                      <LayoutProvider>
+                        <ThemeProvider>
+                          <AppContent />
+                        </ThemeProvider>
+                      </LayoutProvider>
+                    </UIProvider>
                   </SoundProvider>
                 </PlaylistProvider>
               </CategoryProvider>

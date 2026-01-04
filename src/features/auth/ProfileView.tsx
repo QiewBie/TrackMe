@@ -16,7 +16,9 @@ import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
 import { clsx } from 'clsx';
 import PageHeader from '../../components/ui/PageHeader';
+import { Heading } from '../../components/ui/Typography';
 import { Container } from '../../components/ui/Layout';
+import NavSpacer from '../../components/layout/NavSpacer';
 
 interface ProfileViewProps {
     user: UserType | null;
@@ -48,7 +50,7 @@ const ProfileView: React.FC<ProfileViewProps> = ({ user, setUser, updateAvatar, 
     };
 
     return (
-        <Container size="xl" className="space-y-6 py-6 pb-20 animate-in fade-in duration-500">
+        <Container size="xl" className="space-y-6 pt-6 animate-in fade-in duration-500">
 
             {/* Header */}
             <PageHeader
@@ -89,23 +91,32 @@ const ProfileView: React.FC<ProfileViewProps> = ({ user, setUser, updateAvatar, 
                             <div className="w-full space-y-4">
                                 <Input
                                     label={t('profile.name_label')}
-                                    value={user.name}
-                                    onChange={e => setUser({ ...user, name: e.target.value })}
+                                    defaultValue={user.name}
+                                    onBlur={e => {
+                                        if (e.target.value !== user.name) {
+                                            setUser({ ...user, name: e.target.value });
+                                        }
+                                    }}
                                     className="bg-bg-main border-border font-bold text-center text-lg shadow-sm focus:bg-bg-surface"
                                 />
                                 <Input
                                     label={t('profile.role_label')}
-                                    value={user.role}
-                                    onChange={e => setUser({ ...user, role: e.target.value })}
+                                    defaultValue={user.role}
+                                    onBlur={e => {
+                                        if (e.target.value !== user.role) {
+                                            setUser({ ...user, role: e.target.value });
+                                        }
+                                    }}
                                     className="bg-bg-main border-border text-center text-sm font-medium shadow-sm focus:bg-bg-surface"
                                 />
 
-                                <button
+                                <Button
+                                    variant="secondary"
                                     onClick={toggleLanguage}
-                                    className="w-full flex items-center justify-between p-3 rounded-xl bg-bg-main border border-border hover:border-brand-primary transition-all group mt-2"
+                                    className="w-full justify-between mt-2"
                                 >
                                     <div className="flex items-center gap-3">
-                                        <div className="p-2 rounded-lg bg-brand-primary/10 text-brand-primary">
+                                        <div className="p-1.5 rounded-lg bg-brand-primary/10 text-brand-primary">
                                             <Languages size={18} />
                                         </div>
                                         <span className="font-semibold text-text-primary text-sm">{t('profile.language', 'Language')}</span>
@@ -113,16 +124,23 @@ const ProfileView: React.FC<ProfileViewProps> = ({ user, setUser, updateAvatar, 
                                     <span className="font-bold text-xs bg-bg-surface px-3 py-1 rounded-lg border border-border text-text-primary">
                                         {i18n.language === 'uk' ? t('profile.language_uk', 'UK') : t('profile.language_en', 'EN')}
                                     </span>
-                                </button>
+                                </Button>
                             </div>
                         </div>
                     </div>
 
-                    {/* Account Management (Moved to Left Column) */}
-                    <AccountManagementSection
-                        onLogout={logout}
-                        onDeleteProfile={() => setIsDeleteModalOpen(true)}
-                    />
+                    {/* Account Management (Desktop: Left Column) */}
+                    <div className="hidden lg:block">
+                        <AccountManagementSection
+                            onLogout={logout}
+                            onDeleteProfile={() => setIsDeleteModalOpen(true)}
+                        />
+
+                        {/* Troubleshooting (Desktop Only - Left Side) */}
+                        <div className="hidden lg:block">
+                            <TroubleshootingSection />
+                        </div>
+                    </div>
                 </div>
 
                 {/* Right Column: Key Settings */}
@@ -130,9 +148,9 @@ const ProfileView: React.FC<ProfileViewProps> = ({ user, setUser, updateAvatar, 
 
                     {/* Preferences Card */}
                     <div className="bg-bg-surface p-8 rounded-3xl shadow-sm border border-border">
-                        <h2 className="text-xl font-bold text-text-primary mb-6 text-left flex items-center gap-2">
+                        <Heading variant="h2" className="mb-6 text-left flex items-center gap-2">
                             {t('profile.preferences')}
-                        </h2>
+                        </Heading>
 
                         <div className="space-y-6">
                             <Toggle
@@ -141,7 +159,7 @@ const ProfileView: React.FC<ProfileViewProps> = ({ user, setUser, updateAvatar, 
                                 className="w-full p-4 rounded-xl bg-bg-main border border-border hover:border-brand-primary transition-all group"
                                 label={
                                     <div className="flex items-center gap-3">
-                                        <div className={clsx("p-2 rounded-lg transition-colors", darkMode ? "bg-bg-inverse text-text-inverse" : "bg-bg-subtle text-text-secondary")}>
+                                        <div className={clsx("p-2 rounded-lg transition-colors", darkMode ? "bg-brand-primary text-white shadow-glow" : "bg-bg-subtle text-text-secondary")}>
                                             {darkMode ? <Moon size={20} /> : <Sun size={20} />}
                                         </div>
                                         <span className="font-bold text-lg text-text-primary">{darkMode ? t('navigation.dark_theme') : t('navigation.light_theme')}</span>
@@ -157,9 +175,63 @@ const ProfileView: React.FC<ProfileViewProps> = ({ user, setUser, updateAvatar, 
                         <DataManager />
                     </div>
 
-                    {/* Troubleshooting (Bottom Dropdown) */}
-                    <TroubleshootingSection />
+                    {/* Account Management (Mobile: Moved to Bottom) */}
+                    <div className="lg:hidden">
+                        <AccountManagementSection
+                            onLogout={logout}
+                            onDeleteProfile={() => setIsDeleteModalOpen(true)}
+                        />
+                    </div>
 
+                    {/* System Status (Desktop Only - Right Side) */}
+                    <div className="hidden lg:block bg-bg-surface p-4 rounded-3xl shadow-sm border border-border">
+                        <div className="flex items-center justify-between mb-2">
+                            <Heading variant="h4" className="flex items-center gap-2 !text-sm">
+                                <span className="w-2 h-2 rounded-full bg-status-success animate-pulse"></span>
+                                {t('profile.system_status', 'System Status')}
+                            </Heading>
+                            <span className="text-xs text-text-secondary font-mono">v1.2.0</span>
+                        </div>
+                        <div className="space-y-2 text-xs text-text-secondary">
+                            <div className="flex justify-between">
+                                <span>Cloud Sync:</span>
+                                <span className={user ? "text-status-success" : "text-ui-disabled"}>
+                                    {user ? "Active" : "Offline"}
+                                </span>
+                            </div>
+                            <div className="flex justify-between">
+                                <span>Simple Timer:</span>
+                                <span className="text-status-success">Cloud-Enabled</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Troubleshooting (Mobile Only - Bottom) */}
+                    <div className="lg:hidden space-y-6">
+                        <div className="bg-bg-surface p-4 rounded-3xl shadow-sm border border-border">
+                            <div className="flex items-center justify-between mb-2">
+                                <Heading variant="h4" className="flex items-center gap-2 !text-sm">
+                                    <span className="w-2 h-2 rounded-full bg-status-success animate-pulse"></span>
+                                    {t('profile.system_status', 'System Status')}
+                                </Heading>
+                                <span className="text-xs text-text-secondary font-mono">v1.2.0</span>
+                            </div>
+                            <div className="space-y-2 text-xs text-text-secondary">
+                                <div className="flex justify-between">
+                                    <span>Cloud Sync:</span>
+                                    <span className={user ? "text-status-success" : "text-ui-disabled"}>
+                                        {user ? "Active" : "Offline"}
+                                    </span>
+                                </div>
+                                <div className="flex justify-between">
+                                    <span>Simple Timer:</span>
+                                    <span className="text-status-success">Cloud-Enabled</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <TroubleshootingSection />
+                    </div>
                 </div>
             </div>
 
@@ -175,6 +247,7 @@ const ProfileView: React.FC<ProfileViewProps> = ({ user, setUser, updateAvatar, 
                 confirmLabel={t('profile.delete_account')}
                 confirmVariant="danger"
             />
+
         </Container >
     );
 };

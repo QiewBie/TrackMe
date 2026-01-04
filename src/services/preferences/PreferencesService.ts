@@ -19,7 +19,7 @@ export const PreferencesService = {
      * 3. Falls back to Defaults
      */
     subscribe: (userId: string, callback: (prefs: UserSettings) => void) => {
-        if (!userId) return () => { };
+        if (!userId || userId === 'guest') return () => { };
 
         const ref = doc(db, 'users', userId, 'data', 'preferences');
 
@@ -77,7 +77,7 @@ export const PreferencesService = {
      * 4. Deletes the 'value' wrapper.
      */
     update: async (userId: string, updates: Partial<UserSettings>) => {
-        if (!userId) throw new Error("Cannot update preferences: No User ID");
+        if (!userId || userId === 'guest') return; // Silent return for guest
 
         const ref = doc(db, 'users', userId, 'data', 'preferences');
         const { runTransaction } = await import('firebase/firestore');

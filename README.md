@@ -5,10 +5,10 @@ A premium, offline-first productivity workspace designed for deep work. Built wi
 ## ✨ Core Features
 
 ### 🧠 Focus & Flow
-*   **Immersive Session Engine**: A dedicated `FocusView` overlay that blocks distractions.
-*   **Timer Modes**: Customizable Work, Short Break, and Long Break configurations.
-*   **Dynamic Ambience**: Integrated audio engine (`useAudio`) mixing Rain, Forest, Café, and Fireplace soundscapes.
-*   **Task Queue**: Auto-advancing playlist system ("General Queue" or specific Playlists).
+*   **Immersive Session Engine**: A dedicated `FocusView` overlay that blocks distractions and manages the user's cognitive load.
+*   **Smart Pomodoro Logic**: Automatically transitions between Focus, Short Break, and Long Break (after 4 sets). Includes safeguards to prevent auto-starting work if the queue is empty.
+*   **Resilient Session State**: Includes active "Zombie Detection" to automatically purge invalid active sessions (e.g., if a playlist is deleted), ensuring the timer state remains consistent with the data source.
+*   **Task Queue**: Auto-advancing playlist system with "Universal Sync" that keeps the active session queue in perfect harmony with the database, even during background updates.
 
 ### 📊 Analytics & Data (Ledger V2)
 *   **Immutable Logging**: Time is not stored as a mutable counter but as specific `TimeLog` entries (`startTime`, `duration`, `projectId`).
@@ -35,6 +35,7 @@ A premium, offline-first productivity workspace designed for deep work. Built wi
 *   **Layer System**:
     *   Canvas (`bg-bg-main`): `#f8fafc` (Light) / `#020617` (Dark).
     *   Surface (`bg-bg-surface`): `#ffffff` (Light) / `#0f172a` (Dark).
+*   **Navigation & Layout**: Uses a `sticky` sidebar architecture on Desktop for independent scrolling and `scrollbar-gutter: stable` to eliminate layout shifts when modals open/close.
 *   **Tokens**: Functional naming (`bg-brand-primary`, `text-ui-disabled`) ensures automatic theme adaptation.
 *   **Typography**: **Manrope** variable font. Used with strict hierarchy (H1-H4, Body, Caption).
 *   **Z-Index Stack**: Explicit layering model:

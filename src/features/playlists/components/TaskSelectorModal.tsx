@@ -2,6 +2,7 @@ import * as React from 'react';
 import { useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import Modal from '../../../components/ui/Modal';
+import { Heading } from '../../../components/ui/Typography';
 import Button from '../../../components/ui/Button';
 import { Task, Category } from '../../../types';
 import { CheckCircle2, Search, Circle } from 'lucide-react';
@@ -72,7 +73,7 @@ const TaskSelectorModal: React.FC<TaskSelectorModalProps> = ({ isOpen, onClose, 
             <div className="flex flex-col h-full p-4 space-y-4">
                 {/* Creation Area */}
                 <div className="relative z-50">
-                    <h3 className="text-xs font-bold text-text-secondary uppercase mb-2">{t('playlists.create_task')}</h3>
+                    <Heading variant="h4" className="text-xs font-bold text-text-secondary uppercase mb-2">{t('playlists.create_task')}</Heading>
                     <TaskInput
                         categories={categories}
                         currentFilter="all"

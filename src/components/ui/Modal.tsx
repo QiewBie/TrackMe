@@ -27,6 +27,8 @@ const Modal: React.FC<ModalProps> = ({
 }) => {
     const backdropRef = useRef<HTMLDivElement>(null);
 
+    const scrollPosRef = useRef(0);
+
     useEffect(() => {
         const handleEscape = (e: KeyboardEvent) => {
             if (e.key === 'Escape') onClose();
@@ -34,12 +36,10 @@ const Modal: React.FC<ModalProps> = ({
 
         if (isOpen) {
             document.addEventListener('keydown', handleEscape);
-            document.body.style.overflow = 'hidden';
         }
 
         return () => {
             document.removeEventListener('keydown', handleEscape);
-            document.body.style.overflow = 'unset';
         };
     }, [isOpen, onClose]);
 
@@ -62,13 +62,13 @@ const Modal: React.FC<ModalProps> = ({
                         transition={{ duration: 0.2 }}
                         ref={backdropRef}
                         onClick={handleBackdropClick}
-                        className="fixed inset-0 bg-overlay z-[200]"
+                        className="fixed inset-0 bg-overlay z-modal"
                         aria-hidden="true"
                     />
 
                     {/* Content Layer - Interaction Wrapper */}
                     <div className={clsx(
-                        "fixed inset-0 z-[200] flex items-center justify-center pointer-events-none",
+                        "fixed inset-0 z-modal flex items-center justify-center pointer-events-none",
                         fullScreen ? "p-0" : "p-4"
                     )}>
                         <motion.div
@@ -85,7 +85,10 @@ const Modal: React.FC<ModalProps> = ({
                             onClick={e => e.stopPropagation()}
                         >
                             {(title || showCloseButton) && (
-                                <div className="flex items-center justify-between p-4 border-b border-border shrink-0">
+                                <div className={clsx(
+                                    "flex items-center justify-between p-4 border-b border-border shrink-0",
+                                    fullScreen && "pt-[max(1rem,env(safe-area-inset-top))]"
+                                )}>
                                     {title && <h2 className="text-xl font-bold text-text-primary">{title}</h2>}
                                     {showCloseButton && (
                                         <button

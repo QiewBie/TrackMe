@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { clsx } from 'clsx';
 import {
     format, addMonths, subMonths, startOfMonth, endOfMonth,
@@ -8,10 +9,11 @@ import {
 } from 'date-fns';
 import { uk, enUS } from 'date-fns/locale';
 import { useTranslation } from 'react-i18next';
-import { Calendar as CalendarIcon, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, ChevronDown } from 'lucide-react';
 import { DateRange } from '../../types';
 import Modal from '../ui/Modal';
 import Button from '../ui/Button';
+import { useFloatingPosition } from '../../hooks/useFloatingPosition';
 
 interface DateRangePickerProps {
     selectedRange: DateRange;
@@ -26,9 +28,18 @@ const DateRangePicker: React.FC<DateRangePickerProps> = ({ selectedRange, onChan
     const [viewDate, setViewDate] = useState(() => parseISO(selectedRange.start));
     const [tempStart, setTempStart] = useState<Date | null>(null);
     const pickerRef = useRef<HTMLDivElement>(null);
-    const [menuAlignment, setMenuAlignment] = useState(align);
+    const popoverRef = useRef<HTMLDivElement>(null);
 
     const [isMobile, setIsMobile] = useState(false);
+
+    // Systematic Positioning Hook
+    const popoverStyle = useFloatingPosition(pickerRef, popoverRef, {
+        isOpen: !isMobile && isOpen, // Only active on desktop
+        align: align === 'left' || align === 'right' ? align : 'left',
+        side: 'bottom',
+        offset: 8,
+        autoFlip: true
+    });
 
     useEffect(() => {
         const checkMobile = () => setIsMobile(window.innerWidth < 768);
@@ -37,24 +48,7 @@ const DateRangePicker: React.FC<DateRangePickerProps> = ({ selectedRange, onChan
         return () => window.removeEventListener('resize', checkMobile);
     }, []);
 
-    // Smart alignment check (Desktop only)
-    React.useLayoutEffect(() => {
-        if (isOpen && pickerRef.current && !isMobile) {
-            const rect = pickerRef.current.getBoundingClientRect();
-            const POPOVER_WIDTH = 340;
-            const SCREEN_WIDTH = window.innerWidth;
-            let pAlign = align;
-
-            if (pAlign === 'right') {
-                const leftEdge = rect.right - POPOVER_WIDTH;
-                if (leftEdge < 0) pAlign = 'left';
-            } else {
-                const rightEdge = rect.left + POPOVER_WIDTH;
-                if (rightEdge > SCREEN_WIDTH) pAlign = 'right';
-            }
-            setMenuAlignment(pAlign);
-        }
-    }, [isOpen, align, isMobile]);
+    // Removed manual alignment layout effect (handled by hook)
 
     const startDate = parseISO(selectedRange.start);
     const endDate = parseISO(selectedRange.end);
@@ -85,9 +79,14 @@ const DateRangePicker: React.FC<DateRangePickerProps> = ({ selectedRange, onChan
     // Click outside handler (Desktop)
     useEffect(() => {
         const handleClickOutside = (e: MouseEvent) => {
-            if (!isMobile && pickerRef.current && !pickerRef.current.contains(e.target as Node)) {
-                setIsOpen(false);
-                setTempStart(null);
+            if (!isMobile && isOpen) {
+                const clickedInsidePicker = pickerRef.current?.contains(e.target as Node);
+                const clickedInsidePopover = popoverRef.current?.contains(e.target as Node);
+
+                if (!clickedInsidePicker && !clickedInsidePopover) {
+                    setIsOpen(false);
+                    setTempStart(null);
+                }
             }
         };
         if (isOpen) document.addEventListener('mousedown', handleClickOutside);
@@ -162,8 +161,8 @@ const DateRangePicker: React.FC<DateRangePickerProps> = ({ selectedRange, onChan
     const CalendarContent = () => (
         <div className={clsx("flex flex-col h-full", isMobile ? "bg-bg-surface" : "")}>
             <div className={clsx(
-                "flex-1 min-h-0 overflow-y-auto custom-scrollbar",
-                isMobile ? "p-4 space-y-6" : ""
+                "flex-1 min-h-0 overflow-y-auto custom-scrollbar overscroll-contain",
+                isMobile ? "p-4 space-y-6" : "p-1"
             )}>
                 {/* Presets Grid */}
                 <div className="grid grid-cols-3 gap-2 mb-4 pb-4 border-b border-border">
@@ -179,11 +178,11 @@ const DateRangePicker: React.FC<DateRangePickerProps> = ({ selectedRange, onChan
                 </div>
 
                 <div className="flex justify-between items-center mb-4">
-                    <Button variant="ghost" onClick={handlePrevMonth} className="p-1 h-8 w-8 text-text-secondary hover:bg-bg-subtle" icon={ChevronLeft} />
+                    <Button variant="ghost" size="icon" onClick={handlePrevMonth} className="h-8 w-8 text-text-secondary hover:bg-bg-subtle" icon={ChevronLeft} />
                     <span className="font-bold text-text-primary capitalize">
                         {format(viewDate, 'LLLL yyyy', { locale: currentLocale })}
                     </span>
-                    <Button variant="ghost" onClick={handleNextMonth} className="p-1 h-8 w-8 text-text-secondary hover:bg-bg-subtle" icon={ChevronRight} />
+                    <Button variant="ghost" size="icon" onClick={handleNextMonth} className="h-8 w-8 text-text-secondary hover:bg-bg-subtle" icon={ChevronRight} />
                 </div>
 
                 <div className="grid grid-cols-7 mb-2">
@@ -238,16 +237,18 @@ const DateRangePicker: React.FC<DateRangePickerProps> = ({ selectedRange, onChan
 
     return (
         <div className="relative inline-block text-left" ref={pickerRef}>
-            <button
+            <Button
+                variant="secondary"
                 onClick={() => setIsOpen(!isOpen)}
                 className={clsx(
                     "flex items-center gap-2 px-4 py-2 bg-bg-surface border border-border rounded-xl text-sm font-medium text-text-primary transition-all hover:border-brand-primary/50 hover:shadow-md active:scale-95 min-w-[200px]",
-                    isOpen && "ring-2 ring-brand-primary border-transparent"
+                    isOpen && "ring-2 ring-brand-primary/20 border-brand-primary"
                 )}
             >
                 <CalendarIcon size={18} className="text-brand-primary" />
-                <span className="capitalize">{formatLabel()}</span>
-            </button>
+                <span className="flex-1 text-left">{formatLabel()}</span>
+                <ChevronDown size={16} className={clsx("text-text-secondary transition-transform duration-200", isOpen && "rotate-180")} />
+            </Button>
 
             {/* Mobile Modal */}
             {isMobile && (
@@ -261,14 +262,16 @@ const DateRangePicker: React.FC<DateRangePickerProps> = ({ selectedRange, onChan
                 </Modal>
             )}
 
-            {/* Desktop Popover */}
-            {!isMobile && isOpen && (
-                <div className={clsx(
-                    "absolute top-full mt-2 z-30 bg-bg-surface rounded-2xl shadow-2xl border border-border p-4 w-[340px] max-w-[calc(100vw-2rem)] animate-pop-in ring-1 ring-black/5",
-                    menuAlignment === 'left' ? "left-0" : "right-0"
-                )}>
+            {/* Desktop Popover using Portal and Systematic Positioning */}
+            {!isMobile && isOpen && createPortal(
+                <div
+                    ref={popoverRef}
+                    style={popoverStyle}
+                    className="bg-bg-surface rounded-2xl shadow-2xl border border-border p-4 w-[340px] max-w-[calc(100vw-2rem)] animate-pop-in ring-1 ring-border-subtle max-h-[60vh] flex flex-col overflow-hidden"
+                >
                     <CalendarContent />
-                </div>
+                </div>,
+                document.body
             )}
         </div>
     );

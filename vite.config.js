@@ -14,8 +14,6 @@ export default defineConfig({
         name: 'TrackMe - Focus Time Tracker',
         short_name: 'TrackMe',
         description: 'Immersive offset-first focus timer and productivity workspace.',
-        theme_color: '#121212',
-        background_color: '#121212',
         display: 'standalone',
         orientation: 'portrait',
         icons: [

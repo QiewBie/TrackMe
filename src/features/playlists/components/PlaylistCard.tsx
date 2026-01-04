@@ -1,9 +1,10 @@
 import * as React from 'react';
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Play, Edit3, Trash2, ListPlus } from 'lucide-react';
+import { Play, Edit3, Trash2, ListPlus, Edit2 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import Button from '../../../components/ui/Button';
+import { Heading } from '../../../components/ui/Typography';
 import { Task, Playlist, Category } from '../../../types';
 import { getDeterministicGradient } from '../../../utils/theme';
 
@@ -66,17 +67,17 @@ export const PlaylistCard: React.FC<PlaylistCardProps> = ({
             {/* Content Body */}
             <div className="p-5 flex-1 flex flex-col">
                 <div className="flex justify-between items-start mb-2">
-                    <h3 className="font-bold text-lg text-text-primary truncate pr-2" title={playlist.title}>
+                    <Heading variant="h4" className="truncate pr-2" title={playlist.title}>
                         {playlist.title}
-                    </h3>
+                    </Heading>
                     <div className="flex gap-1">
-                        <button
+                        <Button
+                            variant="ghost"
                             onClick={(e) => { e.stopPropagation(); onViewDetails(); }}
-                            className="text-text-secondary hover:text-brand-primary transition-colors p-2 md:p-1"
+                            className="p-2 text-text-secondary hover:text-brand-primary transition-colors"
                             title={t('playlists.manage', 'Manage Tasks')}
-                        >
-                            <Edit3 size={16} />
-                        </button>
+                            icon={Edit3}
+                        />
                         <button
                             onClick={(e) => { e.stopPropagation(); onDelete(); }}
                             className="text-text-secondary hover:text-status-error transition-colors p-2 md:p-1"

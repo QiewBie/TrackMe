@@ -1,7 +1,8 @@
-import { doc, getDoc, setDoc, deleteDoc, collection, getDocs, onSnapshot } from "firebase/firestore";
+import { doc, getDoc, setDoc, deleteDoc, collection, getDocs, onSnapshot, query, where, Timestamp, orderBy, limit } from "firebase/firestore";
 import { db } from "../../lib/firebase";
 import { IStorageAdapter } from "./storage";
-import { Task, Category, Playlist, UserSettings } from "../../types";
+import { Task, Category, Playlist, UserSettings, TimeLog } from "../../types";
+import { Session } from "../../features/focus/types";
 
 export class FirestoreAdapter {
     private userId: string;
@@ -14,7 +15,7 @@ export class FirestoreAdapter {
         if (!this.userId) return null;
 
         // Domain-specific check for subcollections
-        if (['tasks', 'categories', 'playlists'].includes(key)) {
+        if (['tasks', 'categories', 'playlists', 'time_logs'].includes(key)) {
             try {
                 const colRef = collection(db, "users", this.userId, key);
                 const snapshot = await getDocs(colRef);
@@ -104,6 +105,27 @@ export class FirestoreAdapter {
         }
     }
 
+    async subscribeToTasks(callback: (tasks: Task[]) => void): Promise<() => void> {
+        if (!this.userId) return () => { };
+
+        try {
+            const colRef = collection(db, "users", this.userId, "tasks");
+            // Order by createdAt or lastStartTime? For now just raw list, client handles sorting
+            const q = query(colRef);
+
+            const unsubscribe = onSnapshot(q, (snapshot) => {
+                const tasks = snapshot.docs.map(doc => doc.data() as Task);
+                callback(tasks);
+            }, (error) => {
+                console.error("Error in tasks subscription:", error);
+            });
+            return unsubscribe;
+        } catch (error) {
+            console.error("Error setting up tasks subscription:", error);
+            return () => { };
+        }
+    }
+
     async saveCategory(category: Category): Promise<void> {
         if (!this.userId) return;
         try {
@@ -145,6 +167,93 @@ export class FirestoreAdapter {
             console.error(`Error deleting playlist "${id}" from Firestore:`, error);
         }
     }
+
+    // --- Phase 16: Time & Session Sync ---
+
+    async saveTimeLog(log: TimeLog): Promise<void> {
+        if (!this.userId) return;
+        try {
+            // Using a subcollection 'time_logs'
+            const docRef = doc(db, "users", this.userId, "time_logs", log.id);
+            const sanitized = this.sanitizeData(log);
+            await setDoc(docRef, sanitized);
+        } catch (error) {
+            console.error(`Error saving time log "${log.id}" to Firestore:`, error);
+        }
+    }
+
+    async subscribeToTimeLogs(callback: (logs: TimeLog[]) => void, limitDays: number = 30): Promise<() => void> {
+        if (!this.userId) return () => { };
+
+        try {
+            const colRef = collection(db, "users", this.userId, "time_logs");
+
+            // Limit to recent logs to save bandwidth/costs
+            const cutoffDate = new Date();
+            cutoffDate.setDate(cutoffDate.getDate() - limitDays);
+
+            const q = query(
+                colRef,
+                where("startTime", ">=", cutoffDate.toISOString()),
+                orderBy("startTime", "desc")
+            );
+
+            const unsubscribe = onSnapshot(q, (snapshot) => {
+                const logs = snapshot.docs.map(doc => doc.data() as TimeLog);
+                callback(logs);
+            }, (error) => {
+                console.error("Error in time_logs subscription:", error);
+            });
+
+            return unsubscribe;
+        } catch (error) {
+            console.error("Error setting up time_logs subscription:", error);
+            return () => { };
+        }
+    }
+
+    async saveActiveSession(session: Session | null): Promise<void> {
+        if (!this.userId) return;
+        try {
+            // Active session is a single document in 'data' collection or a separate doc
+            // Using 'data/active_session' is cleaner for singletons
+            const docRef = doc(db, "users", this.userId, "data", "active_session");
+
+            if (session) {
+                const sanitized = this.sanitizeData(session);
+                // Add timestamp for "Last-Write-Wins" and "Zombie Killer" logic
+                await setDoc(docRef, { value: sanitized, updatedAt: new Date().toISOString() });
+            } else {
+                // If null, we delete active session to signal "Idle"
+                await deleteDoc(docRef);
+            }
+        } catch (error) {
+            console.error("Error saving active session to Firestore:", error);
+        }
+    }
+
+    async subscribeToActiveSession(callback: (session: Session | null) => void): Promise<() => void> {
+        if (!this.userId) return () => { };
+
+        try {
+            const docRef = doc(db, "users", this.userId, "data", "active_session");
+            const unsubscribe = onSnapshot(docRef, (docSnap) => {
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    callback(data.value as Session);
+                } else {
+                    callback(null);
+                }
+            }, (error) => {
+                console.error("Error in active_session subscription:", error);
+            });
+            return unsubscribe;
+        } catch (error) {
+            console.error("Error setting up active_session subscription:", error);
+            return () => { };
+        }
+    }
+
     async subscribeToUserPreferences(callback: (prefs: UserSettings | null) => void): Promise<() => void> {
         if (!this.userId) return () => { };
 
@@ -189,6 +298,28 @@ export class FirestoreAdapter {
         } catch (error) {
             console.error("Error updating user preferences:", error);
             throw error;
+        }
+    }
+
+    async subscribeToSimpleTimer(callback: (timerState: any) => void): Promise<() => void> {
+        if (!this.userId) return () => { };
+
+        try {
+            const docRef = doc(db, "users", this.userId, "data", "simple_timer_state");
+            const unsubscribe = onSnapshot(docRef, (docSnap) => {
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    callback(data.value);
+                } else {
+                    callback(null);
+                }
+            }, (error) => {
+                console.error("Error in simple_timer subscription:", error);
+            });
+            return unsubscribe;
+        } catch (error) {
+            console.error("Error setting up simple_timer subscription:", error);
+            return () => { };
         }
     }
 }

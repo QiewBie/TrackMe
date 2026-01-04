@@ -24,6 +24,7 @@ import { CreatePlaylistModal } from './components/CreatePlaylistModal';
 import { Container } from '../../components/ui/Layout';
 import { Heading } from '../../components/ui/Typography';
 import { DEFAULT_TEMPLATES } from '../../config/templates';
+import NavSpacer from '../../components/layout/NavSpacer';
 
 const PlaylistManager = () => {
     const { t } = useTranslation();
@@ -137,7 +138,7 @@ const PlaylistManager = () => {
     const targetPlaylist = playlists.find(p => p.id === targetPlaylistId);
 
     return (
-        <Container size="xl" className="space-y-10 py-6 pb-20 animate-in fade-in duration-500">
+        <Container size="xl" className="space-y-10 pt-6 animate-in fade-in duration-500">
 
             {/* Header */}
             <div className="flex flex-col gap-6 border-b border-border pb-8">
@@ -300,6 +301,7 @@ const PlaylistManager = () => {
                 isVisible={toast.visible}
                 onClose={() => setToast(prev => ({ ...prev, visible: false }))}
             />
+
         </Container>
     );
 };

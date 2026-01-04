@@ -1,6 +1,7 @@
 import * as React from 'react';
 import { memo } from 'react';
-import { X, CheckSquare, Plus, CheckCircle, GripVertical } from 'lucide-react';
+import { clsx } from 'clsx';
+import { X, CheckSquare, Plus, CheckCircle, GripVertical, Check } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Heading, Text } from '../../../components/ui/Typography';
 import Input from '../../../components/ui/Input';
@@ -70,7 +71,7 @@ const DraggableQueueItem = memo(({ task, categoryColor, categoryName, onSelect, 
                     )}
                 </div>
 
-                <div className="p-2 -mr-2 cursor-grab active:cursor-grabbing text-text-secondary/50 hover:text-text-primary transition-all z-10" onPointerDown={(e) => controls.start(e)}>
+                <div className="p-2 -mr-2 cursor-grab active:cursor-grabbing text-text-secondary/50 hover:text-text-primary transition-all z-10" onPointerDown={(e) => controls.start(e)} style={{ touchAction: 'none' }}>
                     <GripVertical size={18} />
                 </div>
             </div>
@@ -117,40 +118,34 @@ export const FocusSidebar = memo<FocusSidebarProps>(({
             )}
 
             <div className={`
-                fixed inset-y-0 right-0 w-full md:w-sidebar-focus bg-bg-surface border-l border-border 
-                flex flex-col z-fixed shadow-2xl transform transition-transform duration-500 ease-spring
+                fixed inset-y-0 right-0 w-80 md:w-sidebar-focus bg-bg-surface border-l border-border 
+                flex flex-col z-modal lg:z-fixed shadow-2xl transform transition-transform duration-500 ease-spring
                 ${isOpen ? 'translate-x-0' : 'translate-x-full'}
             `}>
                 {/* Panel Header */}
-                <div className="h-16 shrink-0 flex items-center justify-between px-6 border-b border-border bg-bg-surface">
+                <div className="h-16 shrink-0 flex items-center justify-between px-6 border-b border-border bg-bg-surface pt-safe box-content h-[calc(4rem+env(safe-area-inset-top,0px))] md:h-16 md:pt-0 md:box-border">
                     <div className="flex flex-row items-center gap-3">
-                        <Heading variant="h4" className="text-text-primary font-bold tracking-tight text-base whitespace-nowrap">
+                        <Heading variant="h4" className="text-text-secondary font-bold text-xs tracking-wider">
                             {t('focus.session_details')}
                         </Heading>
                         {activePlaylist && (
-                            <div className="flex items-center gap-2 pl-4 border-l-2 border-border-subtle h-6 shrink-0 min-w-0">
-                                <span className="w-2 h-2 rounded-full bg-brand shrink-0 shadow-sm"></span>
-                                <Text className="text-sm text-text-primary font-bold truncate tracking-tight">
+                            <div className="flex items-center gap-2 pl-4 border-l-2 border-border-subtle h-4 shrink-0 min-w-0">
+                                <span className="w-1.5 h-1.5 rounded-full bg-brand shrink-0 shadow-sm"></span>
+                                <Text className="text-xs text-text-primary font-bold truncate">
                                     {activePlaylist.title}
                                 </Text>
                             </div>
                         )}
                     </div>
-                    <Button
-                        variant="icon"
-                        onClick={onClose}
-                        className="-mr-2"
-                        icon={X}
-                    />
                 </div>
 
                 <div className="flex-1 overflow-y-auto custom-scrollbar p-6 lg:p-8 space-y-12">
                     {/* Subtasks */}
                     <section className="space-y-6">
-                        <div className="flex items-center justify-between">
-                            <Text variant="caption" weight="bold" className="uppercase text-text-secondary/60 tracking-wider text-xs">
+                        <div className="flex items-center justify-between px-1">
+                            <p className="text-xs font-bold text-text-secondary uppercase tracking-wider">
                                 {t('task_details.subtasks_label')}
-                            </Text>
+                            </p>
                             <span className="px-2.5 py-1 rounded-md bg-transparent text-xs font-semibold text-text-secondary">
                                 {activeTask?.subtasks?.filter(s => s.completed).length || 0}/{activeTask?.subtasks?.length || 0}
                             </span>
@@ -159,12 +154,16 @@ export const FocusSidebar = memo<FocusSidebarProps>(({
                         <div className="space-y-3">
                             {activeTask?.subtasks?.map(subtask => (
                                 <div key={subtask.id} className="flex items-start gap-3 p-2 rounded-lg hover:bg-bg-main/50 transition-colors group">
-                                    <button
+                                    <Button
+                                        variant="ghost"
                                         onClick={() => onToggleSubtask(subtask.id)}
-                                        className={`mt-0.5 w-4 h-4 rounded border flex items-center justify-center transition-all ${subtask.completed ? 'bg-status-success border-status-success' : 'border-border-subtle group-hover:border-brand'}`}
+                                        className={clsx(
+                                            "w-6 h-6 p-0 rounded-lg flex items-center justify-center border-2 transition-all",
+                                            subtask.completed ? "bg-brand-primary border-brand-primary text-white" : "border-border-subtle hover:border-brand-primary"
+                                        )}
                                     >
-                                        {subtask.completed && <CheckSquare size={10} className="text-white" />}
-                                    </button>
+                                        <Check size={14} className={clsx("transition-transform duration-200", subtask.completed ? "scale-100" : "scale-0")} strokeWidth={3} />
+                                    </Button>
                                     <span className={`text-sm leading-snug ${subtask.completed ? 'text-text-secondary line-through decoration-text-secondary/50' : 'text-text-primary'}`}>
                                         {subtask.title}
                                     </span>
@@ -194,9 +193,9 @@ export const FocusSidebar = memo<FocusSidebarProps>(({
 
                     {/* Queue */}
                     <section className="space-y-4">
-                        <Text variant="caption" weight="bold" className="uppercase text-text-secondary/60 tracking-wider text-xs">
+                        <p className="px-1 text-xs font-bold text-text-secondary uppercase tracking-wider">
                             {t('focus.queue_title')}
-                        </Text>
+                        </p>
                         <Reorder.Group axis="y" values={queue} onReorder={onReorder} className="space-y-2">
                             {queue.map(task => (
                                 <DraggableQueueItem

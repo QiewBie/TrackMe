@@ -206,7 +206,7 @@ const CategoryManager: React.FC<CategoryManagerProps> = ({ isOpen, onClose, cate
             {isColorPickerOpen && createPortal(
                 <div
                     ref={pickerRef}
-                    className="fixed p-3 bg-bg-surface rounded-2xl shadow-xl border border-border grid grid-cols-4 gap-2 w-[180px] animate-pop-in z-[9999]"
+                    className="fixed p-3 bg-bg-surface rounded-2xl shadow-xl border border-border grid grid-cols-4 gap-2 w-[180px] animate-pop-in z-popover"
                     style={{ top: pickerPos.top, left: pickerPos.left }}
                 >
                     {COLORS.map(c => (

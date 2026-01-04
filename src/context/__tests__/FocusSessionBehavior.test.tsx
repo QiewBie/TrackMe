@@ -41,7 +41,7 @@ describe('FocusSessionContext Integration', () => {
 
         // Start Session
         await act(async () => {
-            result.current.dispatch.startSession('task-123', { workDuration: 25 });
+            result.current.dispatch.startSession('task-123', { duration: 25 });
         });
 
         // Verify Active Session
@@ -62,7 +62,7 @@ describe('FocusSessionContext Integration', () => {
         }), { wrapper });
 
         await act(async () => {
-            result.current.dispatch.startSession('task-tick-test', { workDuration: 10 });
+            result.current.dispatch.startSession('task-tick-test', { duration: 10 });
         });
 
         // Initial: 600s

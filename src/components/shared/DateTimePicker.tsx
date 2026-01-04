@@ -129,7 +129,7 @@ const DateTimePicker: React.FC<DateTimePickerProps> = ({ label, value, onChange,
             {isOpen && createPortal(
                 <div
                     ref={popupRef}
-                    className="fixed z-[9999] bg-bg-surface rounded-2xl shadow-2xl border border-border p-4 w-[320px] animate-pop-in ring-1 ring-black/5"
+                    className="fixed z-popover bg-bg-surface rounded-2xl shadow-2xl border border-border p-4 w-80 animate-pop-in ring-1 ring-border-subtle"
                     style={{ top: coords.top, left: coords.left }}
                 >
                     <div className="flex justify-between items-center mb-4">

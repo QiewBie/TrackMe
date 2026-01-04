@@ -13,7 +13,7 @@ export const Page: React.FC<LayoutProps> = ({ children, className, ...props }) =
     return (
         <div
             className={cn(
-                "min-h-[100dvh] bg-bg-main text-text-primary transition-colors duration-300",
+                "min-h-[100dvh] bg-bg-main text-text-primary transition-colors duration-300 pb-[var(--content-pb,env(safe-area-inset-bottom))]",
                 className
             )}
             {...props}
@@ -41,7 +41,7 @@ export const Container: React.FC<ContainerProps> = ({
     return (
         <div
             className={cn(
-                "w-full px-4 sm:px-6 lg:px-8",
+                "w-full px-4 sm:px-6 lg:px-8 min-h-full flex flex-col pb-[var(--content-pb,env(safe-area-inset-bottom))]",
                 sizes[size],
                 centered && "mx-auto",
                 className

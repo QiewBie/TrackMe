@@ -20,6 +20,7 @@ interface FocusStageProps {
     tasksCount: number;
     category?: Category;
     playlist?: Playlist;
+    sessionStatus?: 'idle' | 'work' | 'shortBreak' | 'longBreak';
 }
 
 export const FocusStage: React.FC<FocusStageProps> = memo(({
@@ -32,7 +33,8 @@ export const FocusStage: React.FC<FocusStageProps> = memo(({
     contextPanelOpen,
     tasksCount,
     category,
-    playlist
+    playlist,
+    sessionStatus
 }) => {
     const { t } = useTranslation();
 
@@ -67,6 +69,12 @@ export const FocusStage: React.FC<FocusStageProps> = memo(({
                                 ${(isTimerRunning && !controlsVisible) ? 'opacity-50 blur-[1px]' : 'opacity-100 blur-0'}
                             `}>
                             <Heading variant="h2" className="text-3xl md:text-4xl lg:text-5xl font-bold tracking-tight text-text-primary leading-tight max-w-xl mx-auto drop-shadow-lg">
+                                {/* Break Indicator */}
+                                {(sessionStatus === 'shortBreak' || sessionStatus === 'longBreak') && (
+                                    <span className="block text-xl md:text-2xl font-medium text-status-success uppercase tracking-widest mb-2 opacity-90">
+                                        {t('focus.break_mode') || "Break Time"}
+                                    </span>
+                                )}
                                 {activeTask.title}
                             </Heading>
 

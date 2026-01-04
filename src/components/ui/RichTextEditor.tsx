@@ -12,6 +12,7 @@ interface RichTextEditorProps {
     placeholder?: string;
     editable?: boolean;
     className?: string;
+    unstyled?: boolean;
 }
 
 const MenuButton = ({
@@ -43,7 +44,8 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
     onChange,
     placeholder,
     editable = true,
-    className = ''
+    className = '',
+    unstyled = false
 }) => {
     const { t } = useTranslation();
     const resolvedPlaceholder = placeholder || t('editor.placeholder');
@@ -86,8 +88,12 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
         return null;
     }
 
+    const containerClass = unstyled
+        ? `relative flex flex-col ${className} rich-text-editor`
+        : `border border-border rounded-xl overflow-hidden bg-bg-surface shadow-sm relative flex flex-col ${className} rich-text-editor`;
+
     return (
-        <div className={`border border-border rounded-xl overflow-hidden bg-bg-surface shadow-sm relative flex flex-col ${className}`}>
+        <div className={containerClass}>
 
             {editable && (
                 <div className="flex flex-wrap gap-1 p-2 border-b border-border bg-bg-subtle shrink-0">

@@ -1,7 +1,7 @@
 import * as React from 'react';
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { X, Plus, Sunrise, Sun, Flame, Zap, Clock, Briefcase, Code, Monitor, Database, Cpu, Book, GraduationCap, Coffee, Dumbbell, Heart, Music, Gamepad2, Star } from 'lucide-react';
+import { X, Plus, Sunrise, Sun, Flame, Zap, Clock, Briefcase, Code, Monitor, Database, Cpu, Book, GraduationCap, Coffee, Dumbbell, Heart, Music, Gamepad2, Star, Edit2, Trash2 } from 'lucide-react';
 import Modal from '../../../components/ui/Modal';
 import Button from '../../../components/ui/Button';
 import Input from '../../../components/ui/Input';
@@ -125,12 +125,12 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = ({ isOpen, onClose,
                                     {defaultTasks.map((task, i) => (
                                         <div key={i} className="flex items-center justify-between p-2 pl-3 rounded-lg hover:bg-bg-surface border border-transparent hover:border-border group transition-all">
                                             <span className="text-sm font-medium text-text-primary">{task}</span>
-                                            <button
+                                            <Button
+                                                variant="ghost"
                                                 onClick={() => removeTask(i)}
                                                 className="p-1 text-text-secondary hover:text-status-error transition-all"
-                                            >
-                                                <X size={14} />
-                                            </button>
+                                                icon={X}
+                                            />
                                         </div>
                                     ))}
                                 </div>
@@ -147,13 +147,12 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = ({ isOpen, onClose,
                                     className="bg-transparent border-none focus:ring-0 px-2 h-auto py-1 shadow-none"
                                     containerClassName="flex-1"
                                 />
-                                <button
+                                <Button
                                     type="submit"
                                     disabled={!newTaskName.trim()}
                                     className="p-1.5 rounded-lg bg-bg-main text-text-secondary hover:text-brand-primary disabled:opacity-50 transition-colors"
-                                >
-                                    <Plus size={16} />
-                                </button>
+                                    icon={Plus}
+                                />
                             </div>
                         </form>
                     </div>

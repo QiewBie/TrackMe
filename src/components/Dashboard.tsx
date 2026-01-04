@@ -21,6 +21,7 @@ import Sidebar from './layout/Sidebar';
 import BottomNav from './layout/BottomNav';
 import CategoryManager from './categories/CategoryManager';
 import LoadingSpinner from './ui/LoadingSpinner';
+import Button from './ui/Button';
 
 // Types
 import { User, FilterType, Task } from '../types';
@@ -88,7 +89,7 @@ const Dashboard = () => {
     }
 
     return (
-        <div className="flex h-[100dvh] w-full bg-bg-main text-text-primary font-sans overflow-hidden">
+        <div className="flex flex-col lg:flex-row min-h-[100dvh] w-full bg-bg-main text-text-primary font-sans">
             <Sidebar
                 filter={filter} setFilter={setFilter}
                 categories={categories}
@@ -102,30 +103,35 @@ const Dashboard = () => {
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
                         transition={{ duration: 0.3 }}
-                        className="fixed inset-0 bg-overlay z-[90] lg:hidden"
+                        className="fixed inset-0 bg-overlay z-overlay lg:hidden"
                         onClick={() => setMobileMenuOpen(false)}
                     />
                 )}
             </AnimatePresence>
 
-            <main className="flex-1 flex flex-col min-w-0 h-full">
+            <main
+                className="flex-1 flex flex-col min-w-0 h-full"
+                style={{ '--content-pb': 'var(--layout-mobile-padding-bottom)' } as React.CSSProperties}
+            >
                 {/* Mobile Header - Hide in Focus Mode */}
                 {!location.pathname.startsWith('/focus') && (
-                    <header className="lg:hidden h-16 bg-bg-surface border-b border-border flex items-center justify-between px-4 shrink-0 sticky top-0 z-40 transition-colors">
-                        <div className="flex items-center gap-3 overflow-hidden flex-1 text-xl font-extrabold tracking-tight text-text-primary">
-                            {mobileHeader.title}
-                        </div>
-                        <div className="flex items-center gap-2">
-                            <button onClick={() => setMobileMenuOpen(true)} className="p-2 active:scale-90 transition-transform text-text-primary" aria-label={t('navigation.open_menu', 'Open menu')}>
-                                <Menu />
-                            </button>
+                    <header className="lg:hidden sticky top-0 z-40 bg-bg-surface/80 backdrop-blur-xl border-b border-border transition-colors pt-safe">
+                        <div className="flex h-16 items-center justify-between px-4">
+                            <div className="flex items-center gap-3 overflow-hidden flex-1 text-xl font-extrabold tracking-tight text-text-primary">
+                                {mobileHeader.title}
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <Button variant="ghost" onClick={() => setMobileMenuOpen(true)} className="p-2 active:scale-90 transition-transform text-text-primary" aria-label={t('navigation.open_menu', 'Open menu')}>
+                                    <Menu size={24} />
+                                </Button>
+                            </div>
                         </div>
                     </header>
                 )}
 
                 <div
                     ref={setScrollContainer}
-                    className={`relative flex-1 overflow-y-auto scroll-smooth p-0 lg:mb-0 ${location.pathname.startsWith('/focus') ? '' : 'mb-16'}`}
+                    className="relative flex-1 overflow-y-auto scroll-smooth p-0 lg:mb-0"
                 >
                     {outlet}
                 </div>
@@ -138,7 +144,12 @@ const Dashboard = () => {
                         animate={{ y: 0 }}
                         exit={{ y: "100%" }}
                         transition={{ duration: 0.3, ease: "easeInOut" }}
-                        className="fixed bottom-0 left-0 right-0 z-30 lg:hidden"
+                        className="fixed left-4 right-4 z-fixed lg:hidden shadow-2xl bg-bg-surface/90 backdrop-blur-xl rounded-2xl border border-white/10 dark:border-black/10"
+                        style={{
+                            height: 'var(--nav-height)',
+                            bottom: 'var(--nav-offset)',
+                            marginBottom: 'var(--safe-area-bottom)'
+                        }}
                     >
                         <BottomNav />
                     </motion.div>

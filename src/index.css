@@ -2,13 +2,25 @@
 @tailwind components;
 @tailwind utilities;
 
-html,
-body,
+html {
+  min-height: 100%;
+  width: 100%;
+  overflow-x: hidden;
+  scrollbar-gutter: stable;
+  @apply bg-bg-main;
+}
+
+body {
+  min-height: 100%;
+  width: 100%;
+  -webkit-font-smoothing: antialiased;
+}
+
 #root {
-  height: 100%;
-  margin: 0;
-  padding: 0;
-  overflow: hidden;
+  min-height: 100%;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
 }
 
 @layer base {
@@ -113,10 +125,36 @@ body,
   .bg-overlay {
     @apply bg-black/60;
   }
+
+  .pb-safe {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  .pt-safe {
+    padding-top: env(safe-area-inset-top);
+  }
+
+  .mb-safe {
+    margin-bottom: env(safe-area-inset-bottom);
+  }
 }
 
 body {
   @apply bg-bg-main text-text-primary transition-colors duration-500 ease-in-out;
+
+  /* 
+     Mobile Navigation Layout System 
+     -------------------------------
+     Centralized configuration for the "True Native" PWA layout.
+     These variables control the "Floating Pill" and the content occlusion logic.
+  */
+  --nav-height: 3.5rem;
+  /* 56px - Standard Mobile Nav Height */
+  --nav-offset: 0.5rem;
+  /* 8px - Visual float from safe area */
+  --safe-area-bottom: env(safe-area-inset-bottom, 0px);
+
+  --layout-mobile-padding-bottom: calc(var(--safe-area-bottom) + var(--nav-height) + var(--nav-offset) + 1rem);
 }
 
 /* Enforce font inheritance for form elements */
@@ -159,12 +197,12 @@ select {
   }
 }
 
-/* 6. ProseMirror Editor Styles */
-.ProseMirror {
+/* 6. ProseMirror Editor Styles (Encapsulated) */
+.rich-text-editor .ProseMirror {
   outline: none;
 }
 
-.ProseMirror h1 {
+.rich-text-editor .ProseMirror h1 {
   font-size: 1.8em;
   font-weight: 800;
   line-height: 1.2;
@@ -172,7 +210,7 @@ select {
   margin-top: 0.2em;
 }
 
-.ProseMirror h2 {
+.rich-text-editor .ProseMirror h2 {
   font-size: 1.4em;
   font-weight: 700;
   line-height: 1.3;
@@ -180,19 +218,19 @@ select {
   margin-top: 0.5em;
 }
 
-.ProseMirror ul {
+.rich-text-editor .ProseMirror ul {
   list-style-type: disc;
   padding-left: 1.5em;
   margin-bottom: 1em;
 }
 
-.ProseMirror ol {
+.rich-text-editor .ProseMirror ol {
   list-style-type: decimal;
   padding-left: 1.5em;
   margin-bottom: 1em;
 }
 
-.ProseMirror blockquote {
+.rich-text-editor .ProseMirror blockquote {
   border-left: 3px solid var(--border-color);
   padding-left: 1rem;
   margin-left: 0;
@@ -261,5 +299,19 @@ div[role="img"]:focus:not(:focus-visible) {
     border-radius: 9999px;
     background-color: transparent;
     cursor: pointer;
+  }
+}
+
+@layer utilities {
+  .pb-safe {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  .pt-safe {
+    padding-top: env(safe-area-inset-top, 0px);
+  }
+
+  .min-h-safe {
+    min-height: calc(100dvh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
   }
 }

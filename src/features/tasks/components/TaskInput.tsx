@@ -17,8 +17,8 @@ const TaskInput: React.FC<TaskInputProps> = ({ categories, onAdd, currentFilter 
     const { t } = useTranslation();
     const [title, setTitle] = useState('');
 
-    // Default category logic
-    const defaultCatId = currentFilter !== 'all' ? currentFilter : (categories.find(c => c.isDefault)?.id || categories[0]?.id || 0);
+    // Default category logic: "No Category" (0) by default if All Tasks view
+    const defaultCatId = currentFilter !== 'all' ? currentFilter : 0;
     const [selectedCatId, setSelectedCatId] = useState<number | string>(defaultCatId);
 
     // Sync category with filter

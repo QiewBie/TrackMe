@@ -18,6 +18,7 @@ import VelocityChart from './components/VelocityChart';
 import EfficiencyStats from './components/EfficiencyStats';
 import { calculateVelocity, calculateSessionStats, calculateSessionStreak } from '../../utils/analyticsHelpers';
 import { TimeLedger } from '../../services/storage/TimeLedger';
+import NavSpacer from '../../components/layout/NavSpacer';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/Card';
 import Badge from '../../components/ui/Badge';
 import PageHeader from '../../components/ui/PageHeader';
@@ -147,7 +148,7 @@ const AnalyticsView: React.FC<AnalyticsViewProps> = ({ tasks, categories }) => {
     };
 
     return (
-        <Container size="xl" className="space-y-6 py-6 pb-24">
+        <Container size="xl" className="space-y-6 pt-6 animate-in fade-in duration-500">
             {/* Header */}
             <PageHeader
                 title={t('analytics.title')}
@@ -277,6 +278,7 @@ const AnalyticsView: React.FC<AnalyticsViewProps> = ({ tasks, categories }) => {
                     <ActivityHeatmap tasks={tasks} />
                 </CardContent>
             </Card>
+
         </Container>
     );
 };

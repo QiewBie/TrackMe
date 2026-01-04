@@ -24,7 +24,7 @@ export const useGlobalTimer = () => {
     // 2. "Traffic Cop" Logic
 
     // START
-    const startTimer = useCallback((taskId: string, source: TimerSource) => {
+    const startTimer = useCallback((taskId: string, source: TimerSource, options?: { mode?: 'focus' | 'break', duration?: number, config?: any }) => {
         if (source === 'dashboard') {
             // Priority: Dashboard Action
 
@@ -57,7 +57,7 @@ export const useGlobalTimer = () => {
             }
 
             // 2. Start Focus
-            startFocusSession(taskId);
+            startFocusSession(taskId, options);
         }
     }, [simpleTimer, focusSession, startSimpleTimer, stopSimpleTimer, startFocusSession, pauseFocusSession]);
 

@@ -75,17 +75,25 @@ const FocusView = () => {
         playCompleteSound: () => playSfx('complete')
     }), [activeTask, updateTaskDetails, playSfx]);
 
+    const hasNextTask = React.useMemo(() => {
+        if (!activeTask) return false;
+        return queue.some(t => t.id !== activeTask.id && !t.completed);
+    }, [queue, activeTask]);
+
     const {
         isTimerRunning,
         toggleTimer,
         timeLeft,
         startNewSet,
+        startBreak,
         showNewSetPrompt,
         setShowNewSetPrompt,
         stopSession, // V2: Use stopSession to flush logs
-        updateSessionConfig // Exposed from context
+        updateSessionConfig, // Exposed from context
+        sessionState
     } = useFocusSession({
         activeTask,
+        hasNextTask, // Passed to prevent infinite loop on empty queue
         settings,
         handlers
     });
@@ -103,14 +111,14 @@ const FocusView = () => {
     // --- Handlers ---
     const handleComplete = useCallback(() => {
         if (activeTask) {
-            // STOP session to flush log
-            stopSession();
+            // Do NOT stop session. We want to carry over the timer to the next task.
+            // switchTask (triggered by navigate) will handle suspension/logging.
             toggleComplete(activeTask.id);
         }
         const nextTask = queue.find(t => !t.completed && t.id !== activeTask?.id);
         if (nextTask) navigate(`/focus/${nextTask.id}`);
-        else setShowNewSetPrompt(true);
-    }, [activeTask, queue, toggleComplete, navigate, setShowNewSetPrompt, stopSession]);
+        // Else: Last task completed. UI naturally updates to "All Done".
+    }, [activeTask, queue, toggleComplete, navigate, setShowNewSetPrompt]);
 
     const handleSkip = useCallback(() => {
         if (!activeTask) return;
@@ -183,7 +191,7 @@ const FocusView = () => {
 
     return (
         <Page
-            className={`w-full h-full relative bg-bg-main overflow-hidden flex flex-col font-sans transition-all duration-500 ease-spring z-[200] ${contextPanelOpen ? 'md:pr-sidebar-focus' : ''}`}
+            className={`w-full h-full relative bg-bg-main overflow-hidden flex flex-col font-sans transition-all duration-500 ease-spring z-modal ${contextPanelOpen ? 'md:pr-sidebar-focus' : ''}`}
         >
             {/* Ambient Background - Optimized */}
             <div className="absolute inset-0 pointer-events-none overflow-hidden z-0">
@@ -274,6 +282,7 @@ const FocusView = () => {
                             tasksCount={tasks.length}
                             category={activeCategory}
                             playlist={activePlaylist || undefined}
+                            sessionStatus={sessionState}
                         />
                     </motion.div>
                 </AnimatePresence>
@@ -297,6 +306,7 @@ const FocusView = () => {
                         onSkip={handleSkip}
                         onComplete={handleComplete}
                         canSkip={true}
+                        disabled={!activeTask}
                     />
                 </div>
             </div>
@@ -353,7 +363,7 @@ const FocusView = () => {
                 }}
                 secondaryAction={{
                     label: t('focus.take_break_btn'),
-                    onClick: () => setShowNewSetPrompt(false),
+                    onClick: startBreak,
                     variant: 'ghost'
                 }}
             />

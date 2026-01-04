@@ -11,6 +11,7 @@
         "volume": "Гучність",
         "icon": "Іконка",
         "minutes_short": "хв",
+        "min_short": "хв",
         "no_category": "Без проєкту",
         "confirm_delete": "Ви впевнені, що хочете видалити цей конкретний проект?",
         "continue": "Продовжити",
@@ -89,6 +90,8 @@
         "break": "Перерва",
         "work": "Робота",
         "long_break": "Довга перерва",
+        "break_short": "Коротка перерва",
+        "break_long": "Довга перерва",
         "settings": "Налаштування таймера",
         "timer_duration": "Тривалість таймера",
         "show_sidebar": "Показати сайдбар",
@@ -132,6 +135,8 @@
             "last_task": "Останнє завдання"
         },
         "all_tasks_completed": "Всі завдання виконано!",
+        "break_duration": "Тривалість перерви",
+        "break_mode": "Час перерви",
         "playlist_finished_msg": "Ви завершили всі завдання в цьому плейлисті. Чудова робота!"
     },
     "task_details": {
@@ -306,6 +311,7 @@
         "danger_warning": "Незворотні дії з акаунтом",
         "name_label": "Ім'я",
         "role_label": "Посада",
+        "system_status": "Статус системи",
         "language": "Мова",
         "language_en": "Англійська",
         "language_uk": "Українська",

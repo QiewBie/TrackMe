@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Edit3, FolderKanban } from 'lucide-react';
+import { clsx } from 'clsx';
+import { Edit3, FolderKanban, CheckCircle } from 'lucide-react';
+import Button from '../../components/ui/Button';
 import { useTranslation } from 'react-i18next';
 import DateRangePicker from '../../components/shared/DateRangePicker';
 import TaskInput from './components/TaskInput';
@@ -12,7 +14,9 @@ import { Virtuoso } from 'react-virtuoso';
 import RichTextEditor from '../../components/ui/RichTextEditor';
 import PageHeader from '../../components/ui/PageHeader';
 import { Container } from '../../components/ui/Layout';
+import { Text } from '../../components/ui/Typography';
 import { getCategoryClass } from '../../utils/theme';
+import NavSpacer from '../../components/layout/NavSpacer';
 
 interface TaskListViewProps {
     tasks: Task[];
@@ -30,15 +34,18 @@ interface TaskListViewProps {
 
 // Inline component for tab consistency
 const TabButton = ({ active, onClick, label }: { active: boolean; onClick: () => void; label: string }) => (
-    <button
+    <Button
+        variant="ghost"
         onClick={onClick}
-        className={`flex-1 md:flex-none px-6 py-2.5 rounded-xl text-sm font-bold transition-all ${active
-            ? 'bg-bg-main text-brand-primary shadow-sm ring-1 ring-border-subtle'
-            : 'text-text-secondary hover:text-text-primary'
-            }`}
+        className={clsx(
+            "flex-1 md:flex-none h-10 px-6 rounded-xl text-sm font-bold transition-all",
+            active
+                ? 'bg-bg-main text-brand-primary shadow-sm ring-1 ring-border-subtle'
+                : 'text-text-secondary hover:text-text-primary bg-transparent'
+        )}
     >
         {label}
-    </button>
+    </Button>
 );
 
 const TaskListView: React.FC<TaskListViewProps> = ({
@@ -112,7 +119,7 @@ const TaskListView: React.FC<TaskListViewProps> = ({
     return (
         <Container
             size={filter !== 'all' ? 'xl' : 'md'}
-            className="py-6 pb-20 animate-in fade-in duration-500"
+            className="pt-6 animate-in fade-in duration-500"
         >
             <PageHeader
                 className="mb-6"
@@ -200,7 +207,7 @@ const TaskListView: React.FC<TaskListViewProps> = ({
 
                     {completedTasks.length > 0 && (
                         <div className="pt-8">
-                            <h3 className="text-xs font-bold text-text-secondary uppercase mb-3">{t('tasks.completed_section')}</h3>
+                            <Text variant="caption" weight="bold" className="text-text-secondary uppercase mb-3 block">{t('tasks.completed_section')}</Text>
                             <div className="space-y-2">
                                 <AnimatePresence mode="popLayout">
                                     {completedTasks.map(task => (
@@ -226,6 +233,7 @@ const TaskListView: React.FC<TaskListViewProps> = ({
                             </div>
                         </div>
                     )}
+                    <NavSpacer />
                 </div>
 
                 {/* Notes Column - Split on desktop, Tab on mobile */}
@@ -245,14 +253,15 @@ const TaskListView: React.FC<TaskListViewProps> = ({
                                     content={noteContent}
                                     onChange={handleNoteChange}
                                     placeholder={t('tasks.notes_placeholder')}
-                                    className="min-h-full !border-0 !shadow-none !rounded-none !bg-transparent"
+                                    className="min-h-full"
+                                    unstyled={true}
                                 />
                             </div>
                         </div>
                     </div>
                 )}
             </div>
-        </Container>
+        </Container >
     );
 };
 

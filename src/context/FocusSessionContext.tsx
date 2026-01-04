@@ -1,8 +1,10 @@
 import * as React from 'react';
 import { createContext, useContext, useEffect, useState, useCallback, useRef, useMemo } from 'react';
-import { Session } from '../features/focus/types'; // Updated import
+import { Session } from '../features/focus/types';
 import { localStorageAdapter } from '../services/storage/LocalStorageAdapter';
 import { TimeLedger } from '../services/storage/TimeLedger';
+import { FirestoreAdapter } from '../services/storage/FirestoreAdapter'; // Import Adapter Class
+import { useAuth } from './AuthContext'; // Need Auth for UserID
 
 // Types
 export interface SessionConfig {
@@ -13,13 +15,13 @@ export interface SessionConfig {
 
 // 1. Dispatch Context (Stable Actions)
 export interface FocusDispatchContextType {
-    startSession: (taskId: string, config?: Partial<SessionConfig>) => void;
+    startSession: (taskId: string, options?: { config?: Partial<SessionConfig>, mode?: 'focus' | 'break', duration?: number }) => void;
     switchTask: (taskId: string) => void;
     pauseSession: () => void;
     resumeSession: () => void;
     stopSession: () => void;
     discardSession: () => void;
-    setPlaylistContext: (playlistId: string, queue: string[]) => void;
+    setPlaylistContext: (playlistId: string | null, queue: string[]) => void;
     updateQueue: (queue: string[]) => void;
     updateSessionConfig: (config: Partial<SessionConfig>) => void;
 }
@@ -55,6 +57,14 @@ const DEFAULT_CONFIG: SessionConfig = {
 };
 
 export const FocusSessionProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+    const { user } = useAuth();
+    // Create Adapter Memoized
+    // Create Adapter Memoized (Local-Only for Guest)
+    const firestoreAdapter = useMemo(() => {
+        if (!user || user.id === 'guest') return null;
+        return new FirestoreAdapter(user.id);
+    }, [user]);
+
     // --- State & Hydration (Lazy Initializers) ---
 
     // 1. Active Session
@@ -108,17 +118,35 @@ export const FocusSessionProvider: React.FC<{ children: React.ReactNode }> = ({ 
         return stored || DEFAULT_CONFIG;
     });
 
-    // Persist Config
+    // Persist Config (Local + Cloud)
     useEffect(() => {
         localStorageAdapter.setItem('time_tracker_session_config', sessionConfig);
-    }, [sessionConfig]);
+        if (firestoreAdapter) {
+            firestoreAdapter.setItem('focus_config', sessionConfig);
+        }
+    }, [sessionConfig, firestoreAdapter]);
 
     // Interval Ref for the Heartbeat
     const timerRef = useRef<number | null>(null);
 
-    // (Removed Lifecycle Effect for Hydration - replaced by Lazy Init)
+    // --- PHASE 16: DRIFT PREVENTION LOGIC ---
+    // Instead of decrementing, we calculate from a stable 'targetTime'
+    // But since our session model stores 'remainingTime', we need to adapt.
+    // Ideally: When starting/resuming, we set a 'localTargetTime' = Date.now() + remainingTime * 1000
+    // Then tick updates timeLeft = Math.max(0, Math.ceil((localTargetTime - Date.now()) / 1000))
+    // We need to store 'localTargetTime' in a Ref so it survives re-renders but doesn't trigger them.
+    const localTargetTimeRef = useRef<number | null>(null);
 
-    // 2. Heartbeat (Timer Logic)
+    // Update Target on Resume/Start
+    useEffect(() => {
+        if (activeSession && !isPaused) {
+            localTargetTimeRef.current = Date.now() + (timeLeft * 1000);
+        } else {
+            localTargetTimeRef.current = null;
+        }
+    }, [isPaused, activeSession?.id]); // Only reocalc on status change or session change
+
+    // 2. Heartbeat (Timer Logic - DRIFT PROOF)
     useEffect(() => {
         if (!activeSession || isPaused) {
             if (timerRef.current) {
@@ -131,13 +159,20 @@ export const FocusSessionProvider: React.FC<{ children: React.ReactNode }> = ({ 
         // Timer is running
         timerRef.current = window.setInterval(() => {
             setTimeLeft((prev) => {
-                const next = Math.max(0, prev - 1);
+                // If we have a target time, use it for strict accuracy
+                if (localTargetTimeRef.current) {
+                    const diff = localTargetTimeRef.current - Date.now();
+                    const next = Math.max(0, Math.ceil(diff / 1000));
 
-                // --- Auto-Stop Logic ---
-                if (next === 0) {
-                    setIsPaused(true);
+                    if (next === 0) {
+                        setIsPaused(true);
+                        localTargetTimeRef.current = null;
+                    }
+                    return next;
                 }
-                return next;
+
+                // Fallback (shouldn't happen active session is verified)
+                return Math.max(0, prev - 1);
             });
         }, 1000);
 
@@ -147,7 +182,7 @@ export const FocusSessionProvider: React.FC<{ children: React.ReactNode }> = ({ 
     }, [activeSession, isPaused]);
 
     // 3. Persistence Helper (Throttle later?)
-    const persistActiveSession = (session: Session | null, currentTimeLeft: number, paused: boolean) => {
+    const persistActiveSession = useCallback((session: Session | null, currentTimeLeft: number, paused: boolean) => {
         if (session) {
             const updated: Session = {
                 ...session,
@@ -155,19 +190,72 @@ export const FocusSessionProvider: React.FC<{ children: React.ReactNode }> = ({ 
                 status: paused ? 'paused' : 'active'
             };
             localStorageAdapter.setItem(ACTIVE_SESSION_KEY, updated);
+
+            // Cloud Sync (Debounce? For now direct, Firestore SDK handles some batching)
+            // Critical: Don't sync every second tick. Sync only significant state changes (Pause/Resume/Stop)
+            // or periodically.
+            // For MVP: We only call firestoreAdapter.saveActiveSession explicitly in actions (Pause/Resume/Start/Stop)
+            // BUT: If the browser crashes, we might lose the 'current progress' on other devices.
+            // Tradeoff: We won't sync 'timeLeft' every second to cloud. We sync it on Pause.
+            // If user looks at phone while PC timer running, they see "Active", but time might be static until PC syncs?
+            // "Active" state is enough for Handoff.
         } else {
             localStorageAdapter.removeItem(ACTIVE_SESSION_KEY);
+            // firestoreAdapter.saveActiveSession(null) handled in actions
         }
-    };
+    }, []);
 
     const persistSuspended = (sessions: Record<string, Session>) => {
         localStorageAdapter.setItem(SUSPENDED_SESSIONS_KEY, sessions);
     };
 
-    // Save on Pause/Unpause
+    // Save on Pause/Unpause (Local)
     useEffect(() => {
         persistActiveSession(activeSession, timeLeft, isPaused);
-    }, [activeSession, timeLeft, isPaused]);
+    }, [activeSession, timeLeft, isPaused, persistActiveSession]);
+
+    // --- CLOUD SYNC: REMOTE LISTENERS ---
+    useEffect(() => {
+        if (!firestoreAdapter) return;
+
+        // 1. Listen to Active Session Changes (Handoff)
+        const unsubscribeSession = firestoreAdapter.subscribeToActiveSession((remoteSession) => {
+            // Logic: standard "Last Write Wins" handled by Firestore. 
+            // Here we need to update local state IF it differs significantly.
+
+            if (!remoteSession) {
+                // Remote says IDLE.
+                // If we are active locally, it means another device Stopped the session?
+                // Or we just started and haven't synced yet?
+                // Safety: Only stop if we are not the one who just started. 
+                // Hard to distinguish without 'deviceId'.
+                // For MVP: If remote is null, and we are active, we trust Local (assuming we are the source of truth if active).
+                // BUT: if I stopped it on Phone, PC should stop.
+                // WE NEED A TIMESTAMP check.
+                return;
+            }
+
+            // If remote has a session
+            if (remoteSession.id !== activeSession?.id || remoteSession.status !== activeSession?.status) {
+                // Remote change detected.
+                // E.g. I paused on Phone. PC sees 'paused'.
+                console.log('[FocusSession] Remote session update:', remoteSession);
+                setActiveSession(remoteSession);
+                setTimeLeft(remoteSession.remainingTime ?? 0);
+                setIsPaused(remoteSession.status !== 'active');
+                // Reset target ref so we re-drift fix from new time
+                localTargetTimeRef.current = null;
+            }
+        });
+
+        // 2. Listen to Config
+        // (Optional for MVP, but good for consistency)
+        // const unsubscribeConfig = ...
+
+        return () => {
+            unsubscribeSession.then(unsub => unsub && unsub());
+        };
+    }, [firestoreAdapter, activeSession?.id, activeSession?.status]);
 
 
     // 5. Actions
@@ -211,28 +299,43 @@ export const FocusSessionProvider: React.FC<{ children: React.ReactNode }> = ({ 
     }, []);
 
 
-    const startSession = useCallback((taskId: string, config?: Partial<SessionConfig>) => {
+    // Updated startSession to support flexible Mode and Duration
+    const startSession = useCallback((taskId: string, options?: { config?: Partial<SessionConfig>, mode?: 'focus' | 'break', duration?: number }) => {
         // 1. Suspend Old (if any)
         if (activeSession) {
             suspendAndLog(activeSession, timeLeft);
         }
+
+        const handleNewSession = (newSession: Session) => {
+            setActiveSession(newSession);
+            // Fix: Fallback to 0 if undefined
+            setTimeLeft(newSession.remainingTime ?? 0);
+            setIsPaused(false);
+            if (firestoreAdapter) firestoreAdapter.saveActiveSession(newSession); // Cloud Sync
+        };
 
         setSuspendedSessions(prev => {
             const existing = prev[taskId];
 
             if (existing) {
                 // RESUME
+                // Check if we are forcibly starting a NEW mode (e.g. switching from Focus to Break on same task)
+                // If existing session is 'focus' but we requested 'break', we should probably NOT resume the old focus session?
+                // For now, simplicity: Resume if exists, else New. 
+                // BUT: "Take a Break" while Focus is Suspended?
+                // The prompt "Take a Break" happens after completion (so old session is GONE). 
+                // So this logic holds: If existing, it means we paused it. 
+
                 const resumeTime = existing.remainingTime ?? (sessionConfig.workDuration * 60);
 
                 const resumedSession = {
                     ...existing,
                     startTime: new Date().toISOString(),
-                    status: 'active' as const
+                    status: 'active' as const,
+                    remainingTime: resumeTime
                 };
 
-                setActiveSession(resumedSession);
-                setTimeLeft(resumeTime);
-                setIsPaused(false);
+                handleNewSession(resumedSession);
 
                 // Remove from suspended (moved to active)
                 const next = { ...prev };
@@ -241,8 +344,16 @@ export const FocusSessionProvider: React.FC<{ children: React.ReactNode }> = ({ 
                 return next;
             } else {
                 // FRESH START
-                const finalConfig = { ...sessionConfig, ...config };
-                const durationSec = finalConfig.workDuration * 60;
+                const mergedConfig = { ...sessionConfig, ...options?.config };
+
+                // Determine Mode and Duration
+                // Priority: Explicit Option > Config
+                const mode = options?.mode || 'focus';
+                const baseDuration = options?.duration || (mode === 'break' ? mergedConfig.shortBreak : mergedConfig.workDuration);
+
+                // Safety: Ensure at least 1 minute
+                const finalDuration = Math.max(1, baseDuration);
+                const durationSec = finalDuration * 60;
 
                 const newSession: Session = {
                     id: crypto.randomUUID(),
@@ -252,38 +363,62 @@ export const FocusSessionProvider: React.FC<{ children: React.ReactNode }> = ({ 
                     remainingTime: durationSec,
                     status: 'active',
                     config: {
-                        mode: 'focus',
-                        duration: finalConfig.workDuration
+                        mode: mode,
+                        duration: finalDuration
                     }
                 };
 
-                setActiveSession(newSession);
-                setTimeLeft(durationSec);
-                setIsPaused(false);
+                // Fix: Ensure remainingTime is passed correctly
+                handleNewSession(newSession);
                 return prev; // No change to suspended map
             }
         });
-    }, [activeSession, timeLeft, sessionConfig, suspendAndLog]);
+    }, [activeSession, timeLeft, sessionConfig, suspendAndLog, firestoreAdapter]);
 
     const switchTask = useCallback((taskId: string) => {
         if (activeSession?.taskId === taskId) return;
 
+        // GLOBAL TIMER LOGIC:
+        // When switching tasks, we want to maintain the "Global Pomodoro Timer" ONLY if we are in FOCUS mode.
+        // If we represent a "Break", and switch to a task, we imply "Start Working". 
+        // We should not inherit the Break timer as Work time.
+
+        const isBreak = activeSession?.config?.mode === 'break';
+        let globalTimeLeft = isBreak ? 0 : timeLeft; // Reset if break, else keep.
+
         // 1. Suspend Current
         if (activeSession) {
             suspendAndLog(activeSession, timeLeft);
+        } else {
+            // If no active session, check if we have a "suspended global state"? 
+            // For now, if no active session, we start fresh (or use task's own if exists).
+            // But if the user was just "Paused", timeLeft might be valid?
+            // If activeSession is null, timeLeft is 0 (set in stopSession).
+            // So standard logic applies.
         }
 
         // 2. Resume Target or Start New
         const existingSession = suspendedSessions[taskId];
 
         if (existingSession) {
-            // RESUME (Paused)
-            setActiveSession(existingSession);
-            setTimeLeft(existingSession.remainingTime || 0);
-            setIsPaused(true);
+            // RESUME (Paused) - BUT OVERRIDE TIME
+            // We discard the 'existingSession.remainingTime' because the Global Timer rules.
+            const continuedSession = {
+                ...existingSession,
+                remainingTime: globalTimeLeft > 0 ? globalTimeLeft : existingSession.remainingTime
+            };
+
+            setActiveSession(continuedSession);
+            setTimeLeft(continuedSession.remainingTime || 0);
+            setIsPaused(true); // Keep it paused for safety, or auto-resume? User usually expects pause on switch.
+            if (firestoreAdapter) firestoreAdapter.saveActiveSession({ ...continuedSession, status: 'paused' });
         } else {
-            // NEW (Paused)
-            const durationSec = sessionConfig.workDuration * 60;
+            // NEW (Paused) - INHERIT TIME
+            // If globalTimeLeft is 0 (fresh start), use config.
+            // If we are switching MID-SESSION, use globalTimeLeft.
+
+            const durationSec = globalTimeLeft > 0 ? globalTimeLeft : sessionConfig.workDuration * 60;
+
             const newSession: Session = {
                 id: crypto.randomUUID(),
                 taskId,
@@ -299,9 +434,10 @@ export const FocusSessionProvider: React.FC<{ children: React.ReactNode }> = ({ 
             setActiveSession(newSession);
             setTimeLeft(durationSec);
             setIsPaused(true);
+            if (firestoreAdapter) firestoreAdapter.saveActiveSession(newSession);
         }
 
-    }, [activeSession, timeLeft, suspendedSessions, sessionConfig, suspendAndLog]);
+    }, [activeSession, timeLeft, suspendedSessions, sessionConfig, suspendAndLog, firestoreAdapter]);
 
     const updateSessionConfig = useCallback((newConfig: Partial<SessionConfig>) => {
         setSessionConfig(prev => ({ ...prev, ...newConfig }));
@@ -318,9 +454,7 @@ export const FocusSessionProvider: React.FC<{ children: React.ReactNode }> = ({ 
             TimeLedger.saveLog({
                 id: crypto.randomUUID(),
                 taskId: activeSession.taskId,
-                startTime: activeSession.startTime, // Should be segment start? activeSession.startTime is session start?
-                // activeSession.startTime is when the session object was created/resumed.
-                // Since we update activeSession on pause/resume, this should be correct segment start.
+                startTime: activeSession.startTime,
                 duration: delta,
                 type: 'auto',
                 note: 'Session Paused'
@@ -328,29 +462,34 @@ export const FocusSessionProvider: React.FC<{ children: React.ReactNode }> = ({ 
         }
 
         // 2. Update State (Reset measurement baseline)
-        setActiveSession(prev => prev ? ({
-            ...prev,
+        const pausedSession: Session = {
+            ...activeSession,
             status: 'paused',
-            remainingTime: timeLeft, // Critical: Next delta starts from here
-            // Update startTime to now? No, startTime is creation. 
-            // Ideally we should update startTime on Resume.
-            // But for now, ensuring remainingTime is updated separates the segments.
-        }) : null);
+            remainingTime: timeLeft,
+        };
 
+        setActiveSession(pausedSession);
         setIsPaused(true);
-    }, [activeSession, timeLeft]);
+        if (firestoreAdapter) firestoreAdapter.saveActiveSession(pausedSession); // Cloud Sync
+
+    }, [activeSession, timeLeft, firestoreAdapter]);
 
     const resumeSession = useCallback(() => {
         if (timeLeft > 0) {
             // Update session start time for the new segment
-            setActiveSession(prev => prev ? ({
-                ...prev,
+            const resumedSession: Session = activeSession ? {
+                ...activeSession,
                 status: 'active',
                 startTime: new Date().toISOString()
-            }) : null);
-            setIsPaused(false);
+            } : null as any; // Should not happen if check logic exists
+
+            if (resumedSession) {
+                setActiveSession(resumedSession);
+                setIsPaused(false);
+                if (firestoreAdapter) firestoreAdapter.saveActiveSession(resumedSession); // Cloud Sync
+            }
         }
-    }, [timeLeft]);
+    }, [timeLeft, activeSession, firestoreAdapter]);
 
     const stopSession = useCallback(() => {
         if (!activeSession) return;
@@ -389,6 +528,7 @@ export const FocusSessionProvider: React.FC<{ children: React.ReactNode }> = ({ 
         setTimeLeft(0);
         setIsPaused(true);
         localStorageAdapter.removeItem(ACTIVE_SESSION_KEY);
+        if (firestoreAdapter) firestoreAdapter.saveActiveSession(null); // Cloud Sync: Clear active session
 
         // Also remove from suspended if somehow there
         setSuspendedSessions(prev => {
@@ -397,7 +537,7 @@ export const FocusSessionProvider: React.FC<{ children: React.ReactNode }> = ({ 
             persistSuspended(next);
             return next;
         });
-    }, [activeSession, timeLeft]);
+    }, [activeSession, timeLeft, firestoreAdapter]);
 
     const discardSession = useCallback(() => {
         if (!activeSession) return;
@@ -406,6 +546,7 @@ export const FocusSessionProvider: React.FC<{ children: React.ReactNode }> = ({ 
         setTimeLeft(0);
         setIsPaused(true);
         localStorageAdapter.removeItem(ACTIVE_SESSION_KEY);
+        if (firestoreAdapter) firestoreAdapter.saveActiveSession(null); // Cloud Sync
 
         setSuspendedSessions(prev => {
             const next = { ...prev };
@@ -413,10 +554,10 @@ export const FocusSessionProvider: React.FC<{ children: React.ReactNode }> = ({ 
             persistSuspended(next);
             return next;
         });
-    }, [activeSession]);
+    }, [activeSession, firestoreAdapter]);
 
     // Playlist
-    const setPlaylistContext = useCallback((playlistId: string, queue: string[]) => {
+    const setPlaylistContext = useCallback((playlistId: string | null, queue: string[]) => {
         setActivePlaylistId(playlistId);
         setSessionQueue(queue);
         localStorage.setItem(PLAYLIST_STATE_KEY, JSON.stringify({ playlistId, queue }));
@@ -469,8 +610,7 @@ export const FocusSessionProvider: React.FC<{ children: React.ReactNode }> = ({ 
                             remainingTime: workDurationSec,
                             config: {
                                 ...s.config,
-                                mode: 'focus',
-                                duration: sessionConfig.workDuration
+                                ...{ duration: sessionConfig.workDuration } // Safety spread
                             }
                         };
                         hasChanges = true;

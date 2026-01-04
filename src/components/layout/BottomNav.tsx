@@ -19,7 +19,7 @@ const BottomNav = () => {
         { path: '/analytics', icon: PieChart, label: t('navigation.analytics', 'Analytics') },
         {
             path: '/focus',
-            icon: isFocusing ? Pause : Play,
+            icon: Play,
             label: t('navigation.quick_focus', 'Focus'),
             isPrimary: true
         },
@@ -28,8 +28,9 @@ const BottomNav = () => {
     ];
 
     return (
-        <nav className="fixed bottom-0 left-0 right-0 bg-bg-surface border-t border-border z-[105] lg:hidden pb-safe">
-            <div className="flex justify-around items-center h-16 px-2">
+        <nav className="w-full h-full bg-transparent transition-all duration-300">
+            {/* Reduced height (h-14 = 56px) for sleeker mobile look */}
+            <div className="flex justify-around items-center h-14 px-6">
                 {navItems.map((item) => (
                     <NavLink
                         key={item.path}

@@ -52,16 +52,66 @@ export const useTasks = ({ onStart, onStop, checkActiveTimer }: TaskCallbacks = 
         return () => { isMounted = false; };
     }, [storage]);
 
-    // 2. Subscribe to TimeLog updates (Auto-Refresh)
+    // 2. Subscribe to TimeLog updates (Auto-Refresh Aggregated Time) AND Remote Tasks (Real-time Sync)
     useEffect(() => {
-        const unsubscribe = TimeLedger.subscribe(() => {
+        let unsubscribeLogs = () => { };
+        let unsubscribeTasks = () => { };
+
+        // A. TimeLogs Subscription (for cachedTotalTime)
+        unsubscribeLogs = TimeLedger.subscribe(() => {
             setTasks(prev => prev.map(t => ({
                 ...t,
                 cachedTotalTime: TimeLedger.getAggregatedTime(t.id)
             })));
         });
-        return unsubscribe;
-    }, []);
+
+        // B. Remote Tasks Subscription (Real-time Sync)
+        const setupTaskSync = async () => {
+            // We only access FirestoreAdapter methods via IStorageAdapter interface
+            // We need to cast or check availability since IStorageAdapter might be LocalStorageAdapter
+            const adapter = storage as any;
+            if (adapter.subscribeToTasks) {
+                unsubscribeTasks = await adapter.subscribeToTasks((remoteTasks: Task[]) => {
+                    console.log('[useTasks] Received remote update:', remoteTasks.length);
+
+                    setTasks(currentLocalTasks => {
+                        // Merge Strategy: Remote should generally win for structural changes.
+                        // BUT: We need to preserve 'cachedTotalTime' from local TimeLedger calculation 
+                        // because remote tasks might have stale 'cachedTotalTime' or it might be deprecated.
+                        // Also, we must respect local 'isRunning' state if we are the active device? 
+                        // No, if remote says stopped, we should stop (Handoff).
+
+                        // Create a map for faster lookup
+                        const currentMap = new Map(currentLocalTasks.map(t => [t.id, t]));
+
+                        return remoteTasks.map(remote => {
+                            // Re-calculate time from local ledger source of truth
+                            // Alternatively, rely on remote if we sync logs? 
+                            // Local TimeLedger is the Aggregator.
+                            const localAggregated = TimeLedger.getAggregatedTime(remote.id);
+
+                            return {
+                                ...remote,
+                                cachedTotalTime: localAggregated
+                            };
+                        });
+
+                        // Note: What if remote deleted a task? The map above filters purely by remote list.
+                        // So deleted tasks vanish. Correct.
+                    });
+
+                    setIsLoading(false);
+                });
+            }
+        };
+
+        setupTaskSync();
+
+        return () => {
+            unsubscribeLogs();
+            if (unsubscribeTasks) unsubscribeTasks();
+        };
+    }, [storage]);
 
     // 3. Sync with Active Timers (Legacy / UI Safety)
     useEffect(() => {

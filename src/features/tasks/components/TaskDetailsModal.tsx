@@ -8,7 +8,8 @@ import Input from '../../../components/ui/Input';
 import Textarea from '../../../components/ui/Textarea';
 import Badge from '../../../components/ui/Badge';
 import DateTimePicker from '../../../components/shared/DateTimePicker';
-import { Task, Category } from '../../../types';
+import { Task, Category, Subtask } from '../../../types';
+import { SubtaskList } from './DraggableSubtaskList';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useClickOutside } from '../../../hooks/useClickOutside';
 
@@ -168,49 +169,20 @@ const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({ task, isOpen, onClo
 
                                         <div className="bg-bg-main rounded-xl border border-border overflow-hidden">
                                             <div className="divide-y divide-border">
-                                                {currentTask.subtasks?.map((subtask) => (
-                                                    <div key={subtask.id} className="flex items-center gap-3 p-3 hover:bg-bg-surface group transition-colors">
-                                                        <button
-                                                            onClick={() => {
-                                                                const updatedSubtasks = currentTask.subtasks.map(s =>
-                                                                    s.id === subtask.id ? { ...s, completed: !s.completed } : s
-                                                                );
-                                                                setEditedTask(prev => prev ? { ...prev, subtasks: updatedSubtasks } : null);
-                                                            }}
-                                                            className={clsx(
-                                                                "w-5 h-5 rounded border flex items-center justify-center transition-colors shrink-0",
-                                                                subtask.completed
-                                                                    ? 'bg-brand-primary border-brand-primary text-white'
-                                                                    : 'border-border-subtle hover:border-brand-primary bg-bg-surface'
-                                                            )}
-                                                        >
-                                                            {subtask.completed && <Check size={12} strokeWidth={3} />}
-                                                        </button>
-                                                        <Input
-                                                            value={subtask.title}
-                                                            onChange={(e) => {
-                                                                const updatedSubtasks = currentTask.subtasks.map(s =>
-                                                                    s.id === subtask.id ? { ...s, title: e.target.value } : s
-                                                                );
-                                                                setEditedTask(prev => prev ? { ...prev, subtasks: updatedSubtasks } : null);
-                                                            }}
-                                                            className={clsx(
-                                                                "py-1 border-b border-transparent rounded-none transition-all px-0",
-                                                                subtask.completed ? 'text-ui-disabled line-through decoration-border' : 'text-text-primary'
-                                                            )}
-                                                            variant="ghost"
-                                                        />
-                                                        <Button
-                                                            variant="icon"
-                                                            onClick={() => {
-                                                                const updatedSubtasks = currentTask.subtasks.filter(s => s.id !== subtask.id);
-                                                                setEditedTask(prev => prev ? { ...prev, subtasks: updatedSubtasks } : null);
-                                                            }}
-                                                            className="text-text-secondary hover:text-status-error transition-all p-1.5 hover:bg-status-error/10"
-                                                            icon={X}
-                                                        />
-                                                    </div>
-                                                ))}
+                                                <SubtaskList
+                                                    subtasks={currentTask.subtasks || []}
+                                                    onReorder={(newSubtasks: Subtask[]) => setEditedTask(prev => prev ? { ...prev, subtasks: newSubtasks } : null)}
+                                                    onUpdate={(id: string, updates: Partial<Subtask>) => {
+                                                        const updatedSubtasks = (currentTask.subtasks || []).map(s =>
+                                                            s.id === id ? { ...s, ...updates } : s
+                                                        );
+                                                        setEditedTask(prev => prev ? { ...prev, subtasks: updatedSubtasks } : null);
+                                                    }}
+                                                    onDelete={(id: string) => {
+                                                        const updatedSubtasks = (currentTask.subtasks || []).filter(s => s.id !== id);
+                                                        setEditedTask(prev => prev ? { ...prev, subtasks: updatedSubtasks } : null);
+                                                    }}
+                                                />
                                                 <div className="flex items-center gap-3 p-3 bg-bg-main/50">
                                                     <div className="w-5 h-5 flex items-center justify-center text-text-secondary">
                                                         <ListPlus size={16} />
@@ -249,14 +221,17 @@ const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({ task, isOpen, onClo
                                     <div>
                                         <label className="text-xs font-bold text-text-secondary uppercase mb-2 block">{t('task_details.project_label')}</label>
                                         <div className="relative" ref={categoryRef}>
-                                            <button
+                                            <Button
+                                                variant="secondary"
                                                 onClick={() => setIsCategoryOpen(!isCategoryOpen)}
-                                                className="w-full flex items-center gap-3 bg-bg-surface border border-border rounded-xl px-3 py-2.5 text-sm font-medium hover:border-brand-primary transition-colors"
+                                                className="w-full justify-between px-3 py-2.5 bg-bg-surface border-border hover:border-brand-primary"
                                             >
-                                                <span className={`w-2.5 h-2.5 rounded-full ${selectedCategory ? getCategoryClass(selectedCategory.color, 'bg') : 'bg-ui-disabled'}`}></span>
-                                                <span className="truncate flex-1 text-left text-text-primary">{selectedCategory?.name}</span>
+                                                <div className="flex items-center gap-3">
+                                                    <span className={`w-2.5 h-2.5 rounded-full ${selectedCategory ? getCategoryClass(selectedCategory.color, 'bg') : 'bg-ui-disabled'}`}></span>
+                                                    <span className="truncate text-text-primary font-medium">{selectedCategory?.name}</span>
+                                                </div>
                                                 <ChevronRight className={clsx("text-text-secondary transition-transform", isCategoryOpen && 'rotate-90')} size={16} />
-                                            </button>
+                                            </Button>
 
                                             <AnimatePresence>
                                                 {isCategoryOpen && (
@@ -268,18 +243,19 @@ const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({ task, isOpen, onClo
                                                     >
                                                         {categories.map(c => (
                                                             <button
+                                                                type="button"
                                                                 key={c.id}
                                                                 onClick={() => { setEditedTask(prev => prev ? { ...prev, categoryId: c.id } : null); setIsCategoryOpen(false); }}
                                                                 className={clsx(
-                                                                    "w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors",
+                                                                    "w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors text-left",
                                                                     currentTask.categoryId === c.id
-                                                                        ? "bg-brand-subtle text-brand-primary"
+                                                                        ? "bg-brand-subtle text-brand-primary font-medium"
                                                                         : "text-text-secondary hover:bg-bg-main"
                                                                 )}
                                                             >
                                                                 <span className={`w-2 h-2 rounded-full ${getCategoryClass(c.color, 'bg')}`}></span>
-                                                                <span className="truncate">{c.name}</span>
-                                                                {currentTask.categoryId === c.id && <Check size={14} className="ml-auto" />}
+                                                                <span className="truncate flex-1">{c.name}</span>
+                                                                {currentTask.categoryId === c.id && <Check size={14} />}
                                                             </button>
                                                         ))}
                                                     </motion.div>
@@ -294,21 +270,24 @@ const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({ task, isOpen, onClo
                                             <Flag size={12} /> {t('task_details.priority_label')}
                                         </label>
                                         <div className="relative" ref={priorityRef}>
-                                            <button
+                                            <Button
+                                                variant="secondary"
                                                 onClick={() => setIsPriorityOpen(!isPriorityOpen)}
                                                 className={clsx(
-                                                    "w-full flex items-center gap-2 border rounded-xl px-3 py-2.5 text-sm font-medium transition-colors",
+                                                    "w-full justify-between px-3 py-2.5",
                                                     currentPriority
                                                         ? getPriorityStyles(currentPriority.value)
                                                         : "bg-bg-surface border-border text-text-secondary hover:border-border-subtle"
                                                 )}
                                             >
-                                                <Flag size={16} className={currentPriority ? "fill-current" : ""} />
-                                                <span className="flex-1 text-left">
-                                                    {currentPriority ? currentPriority.label : t('task_details.set_priority')}
-                                                </span>
+                                                <div className="flex items-center gap-2">
+                                                    <Flag size={16} className={currentPriority ? "fill-current" : ""} />
+                                                    <span className="text-left font-medium">
+                                                        {currentPriority ? currentPriority.label : t('task_details.set_priority')}
+                                                    </span>
+                                                </div>
                                                 <ChevronRight className={clsx("text-current opacity-50 transition-transform", isPriorityOpen && 'rotate-90')} size={16} />
-                                            </button>
+                                            </Button>
 
                                             <AnimatePresence>
                                                 {isPriorityOpen && (
@@ -328,10 +307,11 @@ const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({ task, isOpen, onClo
                                                         </Button>
                                                         {priorityOptions.map(p => (
                                                             <button
+                                                                type="button"
                                                                 key={p.value}
                                                                 onClick={() => { setEditedTask(prev => prev ? { ...prev, priority: p.value } : null); setIsPriorityOpen(false); }}
                                                                 className={clsx(
-                                                                    "w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-colors mt-0.5",
+                                                                    "w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-colors mt-0.5 text-left font-medium",
                                                                     getPriorityStyles(p.value),
                                                                     "hover:brightness-95 dark:hover:brightness-110"
                                                                 )}

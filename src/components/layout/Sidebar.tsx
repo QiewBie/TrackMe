@@ -46,12 +46,14 @@ const Sidebar: React.FC<SidebarProps> = ({
 
     return (
         <aside className={clsx(
-            "flex-shrink-0 flex flex-col bg-bg-surface border-r border-border z-fixed transition-all duration-500 ease-[cubic-bezier(0.25,1,0.5,1)] will-change-[width,transform]",
-            "fixed top-0 bottom-0 left-0 lg:static",
+            "flex-shrink-0 flex flex-col bg-bg-surface border-r border-border z-modal lg:z-fixed transition-all duration-500 ease-[cubic-bezier(0.25,1,0.5,1)] will-change-[width,transform]",
+            "fixed top-0 bottom-0 left-0 lg:sticky lg:top-0 lg:h-screen lg:overflow-y-auto",
             // Mobile logic
             isMobileMenuOpen ? "translate-x-0 shadow-2xl w-72" : "-translate-x-full w-72",
             // Desktop logic
-            !isMobileMenuOpen && (isZenMode ? "lg:w-0 lg:border-none lg:overflow-hidden opacity-0" : "lg:w-72 opacity-100 lg:translate-x-0")
+            !isMobileMenuOpen && (isZenMode ? "lg:w-0 lg:border-none lg:overflow-hidden opacity-0" : "lg:w-72 opacity-100 lg:translate-x-0"),
+            // Safe Area
+            "pt-safe"
         )}>
             {/* Header */}
             <div className="h-16 flex items-center px-6 border-b border-border shrink-0">

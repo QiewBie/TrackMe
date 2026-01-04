@@ -185,4 +185,20 @@ interface BackupData {
 
 ---
 
-*Verified & Current as of Dec 2025*
+## 8. Performance & Mobile Optimization (Jan 2026)
+
+### 8.1 Re-render Optimization
+*   **Problem**: High frequency timers (1Hz) caused entire component trees to re-render, breaking drag-and-drop state.
+*   **Solution**: Strict **Memoization Strategy**.
+    *   Actions in `useFocusViewController` are guarded with `useCallback`.
+    *   The controller return object is stabilized with `useMemo`.
+    *   This isolates the "Tick" context from the "Dispatch" context.
+
+### 8.2 Mobile Experience
+*   **Grip Handling**: Added `touch-action: none` to draggable elements to prevent scroll interference on iOS/Android.
+*   **Viewport Safety**: Sidebars on mobile use `w-80` instead of `w-full` to preserve context and visual hierarchy (the "Sheet" metaphor).
+*   **Typography**: Standardized on `text-xs font-bold uppercase` for utility headers to match the design system.
+
+---
+
+*Verified & Current as of Jan 2026*

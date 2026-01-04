@@ -34,7 +34,7 @@ export const FocusTopBar: React.FC<FocusTopBarProps> = memo(({
         <div
             className={`
                 absolute top-0 left-0 right-0 z-50 px-4 md:px-6 h-16 flex items-center justify-between
-                transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] safe-area-top pt-safe
+                transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] safe-area-top pt-safe box-content
                 ${(isTimerRunning && !controlsVisible) ? 'opacity-0 -translate-y-4 pointer-events-none' : 'opacity-100 translate-y-0'}
                 ${sidebarOpen ? LAYOUT.FOCUS.TOPBAR_SHIFT_CLASS : ''}
             `}

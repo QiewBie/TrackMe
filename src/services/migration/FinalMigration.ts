@@ -59,7 +59,21 @@ export const FinalMigration = {
             // so if useTasks reads it raw, it's correct.
             // But wait, if we delete timeSpent, we rely 100% on logs.
             // The Next useTasks render will call getAggregatedTime(id) and fill cachedTotalTime.
-            return cleanTask;
+            // 4. CLEANUP: Reset stale 'isRunning' flags (Zombies > 24 hours)
+            let finalTask = cleanTask;
+            if (finalTask.isRunning && finalTask.lastStartTime) {
+                const startTime = new Date(finalTask.lastStartTime).getTime();
+                const now = Date.now();
+                const hoursRunning = (now - startTime) / (1000 * 60 * 60);
+
+                if (hoursRunning > 24) {
+                    console.log(`[FinalMigration] Task "${finalTask.title}": Running for ${hoursRunning.toFixed(1)}h. Resetting stale flag.`);
+                    finalTask = { ...finalTask, isRunning: false };
+                    changesMade = true;
+                }
+            }
+
+            return finalTask;
         });
 
         // 4. Save cleaned tasks

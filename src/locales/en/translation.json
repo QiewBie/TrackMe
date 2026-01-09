@@ -110,6 +110,7 @@
         "session_complete_title": "Session Complete",
         "session_complete_msg": "Take a breath. Ready for the next set?",
         "start_next_set": "Start Next Set",
+        "skip_to_next": "Skip to Next Task",
         "take_break_btn": "Take a Break",
         "task_completed_title": "Task Completed",
         "status_focusing": "Focusing",

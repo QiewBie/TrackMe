@@ -31,5 +31,11 @@ export interface IStorageAdapter {
 
     savePlaylist(playlist: Playlist): Promise<void>;
     deletePlaylist(id: string): Promise<void>;
+
+    /**
+     * Returns the estimated server time (milliseconds).
+     * Useful for generating timestamps that are consistent across devices (LWW).
+     */
+    getServerTime(): number;
 }
 

@@ -49,7 +49,7 @@ export const Heading: React.FC<HeadingProps> = ({
                 sizes[variant],
                 fontWeights[weight],
                 'tracking-tight text-text-primary',
-                gradient && 'bg-clip-text text-transparent bg-gradient-to-r from-slate-900 to-slate-600 dark:from-white dark:to-slate-400',
+                gradient && 'bg-clip-text text-transparent bg-gradient-to-r from-text-primary to-text-secondary',
                 className
             )}
             {...props}

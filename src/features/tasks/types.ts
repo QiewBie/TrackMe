@@ -17,6 +17,7 @@ export interface Task {
     completed: boolean;
     createdAt: string; // ISO Date string
     completedAt?: string; // ISO Date string
+    updatedAt?: string; // For Sync Conflict Resolution (LWW)
     lastStartTime?: number; // Timestamp for timer logic
     focusOffset?: number; // Time spent when the current focus set started
 

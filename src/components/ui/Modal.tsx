@@ -1,6 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
+import { ANIMATION_DURATION } from '../../constants/animations';
 import { clsx } from 'clsx';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -59,7 +60,7 @@ const Modal: React.FC<ModalProps> = ({
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        transition={{ duration: 0.2 }}
+                        transition={{ duration: ANIMATION_DURATION.FAST }}
                         ref={backdropRef}
                         onClick={handleBackdropClick}
                         className="fixed inset-0 bg-overlay z-modal"
@@ -76,7 +77,7 @@ const Modal: React.FC<ModalProps> = ({
                             initial={{ opacity: 0, scale: 0.95, y: 10 }}
                             animate={{ opacity: 1, scale: 1, y: 0 }}
                             exit={{ opacity: 0, scale: 0.95, y: 10 }}
-                            transition={{ duration: 0.2, ease: "easeOut" }}
+                            transition={{ duration: ANIMATION_DURATION.FAST, ease: "easeOut" }}
                             className={clsx(
                                 "bg-bg-surface shadow-2xl overflow-hidden flex flex-col pointer-events-auto will-change-transform",
                                 fullScreen ? "!w-full !max-w-none !h-full !max-h-screen !rounded-none" : "rounded-2xl w-full max-h-[90vh]",

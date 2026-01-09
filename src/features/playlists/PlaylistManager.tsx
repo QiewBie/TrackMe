@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useOutletContext, useNavigate } from 'react-router-dom';
 import { usePlaylistContext } from '../../context/PlaylistContext';
+import { useSession } from '../../context/SessionContext';
 import { useTaskContext } from '../../context/TaskContext';
 import { useCategoryContext } from '../../context/CategoryContext';
 import { DashboardContextType } from '../../components/Dashboard';
@@ -113,8 +114,15 @@ const PlaylistManager = () => {
         }
     };
 
+    const { session, stop: stopSession } = useSession(); // Added for cleanup
+
     const confirmDelete = () => {
         if (playlistToDelete) {
+            // Fix: If the active session belongs to this playlist, stop it to prevent "ghost tasks"
+            if (session?.playlistId === playlistToDelete.id) {
+                stopSession();
+            }
+
             deletePlaylist(playlistToDelete.id);
             setUndoPlaylist(playlistToDelete);
             setPlaylistToDelete(null);

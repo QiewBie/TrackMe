@@ -1,13 +1,19 @@
-import { useState, useCallback, useEffect } from 'react';
+/**
+ * useFocusSession - Focus session management hook
+ * 
+ * Provides timer state and actions for FocusView using SessionContext.
+ * Handles work/break cycles, completion detection, and auto-start logic.
+ */
+
+import { useState, useCallback, useEffect, useMemo } from 'react';
 import { Task } from '../types';
-import { useFocusContext } from '../context/FocusSessionContext';
-import { useGlobalTimer } from './useGlobalTimer';
+import { useSession } from '../context/SessionContext';
 
 export type SessionState = 'idle' | 'work' | 'shortBreak' | 'longBreak';
 
 interface UseFocusSessionProps {
     activeTask: Task | undefined;
-    hasNextTask?: boolean; // New prop
+    hasNextTask?: boolean;
     settings: {
         workDuration: number;
         shortBreak: number;
@@ -15,199 +21,146 @@ interface UseFocusSessionProps {
         autoStartNext: boolean;
     };
     handlers: {
-        startTask: (id: string) => void;
-        stopTask: (id: string) => void;
-        updateTaskDetails: (task: Task) => void;
         playCompleteSound: () => void;
     };
 }
 
 export const useFocusSession = ({ activeTask, hasNextTask = true, settings, handlers }: UseFocusSessionProps) => {
-    // We now rely on SessionContext AND GlobalTimer for orchestration
     const {
-        timeLeft,
+        session,
+        elapsed,
+        remaining,
+        isRunning,
         isPaused,
-        activeSession,
-        pauseSession, // We still use specific Pause
-        stopSession,
-        updateSessionConfig
-    } = useFocusContext();
-
-    const { startTimer } = useGlobalTimer(); // New Orchestrator
+        hasSession,
+        start,
+        pause,
+        resume,
+        stop,
+        switchTask
+    } = useSession();
 
     const { playCompleteSound } = handlers;
 
     const [showNewSetPrompt, setShowNewSetPrompt] = useState(false);
 
-    // Derive Session State purely for UI compatibility
-    // In future, SessionContext should own this 'mode' (work/break)
-    const [localSessionState, setLocalSessionState] = useState<SessionState>('idle');
+    // === DERIVED STATE ===
 
-    // Sync Local State with Context
-    useEffect(() => {
-        if (activeSession && !isPaused) {
-            if (activeSession.config?.mode === 'break') {
-                // Distinguish Short vs Long based on duration
-                // Heuristic: If duration >= longBreak setting, it's Long.
-                if (activeSession.config.duration >= settings.longBreak) {
-                    setLocalSessionState('longBreak');
-                } else {
-                    setLocalSessionState('shortBreak');
-                }
-            } else {
-                setLocalSessionState('work');
-            }
-        } else if (activeSession && isPaused) {
-            setLocalSessionState('idle');
-        } else {
-            setLocalSessionState('idle');
+    const sessionState = useMemo((): SessionState => {
+        if (!hasSession || isPaused) return 'idle';
+
+        if (session?.mode === 'break') {
+            return session.targetDuration >= settings.longBreak * 60 ? 'longBreak' : 'shortBreak';
         }
-    }, [activeSession, isPaused, settings.longBreak]);
 
-    // --- Completion Logic ---
-    // --- Cleanup Zombie Sessions (activeSession exists but activeTask is gone) ---
-    useEffect(() => {
-        if (activeSession && !activeTask) {
-            console.warn('[useFocusSession] Zombie session detected (no active task). Discarding.');
-            stopSession();
-        }
-    }, [activeSession, activeTask, stopSession]);
+        return 'work';
+    }, [hasSession, isPaused, session?.mode, session?.targetDuration, settings.longBreak]);
 
-    // --- Completion Logic ---
+    // Time left for countdown display (Pomodoro style)
+    const timeLeft = remaining;
+
+    // === COMPLETION LOGIC ===
+
     useEffect(() => {
-        // If timeLeft hits 0 and we were working
-        // Strict Guard: Must have activeTask to be considered a valid completion
-        if (activeSession && activeTask && timeLeft === 0 && !isPaused) {
+        if (!hasSession || !activeTask || isPaused) return;
+
+        // Timer hit zero
+        if (remaining <= 0 && isRunning) {
             playCompleteSound();
 
             if (settings.autoStartNext) {
-                // Auto-start next set immediately
-                // TOGGLE LOGIC: Focus -> Break -> Focus
-                const currentMode = activeSession.config?.mode || 'focus';
+                const currentMode = session?.mode || 'focus';
 
                 if (currentMode === 'focus') {
-                    // WORK -> BREAK
-                    // Always allowed (Break is earned)
-                    // Increment Completed Sets
+                    // Work completed → Start break
                     const storedSets = parseInt(localStorage.getItem('time_tracker_sets_count') || '0', 10);
                     const newSets = storedSets + 1;
                     localStorage.setItem('time_tracker_sets_count', newSets.toString());
 
-                    // Determine Type of Break
                     const isLongBreak = newSets % 4 === 0;
                     const duration = isLongBreak ? settings.longBreak : settings.shortBreak;
 
-                    // Start Break
-                    updateSessionConfig({
-                        workDuration: settings.workDuration,
-                        shortBreak: settings.shortBreak,
-                        longBreak: settings.longBreak
-                    });
-
-                    // Use 'break' mode but pass specific duration. 
-                    // Note: 'break' mode usually implies shortBreak in context fallback, but we can override duration.
-                    startTimer(activeTask.id, 'focus', { mode: 'break', duration });
-
-                    // Optional: Show toast or indicator about Long Break?
-                    // The UI will show "Break Time", maybe we add "Long Break" text?
-
+                    start(activeTask.id, { mode: 'break', duration }, session?.playlistId, session?.queue);
                 } else {
-                    // BREAK -> WORK
-                    // CRITICAL FIX: Only auto-start work if there is a next task!
+                    // Break completed → Start work (if has next task)
                     if (hasNextTask) {
-                        startTimer(activeTask.id, 'focus', { mode: 'focus' });
+                        start(activeTask.id, { mode: 'focus', duration: settings.workDuration }, session?.playlistId, session?.queue);
                     } else {
-                        // No tasks left? Stop everything.
-                        stopSession();
-                        setLocalSessionState('idle');
+                        stop();
                     }
                 }
-
             } else {
-                // Show manual prompt
                 setShowNewSetPrompt(true);
-                pauseSession(); // Pause to stop the tick while waiting
-                setLocalSessionState('idle');
+                pause();
             }
         }
-    }, [timeLeft, isPaused, activeSession, activeTask, playCompleteSound, pauseSession, settings.autoStartNext, startTimer, settings.workDuration, settings.shortBreak, settings.longBreak, updateSessionConfig, hasNextTask, stopSession]);
+    }, [remaining, isRunning, hasSession, activeTask, isPaused, playCompleteSound, settings, session, start, stop, pause, hasNextTask]);
 
+    // === ACTIONS ===
 
-    // --- Actions ---
-
-    const startNewSet = useCallback(() => {
+    const startNewSet = useCallback(async () => {
         if (!activeTask) return;
 
-        // Start a fresh session via Global Orchestrator (Enforces SimpleTimer stop)
-        // Note: FocusSessionContext.startSession handles the config object merging
-        const finalWork = settings.workDuration;
-
-        updateSessionConfig({
-            workDuration: settings.workDuration,
-            shortBreak: settings.shortBreak,
-            longBreak: settings.longBreak
-        });
-
-        startTimer(activeTask.id, 'focus', { mode: 'focus' });
+        await start(
+            activeTask.id,
+            { mode: 'focus', duration: settings.workDuration },
+            session?.playlistId,
+            session?.queue
+        );
         setShowNewSetPrompt(false);
-    }, [activeTask, settings, startTimer, updateSessionConfig]);
+    }, [activeTask, settings.workDuration, session?.playlistId, session?.queue, start]);
 
-    const toggleTimer = useCallback(() => {
+    const toggleTimer = useCallback(async () => {
         if (!activeTask) return;
 
-        if (!activeSession) {
-            // Start fresh
-            startNewSet();
+        if (!hasSession) {
+            await startNewSet();
+        } else if (isPaused) {
+            await resume();
         } else {
-            // Toggle
-            if (isPaused) {
-                // RESUME via Global (kills SimpleTimer if running)
-                startTimer(activeTask.id, 'focus');
-            } else {
-                // PAUSE (Safe to just pause)
-                pauseSession();
-            }
+            await pause();
         }
-    }, [activeTask, activeSession, isPaused, startNewSet, startTimer, pauseSession]);
+    }, [activeTask, hasSession, isPaused, startNewSet, resume, pause]);
 
-    const startBreak = useCallback(() => {
+    const startBreak = useCallback(async () => {
         if (!activeTask) return;
 
-        // We update config just in case, but really we rely on the mode logic now
-        updateSessionConfig({
-            workDuration: settings.workDuration,
-            shortBreak: settings.shortBreak,
-            longBreak: settings.longBreak
-        });
-
-        // Trigger break mode via Global Timer
-        startTimer(activeTask.id, 'focus', { mode: 'break' });
+        await start(
+            activeTask.id,
+            { mode: 'break', duration: settings.shortBreak },
+            session?.playlistId,
+            session?.queue
+        );
         setShowNewSetPrompt(false);
-    }, [activeTask, settings, startTimer, updateSessionConfig]);
+    }, [activeTask, settings.shortBreak, session?.playlistId, session?.queue, start]);
 
-    const resetSession = useCallback(() => {
-        stopSession();
-        setLocalSessionState('idle');
+    const resetSession = useCallback(async () => {
+        await stop();
         setShowNewSetPrompt(false);
-    }, [stopSession]);
+    }, [stop]);
 
-    // Calculate total time strictly for display if needed, 
-    // but the UI should rely on Task.cachedTotalTime for "Total" (V2 Source of Truth)
-    const totalTimeSpent = activeTask?.cachedTotalTime || 0;
+    // === UPDATE CONFIG (compatibility) ===
+
+    const updateSessionConfig = useCallback((_config: Partial<typeof settings>) => {
+        // In new system, settings are passed to start() directly
+        // This is a no-op for compatibility
+    }, []);
+
+    // === RETURN ===
 
     return {
-        sessionState: localSessionState,
-        setSessionState: setLocalSessionState,
+        sessionState,
+        setSessionState: () => { }, // No-op for compatibility
         showNewSetPrompt,
         setShowNewSetPrompt,
-        timeLeft,             // From Context
-        totalTimeSpent,       // From Task Data
-        isTimerRunning: !isPaused && !!activeSession,
+        timeLeft,
+        totalTimeSpent: activeTask?.cachedTotalTime || 0,
+        isTimerRunning: isRunning,
         toggleTimer,
         startNewSet,
         startBreak,
         resetSession,
-        stopSession, // Expose for manual stops (Complete/Skip)
+        stopSession: stop,
         updateSessionConfig
     };
 };

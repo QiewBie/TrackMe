@@ -108,7 +108,7 @@ const TaskItem: React.FC<TaskItemProps> = memo(({ task, categories, onToggleComp
                     <Button
                         variant="icon"
                         onClick={(e) => { e.stopPropagation(); onDelete(task); }}
-                        className="p-2 text-text-secondary hover:text-status-error hover:bg-status-error/10 transition-colors opacity-0 group-hover:opacity-100"
+                        className="p-2 text-text-secondary hover:text-status-error hover:bg-status-error/10 transition-colors opacity-100 lg:opacity-0 lg:group-hover:opacity-100"
                         title={t('common.delete')}
                         aria-label={t('task_details.delete_task')}
                         icon={Trash2}
@@ -117,7 +117,7 @@ const TaskItem: React.FC<TaskItemProps> = memo(({ task, categories, onToggleComp
                     <Button
                         variant="icon"
                         onClick={() => onEdit(task)}
-                        className="text-text-secondary hover:text-brand-primary hover:bg-brand-primary/10"
+                        className="text-text-secondary hover:text-brand-primary hover:bg-brand-primary/10 opacity-100 lg:opacity-0 lg:group-hover:opacity-100"
                         title={t('tasks.edit')}
                         aria-label={t('tasks.edit')}
                         icon={Edit3}
@@ -125,12 +125,15 @@ const TaskItem: React.FC<TaskItemProps> = memo(({ task, categories, onToggleComp
 
                     {!task.completed && (
                         <button
-                            onClick={() => onToggleTimer(task.id)}
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                onToggleTimer(task.id);
+                            }}
                             className={clsx(
                                 "w-10 h-10 rounded-full flex items-center justify-center text-white shadow-lg transition-all active:scale-90 shrink-0 hover:shadow-xl ml-1",
                                 isTimerActive
                                     ? "bg-brand-primary hover:bg-brand-hover rotate-0"
-                                    : "bg-bg-subtle text-text-secondary hover:bg-brand-primary hover:text-white hover:rotate-12"
+                                    : "bg-bg-subtle text-text-secondary hover:bg-brand-primary hover:text-white"
                             )}
                             aria-label={isTimerActive ? t('focus.pause') : t('focus.start')}
                         >

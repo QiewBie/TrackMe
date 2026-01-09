@@ -1,9 +1,18 @@
 import { useCallback } from 'react';
 import { useSimpleTimer } from '../context/ActiveTimerContext';
-import { useFocusContext } from '../context/FocusSessionContext';
+import { useSession } from '../context/SessionContext';
 
 export type TimerSource = 'dashboard' | 'focus';
 
+/**
+ * useGlobalTimer - "Traffic Cop" for timer orchestration
+ * 
+ * IMPORTANT: Dashboard and Focus are INDEPENDENT systems.
+ * - Dashboard uses SimpleTimer (ActiveTimerContext) → Firestore simple_timer_state
+ * - Focus uses Session (SessionContext) → Firestore session
+ * 
+ * They coordinate LOCALLY but do NOT affect each other in Firestore.
+ */
 export const useGlobalTimer = () => {
     // 1. Consume Both Contexts
     const {
@@ -13,12 +22,11 @@ export const useGlobalTimer = () => {
     } = useSimpleTimer();
 
     const {
-        activeSession: focusSession,
-        startSession: startFocusSession,
-        pauseSession: pauseFocusSession,
-        stopSession: stopFocusSession,
+        session: focusSession,
+        start: startSession,
+        pause: pauseSession,
         isPaused: isFocusPaused
-    } = useFocusContext();
+    } = useSession();
 
 
     // 2. "Traffic Cop" Logic
@@ -26,46 +34,34 @@ export const useGlobalTimer = () => {
     // START
     const startTimer = useCallback((taskId: string, source: TimerSource, options?: { mode?: 'focus' | 'break', duration?: number, config?: any }) => {
         if (source === 'dashboard') {
-            // Priority: Dashboard Action
+            // Dashboard Action - LOCAL coordination only
+            // NOTE: We do NOT stop Focus session here.
+            // Focus/Dashboard are independent Firestore documents.
+            // Stopping Focus would affect all devices!
 
-            // A. If Focus Session is Active or Paused, we should probably Suspend it?
-            // "If I am in Focus, switch to Dashboard... session active?" -> Yes, user said Dashboard is Monitor.
-            // BUT: Use case "Started in Dashboard" -> Simple Timer.
-
-            // Logic derived from stress test: One-Way Control.
-            // Dashboard "Play" Button ALWAYS starts Simple Timer.
-            // It NEVER resumes Focus Session.
-
-            // 1. Kill Focus if running
-            if (focusSession) {
-                // If it's the SAME task, maybe we just want to watch it?
-                // No, user said "Focus is a specialized environment".
-                // If you are on Dashboard and click Play, you are opting out of "Session Mode" into "Simple Mode".
-                pauseFocusSession(); // Pause it safely so it saves to history? Or Stop?
-                // Let's Pause it.
-            }
-
-            // 2. Start Simple
+            // Start Simple Timer
             startSimpleTimer(taskId);
 
         } else if (source === 'focus') {
-            // Priority: Focus View
+            // Focus View Action
 
-            // 1. Kill Simple Timer if running
+            // Kill Simple Timer if running (local only)
             if (simpleTimer) {
                 stopSimpleTimer(); // Writes to log
             }
 
-            // 2. Start Focus
-            startFocusSession(taskId, options);
+            // Start Focus Session
+            const mode = options?.mode ?? 'focus';
+            const duration = options?.duration ?? (options?.config?.workDuration ?? 25);
+            startSession(taskId, { mode, duration }).catch(err =>
+                console.error('[GlobalTimer] Failed to start focus session:', err)
+            );
         }
-    }, [simpleTimer, focusSession, startSimpleTimer, stopSimpleTimer, startFocusSession, pauseFocusSession]);
+    }, [simpleTimer, startSimpleTimer, stopSimpleTimer, startSession]);
 
 
     // STOP / PAUSE
     const stopTimer = useCallback((taskId: string) => {
-        // We need to know WHICH one to stop.
-
         // Check Simple
         if (simpleTimer?.taskId === taskId) {
             stopSimpleTimer();
@@ -74,10 +70,10 @@ export const useGlobalTimer = () => {
 
         // Check Focus
         if (focusSession?.taskId === taskId) {
-            pauseFocusSession(); // Focus usually Pauses on toggle
+            pauseSession(); // Focus usually Pauses on toggle
             return;
         }
-    }, [simpleTimer, focusSession, stopSimpleTimer, pauseFocusSession]);
+    }, [simpleTimer, focusSession, stopSimpleTimer, pauseSession]);
 
 
     // 3. Status Checkers

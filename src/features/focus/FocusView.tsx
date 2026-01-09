@@ -66,14 +66,10 @@ const FocusView = () => {
     }, [setMobileMenuOpen]);
 
     // --- Session Logic ---
-    // Memoize handlers to prevent unstable references causing re-renders/glitches
+    // Simplified handlers for V2
     const handlers = React.useMemo(() => ({
-        // Legacy handlers stubbed - SessionContext handles logic now
-        startTask: () => { },
-        stopTask: () => { },
-        updateTaskDetails,
         playCompleteSound: () => playSfx('complete')
-    }), [activeTask, updateTaskDetails, playSfx]);
+    }), [playSfx]);
 
     const hasNextTask = React.useMemo(() => {
         if (!activeTask) return false;
@@ -88,12 +84,12 @@ const FocusView = () => {
         startBreak,
         showNewSetPrompt,
         setShowNewSetPrompt,
-        stopSession, // V2: Use stopSession to flush logs
-        updateSessionConfig, // Exposed from context
+        stopSession,
+        updateSessionConfig,
         sessionState
     } = useFocusSession({
         activeTask,
-        hasNextTask, // Passed to prevent infinite loop on empty queue
+        hasNextTask,
         settings,
         handlers
     });
@@ -229,8 +225,8 @@ const FocusView = () => {
                 }}
             />
 
-            {/* Empty State - No Active Task or Playlist (AND not completed) */}
-            {(!activeTask && !activePlaylist && !(queue.length > 0 && queue.every(t => t.completed))) && (
+            {/* Empty State - No Active Task (show "Go to Playlists" button) */}
+            {!activeTask && !showNewSetPrompt && !(queue.length > 0 && queue.every(t => t.completed)) && (
                 <div className="flex-1 w-full flex flex-col items-center justify-center relative min-h-0 text-center px-6">
                     <motion.div
                         initial={{ opacity: 0, scale: 0.95 }}
@@ -352,7 +348,7 @@ const FocusView = () => {
 
             {/* Session Complete State */}
             <CompletionOverlay
-                isOpen={showNewSetPrompt && !(queue.length > 0 && queue.every(t => t.completed))}
+                isOpen={showNewSetPrompt && queue.length > 0 && !(queue.length > 0 && queue.every(t => t.completed))}
                 title={t('focus.session_complete_title')}
                 message={t('focus.session_complete_msg')}
                 type="session"
@@ -366,6 +362,14 @@ const FocusView = () => {
                     onClick: startBreak,
                     variant: 'ghost'
                 }}
+                tertiaryAction={hasNextTask ? {
+                    label: t('focus.skip_to_next'),
+                    onClick: () => {
+                        setShowNewSetPrompt(false);
+                        handleSkip();
+                    },
+                    variant: 'ghost'
+                } : undefined}
             />
         </Page>
     );

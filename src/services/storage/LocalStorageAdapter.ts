@@ -122,6 +122,10 @@ export class LocalStorageAdapter implements IStorageAdapter {
     async deletePlaylist(id: string): Promise<void> {
         return this.deleteCollectionItem('playlists', id);
     }
+
+    getServerTime(): number {
+        return Date.now();
+    }
 }
 
 // Singleton instance

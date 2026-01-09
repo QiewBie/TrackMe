@@ -27,6 +27,7 @@ interface CompletionOverlayProps {
     type?: 'session' | 'playlist' | 'milestone';
     primaryAction?: ActionButton;
     secondaryAction?: ActionButton;
+    tertiaryAction?: ActionButton;
     stats?: { label: string; value: string | number; icon?: React.ElementType }[];
 }
 
@@ -37,6 +38,7 @@ export const CompletionOverlay: React.FC<CompletionOverlayProps> = ({
     type = 'session',
     primaryAction,
     secondaryAction,
+    tertiaryAction,
     stats
 }) => {
     // Confetti Effect - Optimized
@@ -176,10 +178,20 @@ export const CompletionOverlay: React.FC<CompletionOverlayProps> = ({
                         <Button
                             onClick={secondaryAction.onClick}
                             variant={secondaryAction.variant || 'ghost'}
-                            size="md" // Use medium for secondary to reduce visual weight or keep lg if desired
+                            size="md"
                             className="w-full"
                         >
                             {secondaryAction.label}
+                        </Button>
+                    )}
+                    {tertiaryAction && (
+                        <Button
+                            onClick={tertiaryAction.onClick}
+                            variant={tertiaryAction.variant || 'ghost'}
+                            size="md"
+                            className="w-full text-text-tertiary"
+                        >
+                            {tertiaryAction.label}
                         </Button>
                     )}
                 </motion.div>

@@ -11,4 +11,12 @@ export interface Session {
         duration: number;
     };
     legacy?: boolean;  // If migrated from old counter
+    lastUpdated: string; // ISO String (Mandatory for sync anchor)
+    playlistId?: string | null; // Synced Playlist Context
+    queue?: string[]; // Synced Queue Context
+
+    // Version metadata for cloud sync conflict resolution
+    _version?: number;
+    _updatedAt?: string;
+    _deviceId?: string;
 }

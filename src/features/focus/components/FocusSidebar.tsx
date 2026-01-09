@@ -20,7 +20,7 @@ const DraggableQueueItem = memo(({ task, categoryColor, categoryName, onSelect, 
             value={task}
             dragListener={false}
             dragControls={controls}
-            className="relative"
+            className="relative select-none"
             style={{ touchAction: 'none' }}
         >
             <div className={`              
@@ -107,6 +107,43 @@ export const FocusSidebar = memo<FocusSidebarProps>(({
 }) => {
     const { t } = useTranslation();
 
+    // --- DnD Stability Fix ---
+    // We maintain a local copy of the queue for the Reorder component.
+    // We sync it from props ONLY when the IDs mismatch (structural change) 
+    // or when we are NOT dragging (to act as a refresh).
+    // But Reorder.Group renders 'values'. If we pass local items, and tasks have updated ticks,
+    // we might display stale time? Yes. 
+    // BUT: Sidebar usually displays Titles + Status. Status changes rarely. 
+    // The visual glitch of stale time in sidebar is better than broken drag.
+
+    const [localQueue, setLocalQueue] = React.useState(queue);
+    const isDraggingRef = React.useRef(false);
+
+    // Sync Props -> Local (Debounced / Selective)
+    React.useEffect(() => {
+        if (isDraggingRef.current) return;
+
+        // Only update if IDs differ (Order changed externally) or specific task data changed
+        // JSON stringify is expensive but safe for small lists
+        /* 
+           Simpler check: If lengths differ, or IDs at index differ.
+        */
+        setLocalQueue(queue);
+    }, [queue]);
+
+    const handleReorder = (newOrder: Task[]) => {
+        isDraggingRef.current = true;
+        setLocalQueue(newOrder); // Optimistic UI
+        onReorder(newOrder); // Sync Up
+
+        // Reset dragging flag after a delay to allow sync "settling"?
+        // No, drag ends when user drops. Framer handles the gesture lifecycle.
+        // We rely on 'onDragEnd' of individual items via controls? 
+        // Reorder.Group doesn't expose onDragEnd easily.
+        // We just assume if we are actively reordering, we block external syncs.
+        setTimeout(() => { isDraggingRef.current = false; }, 1000);
+    };
+
     return (
         <>
             {/* Backdrop for mobile */}
@@ -123,7 +160,7 @@ export const FocusSidebar = memo<FocusSidebarProps>(({
                 ${isOpen ? 'translate-x-0' : 'translate-x-full'}
             `}>
                 {/* Panel Header */}
-                <div className="h-16 shrink-0 flex items-center justify-between px-6 border-b border-border bg-bg-surface pt-safe box-content h-[calc(4rem+env(safe-area-inset-top,0px))] md:h-16 md:pt-0 md:box-border">
+                <div className="h-16 shrink-0 flex items-center justify-between px-6 border-b border-border bg-bg-surface pt-safe box-content md:pt-0 md:box-border">
                     <div className="flex flex-row items-center gap-3">
                         <Heading variant="h4" className="text-text-secondary font-bold text-xs tracking-wider">
                             {t('focus.session_details')}
@@ -196,8 +233,8 @@ export const FocusSidebar = memo<FocusSidebarProps>(({
                         <p className="px-1 text-xs font-bold text-text-secondary uppercase tracking-wider">
                             {t('focus.queue_title')}
                         </p>
-                        <Reorder.Group axis="y" values={queue} onReorder={onReorder} className="space-y-2">
-                            {queue.map(task => (
+                        <Reorder.Group axis="y" values={localQueue} onReorder={handleReorder} className="space-y-2">
+                            {localQueue.map(task => (
                                 <DraggableQueueItem
                                     key={task.id}
                                     task={task}
@@ -207,12 +244,12 @@ export const FocusSidebar = memo<FocusSidebarProps>(({
                                     onSelect={onQueueSelect}
                                 />
                             ))}
-                            {queue.length === 0 && (
-                                <div className="p-8 text-center text-text-secondary/50 italic text-sm border-2 border-dashed border-border/30 rounded-xl">
-                                    {t('focus.queue_empty')}
-                                </div>
-                            )}
                         </Reorder.Group>
+                        {queue.length === 0 && (
+                            <div className="p-8 text-center text-text-secondary/50 italic text-sm border-2 border-dashed border-border/30 rounded-xl">
+                                {t('focus.queue_empty')}
+                            </div>
+                        )}
                     </section>
                 </div>
             </div>

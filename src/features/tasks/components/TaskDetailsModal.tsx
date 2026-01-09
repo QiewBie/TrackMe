@@ -114,7 +114,7 @@ const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({ task, isOpen, onClo
                         onClick={e => e.stopPropagation()}
                     >
                         {/* Header */}
-                        <div className="flex items-start justify-between p-6 border-b border-border shrink-0 bg-bg-surface/95 z-10">
+                        <div className="flex items-start justify-between px-6 pb-6 pt-[max(1.5rem,env(safe-area-inset-top))] border-b border-border shrink-0 bg-bg-surface/95 z-10">
                             <div className="flex-1 mr-4">
                                 <div className="flex items-center gap-2 mb-2">
                                     <Badge variant={currentTask.completed ? 'success' : 'primary'}>
@@ -356,7 +356,7 @@ const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({ task, isOpen, onClo
                         </div>
 
                         {/* Footer Content Actions */}
-                        <div className="p-4 border-t border-border bg-bg-surface/95 shrink-0 flex justify-end gap-3 z-20 pb-[env(safe-area-inset-bottom,20px)]">
+                        <div className="p-4 border-t border-border bg-bg-surface/95 shrink-0 flex justify-end gap-3 z-20 pb-[max(1.25rem,env(safe-area-inset-bottom))]">
                             <Button
                                 variant="secondary"
                                 onClick={onClose}

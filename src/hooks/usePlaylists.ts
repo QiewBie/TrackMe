@@ -6,17 +6,33 @@ export const usePlaylists = () => {
     const storage = useStorage();
     const [playlists, setPlaylists] = useState<Playlist[]>([]);
 
-    // Initial Load
+    // Initial Load & Sync
     useEffect(() => {
-        let isMounted = true;
-        const loadPlaylists = async () => {
-            const loaded = await storage.getItem<Playlist[]>('playlists');
-            if (isMounted && loaded) {
-                setPlaylists(loaded);
+        let unsubscribe: (() => void) | undefined;
+
+        const setupSync = async () => {
+            const adapter = storage as any;
+
+            // Check if adapter supports subscription (Firestore)
+            if (adapter && adapter.subscribeToPlaylists) {
+                console.log('[usePlaylists] Subscribing to Cloud Playlists');
+                unsubscribe = await adapter.subscribeToPlaylists((remotePlaylists: Playlist[]) => {
+                    setPlaylists(remotePlaylists);
+                });
+            } else {
+                // Fallback for LocalStorage
+                const loaded = await storage.getItem<Playlist[]>('playlists');
+                if (loaded) {
+                    setPlaylists(loaded);
+                }
             }
         };
-        loadPlaylists();
-        return () => { isMounted = false; };
+
+        setupSync();
+
+        return () => {
+            if (unsubscribe) unsubscribe();
+        };
     }, [storage]);
 
     const createPlaylist = useCallback(async (title: string) => {

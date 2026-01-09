@@ -28,14 +28,15 @@ const ErrorBoundaryInner = ({ error, reset }: { error: Error | null, reset: () =
                 <Text className="text-text-secondary">
                     {t('common.error_msg') || "We encountered an unexpected issue with this session."}
                 </Text>
-                {process.env.NODE_ENV === 'development' && error && (
+                {error && (
                     <div className="mt-4 p-4 rounded-lg bg-status-error/5 border border-status-error/10 text-left overflow-auto max-h-40">
-                        <code className="text-xs text-status-error font-mono">{error.message}</code>
+                        <code className="text-xs text-status-error font-monoSelect">{error.message}</code>
+                        {error.stack && <pre className="text-[10px] text-text-tertiary mt-2 whitespace-pre-wrap">{error.stack.split('\n').slice(0, 3).join('\n')}</pre>}
                     </div>
                 )}
             </div>
 
-            <Button onClick={reset} variant="primary">
+            <Button onClick={() => window.location.reload()} variant="primary">
                 {t('common.reload') || "Reload Session"}
             </Button>
         </div>

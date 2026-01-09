@@ -1,9 +1,9 @@
-import { useState, useMemo, useEffect, useCallback } from 'react';
+import { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useTaskContext } from '../context/TaskContext';
 import { useCategoryContext } from '../context/CategoryContext';
 import { usePlaylistContext } from '../context/PlaylistContext';
-import { useFocusContext } from '../context/FocusSessionContext';
+import { useSession } from '../context/SessionContext';
 import { Task } from '../types';
 import { getThemeColor } from '../utils/theme';
 
@@ -15,7 +15,45 @@ export const useFocusViewController = () => {
     const { tasks } = useTaskContext();
     const { categories } = useCategoryContext();
     const { playlists } = usePlaylistContext();
-    const { activePlaylistId, sessionQueue, setPlaylistContext, switchTask, activeSession } = useFocusContext();
+
+    // NEW: Use SessionContext instead of FocusSessionContext
+    const { session, switchTask, setPlaylist, stop, start } = useSession();
+
+    // Auto-cleanup Zombie Manual Sessions
+    // SAFEGUARDS to prevent false positives during navigation:
+    // 1. No playlist (manual session only)
+    // 2. Session is PAUSED (not running)
+    // 3. Tasks are loaded (prevent race condition)
+    // 4. Active task exists AND is completed
+    useEffect(() => {
+        // Guard: Skip if no session or has playlist
+        if (!session || session.playlistId) return;
+
+        // Guard: Only cleanup paused sessions
+        if (session.status === 'running') return;
+
+        // Guard: Wait for tasks to load
+        if (tasks.length === 0) return;
+
+        // Check if active task exists
+        const activeTask = session.taskId ? tasks.find(t => t.id === session.taskId) : null;
+
+        // Guard: If task doesn't exist, it was deleted - cleanup orphan
+        if (session.taskId && !activeTask) {
+            console.log('[FocusVC] Orphan session (task deleted), cleaning up');
+            stop();
+            return;
+        }
+
+        // Only cleanup if task is completed AND no pending tasks
+        if (activeTask?.completed) {
+            const hasPending = session.queue?.some(id => !tasks.find(t => t.id === id)?.completed);
+            if (!hasPending) {
+                console.log('[FocusVC] All tasks completed, cleaning up session');
+                stop();
+            }
+        }
+    }, [session, tasks, stop]);
 
     // Local UI State
     const [contextPanelOpen, setContextPanelOpen] = useState(() => window.innerWidth >= 1024);
@@ -54,33 +92,35 @@ export const useFocusViewController = () => {
     const [lastActiveId, setLastActiveId] = useState(() => localStorage.getItem('last_active_focus_task_id'));
 
     const activeTask = useMemo(() => {
+        // PRIORITY 0: Route-derived task takes precedence (user explicitly navigated)
         if (resolvedContext.type === 'task') return resolvedContext.data as Task;
         if (resolvedContext.type === 'playlist') {
             const p = resolvedContext.data as typeof playlists[0];
             // Fix: Return undefined if all tasks are completed. Do NOT fallback to first task.
-            return tasks.find(t => p.taskIds.includes(t.id) && !t.completed) || undefined;
+            // Safely access taskIds in case of malformed data
+            return tasks.find(t => p.taskIds?.includes(t.id) && !t.completed) || undefined;
         }
 
-        // Fallback Logic: Running Task -> Last Active Task -> First Incomplete Task in Queue?
-        const candidate = tasks.find(t => t.isRunning) || (lastActiveId ? tasks.find(t => t.id === lastActiveId) : undefined);
-
-        // CRITICAL FIX: If we have an active playlist (from context), we MUST NOT select a task 
-        // that is completed, or one that is not in the playlist (if we want strict scope).
-        // Check if candidate matches active playlist logic
-        if (activePlaylistId && candidate) {
-            const p = playlists.find(pl => pl.id === activePlaylistId);
-            if (p) {
-                // If the candidate task is IN the playlist but COMPLETED, discard it to show "All Done".
-                if (p.taskIds.includes(candidate.id) && candidate.completed) {
-                    // Try to find ANY incomplete task in this playlist instead
-                    const next = tasks.find(t => p.taskIds.includes(t.id) && !t.completed);
-                    return next || candidate;
-                }
+        // PRIORITY 1: If no explicit route, use session's taskId as source of truth
+        if (session?.taskId) {
+            // Fix: If session has a playlistId that doesn't exist, ignore the task (orphaned session)
+            if (session.playlistId && !playlists.find(p => p.id === session.playlistId)) {
+                return undefined;
             }
+
+            const task = tasks.find(t => t.id === session.taskId);
+            if (task) return task;
         }
+
+        // Fallback Logic:
+        // REMOVED: tasks.find(t => t.isRunning).
+        // REASON: Stale 'isRunning' flags on tasks (from V1 or uncleaned sessions) cause "Zombie Tasks" to persist.
+        const candidate = undefined;
+
+        // (Dead logic removed)
 
         return candidate;
-    }, [resolvedContext, tasks, lastActiveId]);
+    }, [resolvedContext, tasks, lastActiveId, session?.taskId, session?.playlistId, playlists]);
 
     // Persist active task
     useEffect(() => {
@@ -92,55 +132,58 @@ export const useFocusViewController = () => {
 
     const activePlaylist = useMemo(() => {
         if (resolvedContext.type === 'playlist') return resolvedContext.data as typeof playlists[0];
-        if (activePlaylistId) return playlists.find(p => p.id === activePlaylistId) || undefined;
-        if (activeTask) return playlists.find(p => p.taskIds.includes(activeTask.id)) || undefined;
+        if (session?.playlistId) return playlists.find(p => p.id === session.playlistId) || undefined;
+        if (activeTask) return playlists.find(p => p.taskIds?.includes(activeTask.id)) || undefined;
         return undefined;
-    }, [resolvedContext, activePlaylistId, playlists, activeTask]);
+    }, [resolvedContext, session?.playlistId, playlists, activeTask]);
 
-    // --- Session Hydration & Sync ---
+    // --- Session Hydration & Sync (SIMPLIFIED for new SessionContext) ---
     useEffect(() => {
-        // ZOMBIE CHECK: If we have an ID but no playlist matches, it must have been deleted.
-        // We only check this if NOT loading by route ID (which might be invalid for other reasons).
-        if (activePlaylistId && !playlists.find(p => p.id === activePlaylistId)) {
-            console.log('[FocusVC] Active playlist deleted. Clearing session context.');
-            setPlaylistContext(null, []);
-            return;
-        }
-
         if (resolvedContext.type === 'playlist') {
             const p = resolvedContext.data as typeof playlists[0];
+            const firstTask = tasks.find(t => p.taskIds.includes(t.id) && !t.completed);
 
-            // Scenario 1: First Load / Switch Playlist
-            if (activePlaylistId !== p.id) {
-                setPlaylistContext(p.id, p.taskIds);
+            // FIX: Create session if none exists
+            if (!session && firstTask) {
+                console.log('[FocusVC] Creating new session for playlist:', p.id);
+                // Add catch to prevent unhandled rejections
+                start(firstTask.id, { mode: 'focus', duration: settings.workDuration }, p.id, p.taskIds)
+                    .catch(err => console.error('[FocusVC] Failed to auto-start session:', err));
+                return;
             }
-        }
 
-        // UNIVERSAL SYNC: Always check if the active playlist (in context) has drifted from its source
-        // This handles cases where we are on /focus (resolvedContext='none') but the playlist changed in background.
-        if (activePlaylistId) {
-            const sourcePlaylist = playlists.find(p => p.id === activePlaylistId);
-            if (sourcePlaylist) {
-                const sourceSig = JSON.stringify(sourcePlaylist.taskIds);
-                const localSig = JSON.stringify(sessionQueue);
+            // Update playlist in session if different
+            if (session && session.playlistId !== p.id) {
+                // Add catch blocks
+                setPlaylist(p.id, p.taskIds).catch(err => console.error('[FocusVC] Failed to set playlist:', err));
 
-                if (sourceSig !== localSig) {
-                    console.log('[FocusVC] Universal Sync: Updating Session Queue', sourcePlaylist.taskIds);
-                    setPlaylistContext(activePlaylistId, sourcePlaylist.taskIds);
+                // Also switch to first incomplete task in new playlist
+                if (firstTask && session.taskId !== firstTask.id) {
+                    switchTask(firstTask.id).catch(err => console.error('[FocusVC] Failed to switch task:', err));
                 }
             }
         }
-    }, [resolvedContext, activePlaylistId, sessionQueue, setPlaylistContext, playlists]);
+    }, [resolvedContext, session, setPlaylist, playlists, tasks, switchTask, start, settings.workDuration]);
 
-    // --- Synchronization: Route <-> Session Context ---
+    // --- Synchronization: Route <-> Session Context (SIMPLIFIED) ---
+    const lastRouteTaskId = useRef<string | undefined>(activeTask?.id);
+
     useEffect(() => {
-        if (activeTask && activeSession?.taskId !== activeTask.id) {
-            // The user navigated to a new task. Tell the Session Context to switch focus.
-            // This ensures the timer displays the correct 'timeLeft' for the NEW task,
-            // or creates a fresh session if none exists.
-            switchTask(activeTask.id);
+        // User Navigated (Route -> Session)
+        if (activeTask?.id && activeTask.id !== lastRouteTaskId.current) {
+            lastRouteTaskId.current = activeTask.id;
+
+            // Switch session task if different
+            if (session?.taskId !== activeTask.id) {
+                switchTask(activeTask.id);
+            }
         }
-    }, [activeTask, activeSession?.taskId, switchTask]);
+
+        // Remote Session Changed (Session -> Route)
+        if (session?.taskId && activeTask?.id !== session.taskId) {
+            navigate(`/focus/${session.taskId}`, { replace: true });
+        }
+    }, [activeTask?.id, session?.taskId, switchTask, navigate]);
 
     // --- Visuals ---
     const activeCategory = useMemo(() =>
@@ -179,26 +222,34 @@ export const useFocusViewController = () => {
     }, [activeCategory]);
 
     const queue = useMemo(() => {
-        // Priority 1: Explicit Session Queue
-        if (sessionQueue && sessionQueue.length > 0) {
-            // FIX: Filter to ensure tasks actually exist (handles deletion)
-            // AND if there is an active playlist, restrict to its taskIds (strict sync)
-            return sessionQueue
+        // Priority 1: Explicit Session Queue from cloud
+        if (session?.queue && session.queue.length > 0) {
+            // Fix: If session has a playlistId that doesn't exist, ignore the queue (it's orphaned)
+            if (session.playlistId && !playlists.find(p => p.id === session.playlistId)) {
+                return [];
+            }
+
+            const mapped = session.queue
                 .map(id => tasks.find(t => t.id === id))
                 .filter((t): t is Task => {
                     if (!t) return false;
-                    if (activePlaylist && !activePlaylist.taskIds.includes(t.id)) return false; // Strict Playlist Sync
+                    if (activePlaylist && !activePlaylist.taskIds.includes(t.id)) return false;
                     return true;
                 });
+            return mapped;
         }
         // Priority 2: Active Playlist
         if (activePlaylist) {
-            return tasks.filter(t => activePlaylist.taskIds.includes(t.id));
+            return tasks.filter(t => activePlaylist.taskIds?.includes(t.id));
         }
-        // Priority 3: Fallback (Just the active task, no random other tasks)
-        // User feedback: "Don't show all account tasks"
+        // Priority 3: Fallback (Just the active task)
         return activeTask ? [activeTask] : [];
-    }, [tasks, activeTask, activePlaylist, sessionQueue]);
+    }, [tasks, activeTask, activePlaylist, session?.queue]); // Note: data.tasks updates frequently (cachedTotalTime).
+    // This causes 'queue' to be new array reference every second if playing.
+    // Framer Motion Reorder.Group CANNOT handle reference churn during drag.
+    // We must stabilize this in the UI (Sidebar) or here.
+    // Stabilizing here is hard because tasks DO change.
+    // See FocusSidebar for local state fix.
 
     // Auto-open sidebar on large screens
     useEffect(() => {
@@ -206,9 +257,10 @@ export const useFocusViewController = () => {
     }, []);
 
     // Actions
+    const { updateQueue: updateSessionQueue } = useSession();
     const updateQueue = useCallback((newQueue: Task[]) => {
-        setPlaylistContext(activePlaylistId || 'temp', newQueue.map(t => t.id));
-    }, [activePlaylistId, setPlaylistContext]);
+        updateSessionQueue(newQueue.map(t => t.id));
+    }, [updateSessionQueue]);
 
     const controllerAPI = useMemo(() => ({
         // Data

@@ -1,5 +1,7 @@
 import { TimeLog } from '../../types/models';
 import { FirestoreAdapter } from './FirestoreAdapter';
+import { TimeServiceConfig } from '../time/TimeServiceConfig';
+import { timeService } from '../time/TimeService';
 
 const STORAGE_KEY = 'time_tracker_logs';
 const PENDING_KEY = 'time_tracker_pending_uploads';
@@ -89,8 +91,56 @@ class TimeLedgerService {
         return this.cache!;
     }
 
+    // --- Quota Management ---
+
+    private getStorageUsage(): number {
+        try {
+            const data = localStorage.getItem(STORAGE_KEY);
+            return data ? new Blob([data]).size : 0;
+        } catch {
+            return 0;
+        }
+    }
+
+    private cleanupOldLogs(): void {
+        const logs = this.load(true);
+        const now = timeService.getTrustedTime();
+        const cutoff = now - TimeServiceConfig.LOG_RETENTION_MS;
+
+        const cleaned = logs.filter(log => {
+            const logTime = new Date(log.startTime).getTime();
+            return logTime > cutoff;
+        });
+
+        if (cleaned.length < logs.length) {
+            console.log(`[TimeLedger] Cleaned ${logs.length - cleaned.length} old logs (>90 days)`);
+            try {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(cleaned));
+                this.cache = cleaned;
+                this.notifyListeners();
+            } catch (e) {
+                console.error('[TimeLedger] Failed to persist cleaned logs', e);
+            }
+        }
+    }
+
+    private ensureStorageQuota(): boolean {
+        const usage = this.getStorageUsage();
+        if (usage > TimeServiceConfig.MAX_STORAGE_BYTES) {
+            console.warn(`[TimeLedger] Storage quota exceeded (${Math.round(usage / 1024)}KB), cleaning old logs`);
+            this.cleanupOldLogs();
+            return this.getStorageUsage() < TimeServiceConfig.MAX_STORAGE_BYTES;
+        }
+        return true;
+    }
+
     private persist(logs: TimeLog[]) {
         try {
+            // Check quota before persisting
+            if (!this.ensureStorageQuota()) {
+                console.error('[TimeLedger] Cannot persist: storage quota exceeded after cleanup');
+                return;
+            }
             localStorage.setItem(STORAGE_KEY, JSON.stringify(logs));
             this.cache = logs;
             this.notifyListeners();
@@ -136,6 +186,17 @@ class TimeLedgerService {
         }
     }
 
+    // Validate TimeLog structure
+    private validateLog(log: TimeLog): boolean {
+        return !!(
+            log &&
+            typeof log.id === 'string' && log.id.length > 0 &&
+            typeof log.taskId === 'string' && log.taskId.length > 0 &&
+            typeof log.startTime === 'string' && log.startTime.length > 0 &&
+            typeof log.duration === 'number' && log.duration >= 0
+        );
+    }
+
     // --- Public API ---
 
     public getAllLogs(): TimeLog[] {
@@ -154,11 +215,18 @@ class TimeLedgerService {
 
     /**
      * HYBRID SAVE: 
-     * 1. Write Local (Speed)
-     * 2. Write Pending Queue (Safety)
-     * 3. Write Cloud (Sync)
+     * 1. Validate Input
+     * 2. Write Local (Speed)
+     * 3. Write Pending Queue (Safety)
+     * 4. Write Cloud (Sync)
      */
     public saveLog(log: TimeLog): void {
+        // 0. Validate
+        if (!this.validateLog(log)) {
+            console.error('[TimeLedger] Invalid log rejected:', log);
+            return;
+        }
+
         // 1. Local
         const current = this.load(true);
         // Deduplicate locally just in case

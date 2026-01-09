@@ -4,6 +4,7 @@ import { Task } from '../types';
 import { useStorage } from '../context/StorageContext';
 import { TimeLedger } from '../services/storage/TimeLedger';
 import { FinalMigration } from '../services/migration/FinalMigration';
+import { timeService } from '../services/time/TimeService';
 
 // Helper to update task state without touching time (Time is now Log-based)
 const createStoppedTask = (task: Task): Task => {
@@ -72,36 +73,52 @@ export const useTasks = ({ onStart, onStop, checkActiveTimer }: TaskCallbacks = 
             const adapter = storage as any;
             if (adapter.subscribeToTasks) {
                 unsubscribeTasks = await adapter.subscribeToTasks((remoteTasks: Task[]) => {
-                    console.log('[useTasks] Received remote update:', remoteTasks.length);
-
                     setTasks(currentLocalTasks => {
-                        // Merge Strategy: Remote should generally win for structural changes.
-                        // BUT: We need to preserve 'cachedTotalTime' from local TimeLedger calculation 
-                        // because remote tasks might have stale 'cachedTotalTime' or it might be deprecated.
-                        // Also, we must respect local 'isRunning' state if we are the active device? 
-                        // No, if remote says stopped, we should stop (Handoff).
-
-                        // Create a map for faster lookup
                         const currentMap = new Map(currentLocalTasks.map(t => [t.id, t]));
 
                         return remoteTasks.map(remote => {
-                            // Re-calculate time from local ledger source of truth
-                            // Alternatively, rely on remote if we sync logs? 
-                            // Local TimeLedger is the Aggregator.
+                            const local = currentMap.get(remote.id);
                             const localAggregated = TimeLedger.getAggregatedTime(remote.id);
 
-                            return {
-                                ...remote,
-                                cachedTotalTime: localAggregated
-                            };
-                        });
+                            // Conflict Resolution Strategy: "Trusted Timestamp Wins"
+                            // If we have a local version, we check if it is "newer" than the remote version.
+                            // This protects our Optimistic Updates (like 'isRunning: true') from being overwritten
+                            // by a stale snapshot that corresponds to the state BEFORE the user clicked start.
 
-                        // Note: What if remote deleted a task? The map above filters purely by remote list.
-                        // So deleted tasks vanish. Correct.
+                            let finalTask = remote;
+
+                            if (local && local.updatedAt && remote.updatedAt) {
+                                // String comparison of ISO dates works perfectly
+                                if (local.updatedAt > remote.updatedAt) {
+                                    // Local is newer! Keep Local State.
+                                    // console.log(`[useTasks] Ignoring stale remote update for "${local.title}". Local: ${local.updatedAt} vs Remote: ${remote.updatedAt}`);
+                                    finalTask = {
+                                        ...local,
+                                        // Still update aggregated time as that comes from Ledger
+                                        cachedTotalTime: localAggregated
+                                    };
+                                } else {
+                                    // Remote is newer or equal. Accept Remote.
+                                    finalTask = {
+                                        ...remote,
+                                        cachedTotalTime: localAggregated
+                                    };
+                                }
+                            } else {
+                                // No conflict info, accept remote (default)
+                                finalTask = {
+                                    ...remote,
+                                    cachedTotalTime: localAggregated
+                                };
+                            }
+
+                            return finalTask;
+                        });
                     });
 
                     setIsLoading(false);
                 });
+
             }
         };
 
@@ -127,6 +144,7 @@ export const useTasks = ({ onStart, onStop, checkActiveTimer }: TaskCallbacks = 
 
     const addTask = useCallback(async (title: string, catId: string | number, autoStart = false) => {
         const newId = crypto.randomUUID();
+        const now = new Date(storage.getServerTime()).toISOString();
         const newTask: Task = {
             id: newId,
             title,
@@ -134,10 +152,10 @@ export const useTasks = ({ onStart, onStop, checkActiveTimer }: TaskCallbacks = 
             description: '',
             cachedTotalTime: 0,
             savedTime: 0,
-            lastStartTime: autoStart ? Date.now() : undefined,
+            lastStartTime: autoStart ? timeService.getTrustedTime() : undefined,
             isRunning: autoStart,
             completed: false,
-            createdAt: new Date().toISOString(),
+            createdAt: now,
             completedAt: undefined,
             subtasks: []
         };
@@ -177,7 +195,7 @@ export const useTasks = ({ onStart, onStop, checkActiveTimer }: TaskCallbacks = 
             tasksToStop.forEach(t => onStop?.(t.id));
             onStart?.(id);
 
-            const startedTask = { ...task, isRunning: true, lastStartTime: Date.now() };
+            const startedTask = { ...task, isRunning: true, lastStartTime: timeService.getTrustedTime() };
 
             setTasks(prev => prev.map(t => {
                 if (t.id === id) return startedTask;
@@ -200,7 +218,7 @@ export const useTasks = ({ onStart, onStop, checkActiveTimer }: TaskCallbacks = 
         tasksToStop.forEach(t => onStop?.(t.id));
         onStart?.(id);
 
-        const startedTask = { ...task, isRunning: true, lastStartTime: Date.now() };
+        const startedTask = { ...task, isRunning: true, lastStartTime: timeService.getTrustedTime() };
 
         setTasks(prev => prev.map(t => {
             if (t.id === id) return startedTask;
@@ -229,8 +247,8 @@ export const useTasks = ({ onStart, onStop, checkActiveTimer }: TaskCallbacks = 
         if (task?.isRunning) onStop?.(id);
         setTasks(p => p.filter(t => t.id !== id));
         await storage.deleteTask(id);
-        // Also clean up logs
-        TimeLedger.deleteLogsForTask(id);
+        // NOTE: Time logs are preserved for undo functionality.
+        // Orphaned logs will be cleaned up automatically by TimeLedger.cleanupOldLogs()
     };
 
     const toggleComplete = async (id: string) => {
@@ -241,7 +259,7 @@ export const useTasks = ({ onStart, onStop, checkActiveTimer }: TaskCallbacks = 
         let updatedTask = {
             ...task,
             completed: isComplete,
-            completedAt: isComplete ? new Date().toISOString() : undefined
+            completedAt: isComplete ? new Date(storage.getServerTime()).toISOString() : undefined
         };
 
         if (isComplete && task.isRunning) {

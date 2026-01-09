@@ -3,12 +3,18 @@ import { db } from "../../lib/firebase";
 import { IStorageAdapter } from "./storage";
 import { Task, Category, Playlist, UserSettings, TimeLog } from "../../types";
 import { Session } from "../../features/focus/types";
+import { timeService } from "../time/TimeService";
+import { withRetry } from "../../utils/retry";
 
 export class FirestoreAdapter {
     private userId: string;
 
     constructor(userId: string) {
         this.userId = userId;
+        // Aggressively initialize time sync on instantiation
+        timeService.initialize(userId).catch(err => {
+            console.warn('[FirestoreAdapter] Time sync initialization failed:', err);
+        });
     }
 
     async getItem<T>(key: string): Promise<T | null> {
@@ -49,7 +55,9 @@ export class FirestoreAdapter {
             // Sanitizing data to remove 'undefined' which Firestore rejects
             const sanitizedValue = this.sanitizeData(value);
             if (key.includes('notes')) console.log(`[Firestore] SAVE key="${key}":`, sanitizedValue);
-            await setDoc(docRef, { value: sanitizedValue, updatedAt: new Date().toISOString() });
+
+            // Use Trusted Time for metadata
+            await setDoc(docRef, { value: sanitizedValue, updatedAt: timeService.getTrustedISO() });
         } catch (error) {
             console.error(`Error writing key "${key}" to Firestore:`, error);
         }
@@ -69,9 +77,15 @@ export class FirestoreAdapter {
     private sanitizeData(data: any): any {
         if (data === undefined) return null;
         if (data === null) return null;
-        if (typeof data !== 'object') return data;
         if (data instanceof Date) return data.toISOString();
+        // Preserve Firestore Timestamps
+        if (data instanceof Timestamp) return data;
+        // Pass through Firestore FieldValues (sentinels)
+        if (typeof data === 'object' && (data._methodName || (data.constructor && data.constructor.name && data.constructor.name.endsWith('FieldValue')))) {
+            return data;
+        }
         if (Array.isArray(data)) return data.map(item => this.sanitizeData(item));
+        if (typeof data !== 'object') return data;
 
         const sanitized: any = {};
         for (const key in data) {
@@ -89,7 +103,7 @@ export class FirestoreAdapter {
         try {
             const docRef = doc(db, "users", this.userId, "tasks", task.id);
             const sanitized = this.sanitizeData(task);
-            await setDoc(docRef, sanitized);
+            await withRetry(() => setDoc(docRef, sanitized));
         } catch (error) {
             console.error(`Error saving task "${task.id}" to Firestore:`, error);
         }
@@ -99,7 +113,7 @@ export class FirestoreAdapter {
         if (!this.userId) return;
         try {
             const docRef = doc(db, "users", this.userId, "tasks", id);
-            await deleteDoc(docRef);
+            await withRetry(() => deleteDoc(docRef));
         } catch (error) {
             console.error(`Error deleting task "${id}" from Firestore:`, error);
         }
@@ -168,6 +182,24 @@ export class FirestoreAdapter {
         }
     }
 
+    async subscribeToPlaylists(callback: (playlists: Playlist[]) => void): Promise<() => void> {
+        if (!this.userId) return () => { };
+
+        try {
+            const colRef = collection(db, "users", this.userId, "playlists");
+            const unsubscribe = onSnapshot(colRef, (snapshot) => {
+                const playlists = snapshot.docs.map(doc => doc.data() as Playlist);
+                callback(playlists);
+            }, (error) => {
+                console.error("Error in playlists subscription:", error);
+            });
+            return unsubscribe;
+        } catch (error) {
+            console.error("Error setting up playlists subscription:", error);
+            return () => { };
+        }
+    }
+
     // --- Phase 16: Time & Session Sync ---
 
     async saveTimeLog(log: TimeLog): Promise<void> {
@@ -212,47 +244,9 @@ export class FirestoreAdapter {
         }
     }
 
-    async saveActiveSession(session: Session | null): Promise<void> {
-        if (!this.userId) return;
-        try {
-            // Active session is a single document in 'data' collection or a separate doc
-            // Using 'data/active_session' is cleaner for singletons
-            const docRef = doc(db, "users", this.userId, "data", "active_session");
-
-            if (session) {
-                const sanitized = this.sanitizeData(session);
-                // Add timestamp for "Last-Write-Wins" and "Zombie Killer" logic
-                await setDoc(docRef, { value: sanitized, updatedAt: new Date().toISOString() });
-            } else {
-                // If null, we delete active session to signal "Idle"
-                await deleteDoc(docRef);
-            }
-        } catch (error) {
-            console.error("Error saving active session to Firestore:", error);
-        }
-    }
-
-    async subscribeToActiveSession(callback: (session: Session | null) => void): Promise<() => void> {
-        if (!this.userId) return () => { };
-
-        try {
-            const docRef = doc(db, "users", this.userId, "data", "active_session");
-            const unsubscribe = onSnapshot(docRef, (docSnap) => {
-                if (docSnap.exists()) {
-                    const data = docSnap.data();
-                    callback(data.value as Session);
-                } else {
-                    callback(null);
-                }
-            }, (error) => {
-                console.error("Error in active_session subscription:", error);
-            });
-            return unsubscribe;
-        } catch (error) {
-            console.error("Error setting up active_session subscription:", error);
-            return () => { };
-        }
-    }
+    // NOTE: saveActiveSession and subscribeToActiveSession have been removed.
+    // Session management is now handled exclusively by SessionService.
+    // See: src/services/session/SessionService.ts
 
     async subscribeToUserPreferences(callback: (prefs: UserSettings | null) => void): Promise<() => void> {
         if (!this.userId) return () => { };
@@ -284,7 +278,7 @@ export class FirestoreAdapter {
             const sanitized = this.sanitizeData(prefs);
 
             // Flatten to dot notation to ensure deep merge doesn't overwrite the 'value' object
-            const updateData: any = { updatedAt: new Date().toISOString() };
+            const updateData: any = { updatedAt: timeService.getTrustedISO() };
 
             // We iterate over the keys of the partial update
             for (const key of Object.keys(sanitized)) {
@@ -301,15 +295,33 @@ export class FirestoreAdapter {
         }
     }
 
-    async subscribeToSimpleTimer(callback: (timerState: any) => void): Promise<() => void> {
+    // --- Clock Synchronization ---
+
+    /**
+     * @deprecated Use timeService.getTrustedTime() instead
+     */
+    getServerTime(): number {
+        return timeService.getTrustedTime();
+    }
+
+    async subscribeToSimpleTimer(callback: (data: { value: any, readTime: number } | null) => void): Promise<() => void> {
         if (!this.userId) return () => { };
 
         try {
             const docRef = doc(db, "users", this.userId, "data", "simple_timer_state");
             const unsubscribe = onSnapshot(docRef, (docSnap) => {
+                // Safe read time extraction
+                let readTime = Date.now();
+                if (!docSnap.metadata.fromCache && (docSnap as any).readTime?.toMillis) {
+                    readTime = (docSnap as any).readTime.toMillis();
+                }
+
+                // NOTE: Removed piggyback offset update - probe sync is sufficient
+                // Piggyback was causing instability (readTime from cache/metadata unreliable)
+
                 if (docSnap.exists()) {
                     const data = docSnap.data();
-                    callback(data.value);
+                    callback({ value: data.value, readTime });
                 } else {
                     callback(null);
                 }

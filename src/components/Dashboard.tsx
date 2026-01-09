@@ -144,7 +144,7 @@ const Dashboard = () => {
                         animate={{ y: 0 }}
                         exit={{ y: "100%" }}
                         transition={{ duration: 0.3, ease: "easeInOut" }}
-                        className="fixed left-4 right-4 z-fixed lg:hidden shadow-2xl bg-bg-surface/90 backdrop-blur-xl rounded-2xl border border-white/10 dark:border-black/10"
+                        className="fixed left-4 right-4 z-fixed lg:hidden shadow-2xl shadow-brand/5 bg-bg-surface/60 backdrop-blur-3xl backdrop-saturate-150 rounded-2xl border border-white/20 dark:border-white/10 ring-1 ring-black/5"
                         style={{
                             height: 'var(--nav-height)',
                             bottom: 'var(--nav-offset)',

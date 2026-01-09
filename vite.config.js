@@ -8,12 +8,14 @@ export default defineConfig({
   plugins: [
     react(),
     VitePWA({
-      registerType: 'autoUpdate',
+      registerType: 'prompt', // SYSTEMIC FIX: Don't auto-update, let user control it
       includeAssets: ['favicon.svg', 'favicon.ico', 'robots.txt', 'apple-touch-icon.png'],
       manifest: {
         name: 'TrackMe - Focus Time Tracker',
         short_name: 'TrackMe',
         description: 'Immersive offset-first focus timer and productivity workspace.',
+        theme_color: '#1a1b1e',
+        background_color: '#1a1b1e',
         display: 'standalone',
         orientation: 'portrait',
         icons: [
@@ -34,6 +36,11 @@ export default defineConfig({
             purpose: 'any maskable'
           }
         ]
+      },
+      workbox: {
+        globPatterns: ['**/*.{js,css,html,ico,png,svg}'], // Precache EVERYTHING
+        cleanupOutdatedCaches: true,
+        sourcemap: true
       }
     })
   ],

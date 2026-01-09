@@ -20,7 +20,7 @@ const DraggableSubtaskItem = memo(({ subtask, onChange, onDelete }: DraggableSub
             value={subtask}
             dragListener={false}
             dragControls={controls}
-            className="relative touch-none"
+            className="relative touch-none select-none"
         >
             <div className="flex items-center gap-3 p-3 hover:bg-bg-surface group transition-colors">
                 <button

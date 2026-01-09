@@ -240,7 +240,7 @@ const AnalyticsView: React.FC<AnalyticsViewProps> = ({ tasks, categories }) => {
                                                     borderColor: 'hsl(var(--border-color))',
                                                     color: 'hsl(var(--text-primary))',
                                                     borderRadius: '12px',
-                                                    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
+                                                    boxShadow: 'var(--shadow-tooltip)'
                                                 }}
                                                 itemStyle={{ color: 'hsl(var(--text-primary))' }}
                                             />

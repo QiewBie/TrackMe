@@ -4,6 +4,7 @@ import { User, UserSettings } from '../types';
 import { authService, mapFirebaseUser } from '../services/auth/firebaseAuth';
 import { auth } from '../lib/firebase';
 import { localStorageAdapter } from '../services/storage/LocalStorageAdapter';
+import { versionManager } from '../services/sync/VersionManager';
 
 
 // Helper type for deep partial updates
@@ -121,6 +122,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             // 1. Clear Domain State
             localStorageAdapter.removeItem('guest_mode');
             localStorageAdapter.removeItem('user_cache');
+
+            // 2. Reset Version Manager (clears sync state)
+            versionManager.resetAll();
 
             // 2. Reset Memory State
             setUser(null);

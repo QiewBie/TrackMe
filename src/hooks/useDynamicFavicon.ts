@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { useFocusState } from '../context/FocusSessionContext';
+import { useSession } from '../context/SessionContext';
 
 /**
  * Updates the site favicon dynamically based on timer state.
@@ -7,19 +7,19 @@ import { useFocusState } from '../context/FocusSessionContext';
  * - Running: Red Pause Icon (active)
  */
 export const useDynamicFavicon = () => {
-    const { activeSession, isPaused } = useFocusState();
-    const isRunning = !!activeSession && !isPaused;
+    const { hasSession, isRunning } = useSession();
+    const isActive = hasSession && isRunning;
 
     useEffect(() => {
         const link: HTMLLinkElement | null = document.querySelector("link[rel*='icon']");
 
         if (!link) return;
 
-        const favicon = isRunning ? '/favicon-active.svg' : '/favicon.svg';
+        const favicon = isActive ? '/favicon-active.svg' : '/favicon.svg';
 
         // Only update if changed to prevent flashing/reloading
         if (link.getAttribute('href') !== favicon) {
             link.href = favicon;
         }
-    }, [isRunning]);
+    }, [isActive]);
 };

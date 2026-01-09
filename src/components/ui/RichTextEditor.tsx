@@ -31,7 +31,7 @@ const MenuButton = ({
         onClick={onClick}
         disabled={disabled}
         className={`p-2 rounded hover:bg-bg-subtle transition-colors
-            ${active ? 'text-brand-primary bg-brand-subtle' : 'text-text-secondary'}
+            ${active ? 'text-brand-primary bg-brand-primary/15 ring-1 ring-brand-primary/30' : 'text-text-secondary hover:text-text-primary'}
             ${disabled ? 'opacity-50 cursor-not-allowed' : ''}
         `}
     >

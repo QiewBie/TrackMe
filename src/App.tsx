@@ -9,14 +9,17 @@ import { TaskProvider, useTaskContext } from './context/TaskContext';
 import { CategoryProvider, useCategoryContext } from './context/CategoryContext';
 import { PlaylistProvider } from './context/PlaylistContext';
 import { SoundProvider } from './context/SoundContext';
-import { FocusSessionProvider, useFocusContext } from './context/FocusSessionContext';
+// FocusSessionProvider removed - useFocusSession now uses SessionContext directly
+import { SessionProvider } from './context/SessionContext';
 import Dashboard, { DashboardContextType } from './components/Dashboard';
-const TaskListView = lazy(() => import('./features/tasks/TaskListView'));
+import { lazyWithRetry } from './utils/lazyWithRetry';
+
+const TaskListView = lazyWithRetry(() => import('./features/tasks/TaskListView'));
 // Lazy load heavy views
-const AnalyticsView = lazy(() => import('./features/analytics/AnalyticsView'));
-const ProfileView = lazy(() => import('./features/auth/ProfileView'));
-const PlaylistManager = lazy(() => import('./features/playlists/PlaylistManager'));
-const FocusView = lazy(() => import('./features/focus/FocusView'));
+const AnalyticsView = lazyWithRetry(() => import('./features/analytics/AnalyticsView'));
+const ProfileView = lazyWithRetry(() => import('./features/auth/ProfileView'));
+const PlaylistManager = lazyWithRetry(() => import('./features/playlists/PlaylistManager'));
+const FocusView = lazyWithRetry(() => import('./features/focus/FocusView'));
 import { ThemeProvider } from './context/ThemeContext';
 
 import { useTranslation } from 'react-i18next';
@@ -113,6 +116,8 @@ const PageTransitionWrapper = ({ children, noPadding = false }: { children: Reac
 
 import { useCloudSync } from './hooks/useCloudSync';
 import { useThemeColor } from './hooks/useThemeColor';
+import { TaskOrchestrator } from './components/TaskOrchestrator';
+import { ReloadPrompt } from './components/ReloadPrompt';
 
 const AppContent = () => {
   // Features Cloud Sync (TimeLedger)
@@ -192,6 +197,7 @@ const AppContent = () => {
 // ...
 
 import { ActiveTimerProvider } from './context/ActiveTimerContext';
+import { ToastProvider } from './components/ui/ToastContext';
 // ... (imports)
 
 // ...
@@ -205,28 +211,32 @@ export default function App() {
   }, [i18n.language]);
 
   return (
-    <AuthProvider>
-      <StorageProvider>
-        <FocusSessionProvider>
-          <ActiveTimerProvider>
-            <TaskProvider>
-              <CategoryProvider>
-                <PlaylistProvider>
-                  <SoundProvider>
-                    <UIProvider>
-                      <LayoutProvider>
-                        <ThemeProvider>
-                          <AppContent />
-                        </ThemeProvider>
-                      </LayoutProvider>
-                    </UIProvider>
-                  </SoundProvider>
-                </PlaylistProvider>
-              </CategoryProvider>
-            </TaskProvider>
-          </ActiveTimerProvider>
-        </FocusSessionProvider>
-      </StorageProvider>
-    </AuthProvider>
+    <ToastProvider>
+      <AuthProvider>
+        <StorageProvider>
+          <SessionProvider>
+            <ActiveTimerProvider>
+              <TaskProvider>
+                <CategoryProvider>
+                  <PlaylistProvider>
+                    <TaskOrchestrator />
+                    <ReloadPrompt />
+                    <SoundProvider>
+                      <UIProvider>
+                        <LayoutProvider>
+                          <ThemeProvider>
+                            <AppContent />
+                          </ThemeProvider>
+                        </LayoutProvider>
+                      </UIProvider>
+                    </SoundProvider>
+                  </PlaylistProvider>
+                </CategoryProvider>
+              </TaskProvider>
+            </ActiveTimerProvider>
+          </SessionProvider>
+        </StorageProvider>
+      </AuthProvider>
+    </ToastProvider >
   );
 }

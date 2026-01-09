@@ -56,14 +56,14 @@ const Select: React.FC<SelectProps> = ({
             </button>
 
             {isOpen && (
-                <div className="absolute top-full left-0 mt-2 w-full min-w-[200px] bg-bg-surface rounded-xl shadow-xl border border-border p-1 z-50 animate-pop-in max-h-60 overflow-y-auto custom-scrollbar origin-top-left">
+                <div className="absolute top-full left-0 mt-2 w-full min-w-[200px] bg-bg-surface rounded-xl shadow-xl border border-border p-1 z-popover animate-pop-in max-h-60 overflow-y-auto custom-scrollbar origin-top-left">
                     {options.map(option => (
                         <button
                             key={option.value}
                             type="button"
                             onClick={() => handleSelect(option.value)}
                             className={clsx(
-                                "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors text-left",
+                                "w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-colors text-left",
                                 value === option.value
                                     ? "bg-brand-primary/10 text-brand-primary"
                                     : "text-text-secondary hover:bg-bg-subtle"

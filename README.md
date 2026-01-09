@@ -1,47 +1,55 @@
-# ⚡ Deep Flow: Time Tracker (V2)
+'# ⚡ Deep Flow: Time Tracker (V2)
 
-A premium, offline-first productivity workspace designed for deep work. Built with a robust **Ledger-Based Architecture**, it prioritizes data integrity, immersive focus, and strict local privacy.
+A premium, offline-first productivity workspace designed for deep work. Built with a robust **Ledger-Based Architecture** and **Versioned Sync System**, it prioritizes data integrity, immersive focus, and strict local privacy.
 
 ## ✨ Core Features
 
 ### 🧠 Focus & Flow
-*   **Immersive Session Engine**: A dedicated `FocusView` overlay that blocks distractions and manages the user's cognitive load.
-*   **Smart Pomodoro Logic**: Automatically transitions between Focus, Short Break, and Long Break (after 4 sets). Includes safeguards to prevent auto-starting work if the queue is empty.
-*   **Resilient Session State**: Includes active "Zombie Detection" to automatically purge invalid active sessions (e.g., if a playlist is deleted), ensuring the timer state remains consistent with the data source.
-*   **Task Queue**: Auto-advancing playlist system with "Universal Sync" that keeps the active session queue in perfect harmony with the database, even during background updates.
+*   **Immersive Session Engine**: A dedicated `FocusView` overlay that blocks distractions and manages cognitive load.
+*   **Smart Pomodoro Logic**: Automatically transitions between Focus, Short Break, and Long Break (after 4 sets).
+*   **Dual Timer System**: Focus Timer (Pomodoro countdown) + Simple Timer (Dashboard stopwatch).
+*   **Timer Orchestrator**: `useGlobalTimer` ensures only one timer type is active, preventing data conflicts.
+*   **Drift-Proof Timing**: Uses target-time calculation instead of interval counting for accurate sessions.
+*   **Task Queue**: Auto-advancing playlist system with "Universal Sync" across devices.
 
 ### 📊 Analytics & Data (Ledger V2)
-*   **Immutable Logging**: Time is not stored as a mutable counter but as specific `TimeLog` entries (`startTime`, `duration`, `projectId`).
-*   **Source of Truth**: Dashboards derive metrics (Total Time, Velocity, Heatmaps) directly from the raw ledger, ensuring 100% accuracy.
+*   **Immutable Logging**: Time stored as `TimeLog` entries (`startTime`, `duration`, `projectId`).
+*   **Source of Truth**: Dashboards derive metrics directly from the raw ledger.
 *   **Metrics**:
-    *   **Activity Heatmap**: Github-style consistency tracking.
+    *   **Activity Heatmap**: GitHub-style consistency tracking.
     *   **Velocity Chart**: 14-day trend analysis.
     *   **Efficiency**: Completion rates and average session duration.
     *   **Distribution**: Project-based time breakdown.
 
 ### 🌍 Localization (i18n)
 *   **Multi-language Support**: Fully localized in English (`en`) and Ukrainian (`uk`).
-*   **Dynamic Loading**: Locale-specific date formatting (via `date-fns` and `i18n.language` detection).
+*   **Dynamic Loading**: Locale-specific date formatting via `date-fns`.
 *   **Keys**: Centralized JSON translation files (`src/locales/*`).
 
 ### 💾 Data Persistence & Management
-*   **Offline-First**: All data is stored locally in the browser (`localStorage`) via the `TimeLogRepository`.
-*   **Data Portability**: Full JSON Export/Import capabilities (`useDataPersistence`) for backups or device migration.
-*   **Safe Storage**: Sub-collection storage pattern to prevent monolithic data corruption.
+*   **Offline-First**: All data stored locally in browser via `TimeLedgerService`.
+*   **Pending Queue**: Logs saved even when offline, synced when connection restored.
+*   **Data Portability**: Full JSON Export/Import for backups or device migration.
+*   **Safe Storage**: Sub-collection storage pattern prevents monolithic corruption.
+
+### ☁️ Cloud Sync (Optional)
+*   **Firebase Integration**: Sign in with Google for multi-device sync.
+*   **Real-Time Updates**: Tasks, sessions, and preferences sync instantly.
+*   **Versioned Sync (v4.1)**: Version-based conflict resolution via `VersionManager`.
+*   **Server Time Sync**: `TimeService` maintains clock accuracy across devices.
+*   **UI Lockout**: 300ms lockout after local actions prevents UI flash.
+*   **Zombie Detection**: Stale sessions (>24h) auto-purged.
 
 ### 🎨 Design System & Theming
 > Full Specification: [**See STYLE_GUIDE.md**](docs/STYLE_GUIDE.md)
 
+*   **6 Themes**: Default (Blue), Serenity, Amber, Rose, Sage, Monochrome.
 *   **Layer System**:
     *   Canvas (`bg-bg-main`): `#f8fafc` (Light) / `#020617` (Dark).
     *   Surface (`bg-bg-surface`): `#ffffff` (Light) / `#0f172a` (Dark).
-*   **Navigation & Layout**: Uses a `sticky` sidebar architecture on Desktop for independent scrolling and `scrollbar-gutter: stable` to eliminate layout shifts when modals open/close.
-*   **Tokens**: Functional naming (`bg-brand-primary`, `text-ui-disabled`) ensures automatic theme adaptation.
-*   **Typography**: **Manrope** variable font. Used with strict hierarchy (H1-H4, Body, Caption).
-*   **Z-Index Stack**: Explicit layering model:
-    *   `z-40` (Mobile Sidebar)
-    *   `z-50` (Modals)
-    *   `z-[100+]` (Critical Overlays)
+*   **Tokens**: Functional naming (`bg-brand-primary`, `text-ui-disabled`).
+*   **Typography**: **Manrope** variable font with strict hierarchy.
+*   **Z-Index Stack**: `z-40` (Sidebar) → `z-50` (Modals) → `z-[100+]` (Overlays).
 
 ---
 
@@ -49,36 +57,60 @@ A premium, offline-first productivity workspace designed for deep work. Built wi
 
 ### Tech Stack
 *   **Core**: React 18, TypeScript, Vite
-*   **State**: React Context API (`FocusSessionContext`, `UIContext`) + Custom Hooks
+*   **State**: React Context API (Split Pattern) + Custom Hooks
 *   **Styling**: Tailwind CSS (Semantic), Framer Motion, Lucide Icons
 *   **Charts**: Recharts
 *   **Utils**: date-fns, dnd-kit, react-i18next
+*   **Cloud**: Firebase Auth + Firestore (optional)
+
+### Time System
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                          TimeService                            │
+│   Maintains trusted time via probe sync + piggyback updates     │
+└────────────────────────────┬────────────────────────────────────┘
+                             │
+        ┌────────────────────┼────────────────────┐
+        ▼                    ▼                    ▼
+┌───────────────┐  ┌─────────────────┐  ┌─────────────────────┐
+│ FocusSession  │  │  ActiveTimer    │  │    TimeLedger       │
+│   Context     │  │    Context      │  │     Service         │
+│ (Pomodoro)    │  │  (Stopwatch)    │  │ (Log Persistence)   │
+└───────┬───────┘  └────────┬────────┘  └──────────┬──────────┘
+        │                   │                      │
+        └───────────────────┼──────────────────────┘
+                            ▼
+                   ┌─────────────────┐
+                   │  useGlobalTimer │
+                   │  (Orchestrator) │
+                   └─────────────────┘
+```
 
 ### Data Flow
-1.  **Session Context**: Manages the active "Live" state (ticking timer).
-2.  **Flush Strategy**: When a user pauses or stops, the session duration is "flushed" to a static `TimeLog`.
-3.  **Ledger**: The `TimeLedger` service handles validation and writes the log to persistent storage (`localStorage`).
-4.  **Reactivity**: Listeners (`TimeLedger.subscribe`) update the UI (analytics, task totals) instantly.
+1.  **TimeService**: Syncs clock on login, maintains offset.
+2.  **Session Context**: Manages active "Live" state (ticking timer).
+3.  **Flush Strategy**: On pause/stop, duration "flushed" to `TimeLog`.
+4.  **TimeLedger**: Writes log to localStorage + pending queue + cloud.
+5.  **Reactivity**: `TimeLedger.subscribe()` updates UI instantly.
 
 ### Directory Structure
 ```
 src/
 ├── components/     # Shared UI Building Blocks
-│   ├── layout/     # Sidebar, BottomNav
-│   ├── shared/     # Common Widgets (Modals, DatePickers)
-│   └── ui/         # Atomic Primitives (Button, Input, Typography)
-├── features/       # Feature Modules (Vertical Slices)
-│   ├── analytics/  # Analytics View & Charts
-│   ├── auth/       # Login, Profile, Datamanager
-│   ├── focus/      # Focus Session Engine & View
-│   ├── playlists/  # Playlist Management & Editors
-│   └── tasks/      # Task Management System
 ├── context/        # Global State (Auth, FocusSession, Task, UI)
-├── hooks/          # Logic (useFocusSession, useTimeLedger)
-├── locales/        # i18n JSON files
+├── features/       # Feature Modules (Vertical Slices)
+│   ├── analytics/  # Charts & Metrics
+│   ├── auth/       # Login, Profile
+│   ├── focus/      # Focus Timer & View
+│   ├── playlists/  # Playlist Management
+│   └── tasks/      # Task Management
+├── hooks/          # Custom Hooks (useFocusSession, useGlobalTimer)
 ├── services/       # Core Business Logic
-├── types/          # TypeScript Interfaces
-└── utils/          # Helpers
+│   ├── storage/    # TimeLedger, FirestoreAdapter, LocalStorageAdapter
+│   ├── sync/       # VersionManager (conflict resolution)
+│   └── time/       # TimeService
+├── types/          # TypeScript Definitions (incl. sync.ts)
+└── utils/          # Helper Functions
 ```
 
 ---
@@ -97,14 +129,39 @@ npm install
 *   `npm run build`: Compile for production.
 *   `npm run preview`: Preview the production build locally.
 *   `npm run lint`: Run ESLint check.
+*   `npm run test`: Run Vitest tests.
+
+### Environment Variables
+Create `.env` from `.env.example`:
+```
+VITE_FIREBASE_API_KEY=your_api_key
+VITE_FIREBASE_AUTH_DOMAIN=your_domain
+VITE_FIREBASE_PROJECT_ID=your_project
+# ... other Firebase config
+```
+
+---
+
+## 📚 Documentation
+
+| Document | Purpose |
+|:---------|:--------|
+| [ARCHITECTURE.md](docs/ARCHITECTURE.md) | System design, data flow, context patterns |
+| [PROJECT_STRUCTURE.md](docs/PROJECT_STRUCTURE.md) | File organization, module breakdown |
+| [DEVELOPMENT_GUIDE.md](docs/DEVELOPMENT_GUIDE.md) | How to add features, best practices |
+| [STYLE_GUIDE.md](docs/STYLE_GUIDE.md) | Design system, colors, typography |
+| [PROJECT_STATE.md](docs/PROJECT_STATE.md) | Current features, roadmap |
+| [GAP_ANALYSIS.md](docs/GAP_ANALYSIS.md) | Technical debt, test coverage |
 
 ---
 
 ## 🔒 Privacy & Security
-*   **Local-First**: By default, data resides in the user's LocalStorage.
-*   **Cloud Sync (Optional)**: Users can sign in to sync preferences and data across devices via Firebase.
-*   **Export**: Users own their data via the JSON Export feature.
+*   **Local-First**: By default, data resides in LocalStorage.
+*   **Cloud Sync (Optional)**: Sign in to sync across devices via Firebase.
+*   **Export**: Users own their data via JSON Export feature.
+*   **No Tracking**: Zero analytics or telemetry collected.
 
 ---
 
-*Current State: Production Ready (v0.2.1)*
+*Current State: Production Ready (v0.2.2 - Versioned Sync)*
+

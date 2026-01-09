@@ -38,6 +38,7 @@ const CategoryManager: React.FC<CategoryManagerProps> = ({ isOpen, onClose, cate
     const [editColor, setEditColor] = useState('');
 
     const openPicker = (e: React.MouseEvent, id: string | number | boolean) => {
+        e.stopPropagation();
         const rect = e.currentTarget.getBoundingClientRect();
         const pickerHeight = 160; // Approximate height of the picker
         const spaceBelow = window.innerHeight - rect.bottom;
